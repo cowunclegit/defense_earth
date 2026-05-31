@@ -1,0 +1,18 @@
+# Godot 4.x Specific Ignores
+.godot/
+*.import
+export_preset.cfg
+*.translation
+
+# Mono/C# Ignores (if used in future)
+.mono/
+data_*/
+mono_crash_release_*.txt
+
+# OS/System Ignores
+.DS_Store
+Thumbs.db
+
+# Agent/Tool Ignores
+.antigravitycli/
+.gemini/
