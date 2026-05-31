@@ -1,15 +1,23 @@
-# Godot 4.x Specific Ignores
-.godot/
-*.import
-export_preset.cfg
-*.translation
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Mono/C# Ignores (if used in future)
-.mono/
-data_*/
-mono_crash_release_*.txt
+# Expo / React Native
+.expo/
+dist/
+web-build/
+ios/
+android/
 
-# OS/System Ignores
+# Native build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+
+# OS / System Ignores
 .DS_Store
 Thumbs.db
 
