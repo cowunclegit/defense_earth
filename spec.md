@@ -9,7 +9,7 @@
 * **게임 제목:** 디펜스 어스: 코스믹 루프 (Defense Earth: Cosmic Loop)
 * **장르:** 방어(디펜스) + 자원 관리(시뮬레이션) + 로그라이트(환생/루프)
 * **플랫폼:** 모바일 (iOS & Android) 및 웹 브라우저
-* **개발 스택:** React Native (Expo) + TypeScript + React Native Skia (고성능 2D 게임 전투 캔버스) + Zustand (글로벌 게임 상태 관리)
+* **개발 스택:** React Native (Expo) + JavaScript (ES6+) + React Native Skia (고성능 2D 게임 전투 캔버스) + Zustand (글로벌 게임 상태 관리)
 * **핵심 컨셉:** 
   * 외계인의 침공으로부터 지구와 태양계 행성들을 방어.
   * 멸망의 위기에서 타임머신을 가동하여 과거로 회귀.
@@ -622,7 +622,7 @@ graph LR
 
 ### 7.2. 주요 검증 시나리오 및 에이전트 행동 (Playtest Scenarios)
 
-검증 테스트 스크립트(`__tests__/game_simulation.test.ts`)가 Zustand 스토어를 로드하고, 게임 루프를 초고속(Virtual Time Ticks)으로 가동하며 시스템 무결성을 테스트합니다.
+검증 테스트 스크립트(`__tests__/game_simulation.test.js`)가 Zustand 스토어를 로드하고, 게임 루프를 초고속(Virtual Time Ticks)으로 가동하며 시스템 무결성을 테스트합니다.
 
 1. **경제 & 인프라 빌드 시나리오 (Economy Test):**
    * 시뮬레이터가 자원 건물(발전소, 광산)의 가상 건설 액션을 트리거하여 그리드에 추가합니다.
