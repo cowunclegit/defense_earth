@@ -24,3 +24,7 @@ Thumbs.db
 # Agent/Tool Ignores
 .antigravitycli/
 .gemini/
+
+# Test artifacts
+test-results/
+test_error.log
