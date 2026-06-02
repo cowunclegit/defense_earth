@@ -221,8 +221,8 @@ export default function GameCanvas() {
                 {/* HP 게이지바 */}
                 <line x1={enemy.x - w / 2} y1={enemy.y - h / 2 - 5} x2={enemy.x + w / 2} y2={enemy.y - h / 2 - 5} stroke="rgba(255, 255, 255, 0.25)" strokeWidth={2} />
                 <line x1={enemy.x - w / 2} y1={enemy.y - h / 2 - 5} x2={enemy.x - w / 2 + w * (enemy.hp / enemy.maxHp)} y2={enemy.y - h / 2 - 5} stroke={isBoss ? '#ffd700' : '#00ff8a'} strokeWidth={2} />
-                <text x={enemy.x} y={enemy.y - h / 2 - 9} fill="#ffffff" fontSize={7} fontWeight="bold" textAnchor="middle">
-                  Lv.{enemy.level || 1}
+                <text x={enemy.x} y={enemy.y - h / 2 - 9} fill="#ffffff" fontSize={6.5} fontWeight="bold" textAnchor="middle">
+                  Lv.{enemy.level || 1} ({Math.round(enemy.hp)}/{Math.round(enemy.maxHp)})
                 </text>
               </g>
             );
