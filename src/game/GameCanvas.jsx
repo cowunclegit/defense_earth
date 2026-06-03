@@ -22,7 +22,7 @@ export default function GameCanvas() {
         const zoomFactor = 1.1;
         setZoom(prevZoom => {
           const nextZoom = e.deltaY > 0 ? prevZoom / zoomFactor : prevZoom * zoomFactor;
-          return Math.max(0.3, Math.min(3.0, nextZoom));
+          return Math.max(0.15, Math.min(3.0, nextZoom));
         });
       };
       element.addEventListener('wheel', handleWheel, { passive: false });

@@ -8,7 +8,7 @@ export default function CanvasControls({ zoom, setZoom, resetZoomPan }) {
       <TouchableOpacity style={styles.hudBtn} onPress={() => setZoom(z => Math.min(3.0, z + 0.15))}>
         <Text style={styles.hudText}>➕</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.hudBtn} onPress={() => setZoom(z => Math.max(0.3, z - 0.15))}>
+      <TouchableOpacity style={styles.hudBtn} onPress={() => setZoom(z => Math.max(0.15, z - 0.15))}>
         <Text style={styles.hudText}>➖</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.hudBtn} onPress={resetZoomPan}>
