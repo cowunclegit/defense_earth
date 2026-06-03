@@ -18,6 +18,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
   const planetId = route?.params?.planetId || PLANETS.EARTH;
   const [activeTab, setActiveTab] = React.useState('ground');
   const [purchaseMultiplier, setPurchaseMultiplier] = React.useState(1);
+  const [isSystemsExpanded, setIsSystemsExpanded] = React.useState(true);
   const { 
     planets, 
     credits, 
@@ -184,77 +185,97 @@ export default function PlanetDetailScreen({ route, navigation }) {
               시너지: {planetState.terraformProgress >= 80 ? '활성' : '대기'}
             </Text>
           </View>
+
+          {/* 오버레이: 하단 지구 제어 및 상태 모니터 (접기/펼치기 지원) */}
+          <View style={[styles.bottomStatusOverlay, isSystemsExpanded && styles.bottomStatusOverlayExpanded]}>
+            {/* 상단: 접기/펼치기 토글 헤더 및 HP/Shield 요약 */}
+            <View style={styles.statusHeaderRow}>
+              <View style={styles.statusHeaderMain}>
+                <Text style={styles.overlayHpText}>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
+                <Text style={styles.overlayShieldText}>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.expandToggleBtn} 
+                onPress={() => setIsSystemsExpanded(!isSystemsExpanded)}
+              >
+                <Text style={styles.expandToggleText}>
+                  {isSystemsExpanded ? '접기 ▲' : '제어판 ▼'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 게이지바 요약 */}
+            <View style={styles.statusHeaderBars}>
+              <View style={styles.miniBarBg}>
+                <View style={[styles.miniBarFillHP, { width: `${Math.min(100, Math.max(0, (earthHp / earthMaxHp) * 100))}%` }]} />
+              </View>
+              <View style={styles.miniBarBg}>
+                <View style={[styles.miniBarFillShield, { width: `${Math.min(100, Math.max(0, (earthShield / earthMaxShield) * 100))}%` }]} />
+              </View>
+            </View>
+
+            {/* 확장 영역: 테라포밍, 인구, 자동화 제어 */}
+            {isSystemsExpanded && (
+              <View style={styles.expandedControlArea}>
+                <View style={styles.overlayStatsRow}>
+                  <Text style={styles.overlayTextMini}>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
+                  <Text style={styles.overlayTextMini}>테라포밍 {planetState.terraformProgress}%</Text>
+                </View>
+
+                {/* 테라포밍 바 및 강화 버튼 */}
+                <View style={styles.overlayTerraformBarRow}>
+                  <View style={styles.overlayTerraformBarBg}>
+                    <View style={[styles.overlayTerraformBarFill, { width: `${planetState.terraformProgress}%` }]} />
+                  </View>
+                  {planetState.terraformProgress < 100 ? (
+                    <TouchableOpacity style={styles.overlayTerraformBtn} onPress={handleUpgrade}>
+                      <Text style={styles.overlayTerraformBtnText}>
+                        테라포밍 10% 증가 ({Math.floor(planetData.terraformCredit * 0.1).toLocaleString()} Cr)
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.overlayCompleteBadge}>
+                      <Text style={styles.overlayCompleteText}>완료</Text>
+                    </View>
+                  )}
+                </View>
+
+                <Text style={styles.overlayPopulationText}>
+                  현재 수용 인구: {planetState.population.toLocaleString()}명 / {planetData.maxPopulation.toLocaleString()}명
+                </Text>
+
+                {/* 자동화 제어 */}
+                <View style={styles.overlayAutomationRow}>
+                  <View style={styles.overlayAutoItem}>
+                    <Text style={styles.overlayAutoLabel}>자동 테라포밍 시스템</Text>
+                    <TouchableOpacity 
+                      style={[styles.overlayAutoToggle, autoTerraform ? styles.overlayToggleOn : styles.overlayToggleOff]} 
+                      onPress={handleToggleAutoTerraform}
+                    >
+                      <Text style={styles.overlayToggleText}>
+                        {!isPremium ? '🔒 PASS 전용' : autoTerraform ? 'ON' : 'OFF'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.overlayAutoItem}>
+                    <Text style={styles.overlayAutoLabel}>자동 요격 타워 재건</Text>
+                    <TouchableOpacity 
+                      style={[styles.overlayAutoToggle, autoBuildTowers ? styles.overlayToggleOn : styles.overlayToggleOff]} 
+                      onPress={handleToggleAutoBuild}
+                    >
+                      <Text style={styles.overlayToggleText}>
+                        {!isPremium ? '🔒 PASS 전용' : autoBuildTowers ? 'ON' : 'OFF'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* 하단 제어판 및 조작 버튼 */}
         <View style={styles.controlPanel}>
-          {/* 고품격 지구 상태 오버레이 (시안 스타일의 체력/실드 통합 패널) */}
-          <View style={styles.compactStatusPanel}>
-            <View style={styles.statusProgressItem}>
-              <Text style={styles.statusProgressLabel}>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
-              <View style={styles.statusProgressBarBg}>
-                <View style={[styles.statusProgressBarFillHP, { width: `${Math.min(100, Math.max(0, (earthHp / earthMaxHp) * 100))}%` }]} />
-              </View>
-            </View>
-            
-            <View style={styles.statusProgressItem}>
-              <Text style={styles.statusProgressLabel}>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
-              <View style={styles.statusProgressBarBg}>
-                <View style={[styles.statusProgressBarFillShield, { width: `${Math.min(100, Math.max(0, (earthShield / earthMaxShield) * 100))}%` }]} />
-              </View>
-            </View>
-            
-            <View style={styles.kineticTowerBadge}>
-              <Text style={styles.kineticTowerBadgeText}>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
-            </View>
-          </View>
-          {/* 테라포밍 프로젝트 줄 (매우 콤팩트하게) */}
-          <View style={styles.compactTerraformRow}>
-            <Text style={styles.terraformProgressText}>테라포밍 {planetState.terraformProgress}%</Text>
-            <View style={styles.compactProgressBarBg}>
-              <View style={[styles.compactProgressBarFill, { width: `${planetState.terraformProgress}%` }]} />
-            </View>
-            {planetState.terraformProgress < 100 ? (
-              <TouchableOpacity style={styles.compactUpgradeBtn} onPress={handleUpgrade}>
-                <Text style={styles.compactUpgradeBtnText}>
-                  테라포밍 10% 증가 ({Math.floor(planetData.terraformCredit * 0.1).toLocaleString()} Cr)
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.compactCompleteBadge}>
-                <Text style={styles.compactCompleteText}>완료</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.populationText}>
-            현재 수용 인구: {planetState.population.toLocaleString()}명 / {planetData.maxPopulation.toLocaleString()}명
-          </Text>
-
-          {/* QoL 자동화 토글 줄 */}
-          <View style={styles.qolRow}>
-            <View style={styles.qolItem}>
-              <Text style={styles.qolLabel}>자동 테라포밍 시스템</Text>
-              <TouchableOpacity 
-                style={[styles.qolToggleBtn, autoTerraform ? styles.toggleOn : styles.toggleOff]} 
-                onPress={handleToggleAutoTerraform}
-              >
-                <Text style={styles.toggleBtnText}>
-                  {!isPremium ? '🔒 PASS 전용' : autoTerraform ? 'ON' : 'OFF'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.qolItem}>
-              <Text style={styles.qolLabel}>자동 요격 타워 재건</Text>
-              <TouchableOpacity 
-                style={[styles.qolToggleBtn, autoBuildTowers ? styles.toggleOn : styles.toggleOff]} 
-                onPress={handleToggleAutoBuild}
-              >
-                <Text style={styles.toggleBtnText}>
-                  {!isPremium ? '🔒 PASS 전용' : autoBuildTowers ? 'ON' : 'OFF'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           {/* Upgrades Section Header & Multiplier */}
           <View style={styles.gridHeaderRow}>
@@ -1268,66 +1289,177 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: 'bold',
   },
-  compactStatusPanel: {
+  bottomStatusOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: 235,
+    backgroundColor: 'rgba(5, 8, 20, 0.85)',
+    borderWidth: 1.2,
+    borderColor: '#00f0ff',
+    borderRadius: 8,
+    padding: 6,
+    zIndex: 99,
+  },
+  bottomStatusOverlayExpanded: {
+  },
+  statusHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusHeaderMain: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 1,
+  },
+  overlayHpText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#ff5c5c',
+  },
+  overlayShieldText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#00f0ff',
+  },
+  expandToggleBtn: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(0, 240, 255, 0.15)',
+    borderRadius: 4,
+    borderWidth: 0.8,
+    borderColor: '#00f0ff',
+  },
+  expandToggleText: {
+    fontSize: 8.5,
+    fontWeight: 'bold',
+    color: '#00f0ff',
+  },
+  statusHeaderBars: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 4,
+  },
+  miniBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#16223f',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  miniBarFillHP: {
+    height: '100%',
+    backgroundColor: '#ff5c5c',
+  },
+  miniBarFillShield: {
+    height: '100%',
+    backgroundColor: '#00f0ff',
+  },
+  expandedControlArea: {
+    marginTop: 4,
+    borderTopWidth: 0.8,
+    borderTopColor: 'rgba(0, 240, 255, 0.15)',
+    paddingTop: 4,
+  },
+  overlayStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  overlayTextMini: {
+    fontSize: 8,
+    color: '#ffd700',
+    fontWeight: 'bold',
+  },
+  overlayTerraformBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(10, 20, 45, 0.6)',
-    borderWidth: 1.2,
-    borderColor: 'rgba(0, 240, 255, 0.15)',
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 8,
+    gap: 6,
     marginBottom: 4,
-    gap: 8,
   },
-  statusProgressItem: {
-    flex: 1.1,
-    flexDirection: 'column',
-    gap: 3,
-  },
-  statusProgressLabel: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  statusProgressBarBg: {
-    height: 7,
+  overlayTerraformBarBg: {
+    flex: 1,
+    height: 6,
     backgroundColor: '#16223f',
-    borderRadius: 3.5,
+    borderRadius: 3,
     overflow: 'hidden',
   },
-  statusProgressBarFillHP: {
+  overlayTerraformBarFill: {
     height: '100%',
-    backgroundColor: '#ff5c5c',
-    shadowColor: '#ff5c5c',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
+    backgroundColor: '#00ff8a',
   },
-  statusProgressBarFillShield: {
-    height: '100%',
-    backgroundColor: '#00f0ff',
-    shadowColor: '#00f0ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
+  overlayTerraformBtn: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    backgroundColor: '#00ff8a',
+    borderRadius: 3,
+    minWidth: 90,
+    alignItems: 'center',
   },
-  kineticTowerBadge: {
-    flex: 0.8,
-    backgroundColor: 'rgba(191, 92, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: '#bf5cff',
-    borderRadius: 6,
+  overlayTerraformBtnText: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    color: '#050814',
+  },
+  overlayCompleteBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderColor: '#00ff8a',
+    borderWidth: 0.5,
+    borderRadius: 3,
+  },
+  overlayCompleteText: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    color: '#00ff8a',
+  },
+  overlayPopulationText: {
+    fontSize: 8.5,
+    color: '#8fa0c4',
+    marginBottom: 4,
+  },
+  overlayAutomationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  overlayAutoItem: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     paddingVertical: 4,
     paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    gap: 3,
   },
-  kineticTowerBadgeText: {
-    color: '#bf5cff',
-    fontSize: 8.5,
+  overlayAutoLabel: {
+    fontSize: 7.5,
+    color: '#8fa0c4',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  overlayAutoToggle: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 3,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  overlayToggleOn: {
+    backgroundColor: '#00bfa5',
+  },
+  overlayToggleOff: {
+    backgroundColor: '#16223f',
+  },
+  overlayToggleText: {
+    fontSize: 7.5,
+    color: '#ffffff',
+    fontWeight: 'bold',
   }
 });
