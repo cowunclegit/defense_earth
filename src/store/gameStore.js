@@ -1544,6 +1544,16 @@ export const useGameStore = create((set, get) => ({
       }
 
       // 3. 궤도 위성 공격
+      const earthSatellites = [];
+      if (p.orbitalSatellitesList) {
+        Object.keys(p.orbitalSatellitesList).forEach((t) => {
+          const c = p.orbitalSatellitesList[t] || 0;
+          for (let i = 0; i < c; i++) {
+            earthSatellites.push({ type: t, globalIndex: earthSatellites.length });
+          }
+        });
+      }
+
       Object.keys(p.orbitalSatellitesList).forEach((type) => {
         const count = p.orbitalSatellitesList[type] || 0;
         if (count <= 0) return;
@@ -1557,34 +1567,55 @@ export const useGameStore = create((set, get) => ({
         }
 
         if (p.satelliteTimers[type] <= 0 && updatedEnemies.length > 0) {
-          const target = updatedEnemies[Math.floor(Math.random() * updatedEnemies.length)];
-          if (target) {
-            const dmg = spec.dmg * count;
-            target.hp -= dmg;
-            p.satelliteTimers[type] = spec.cd;
+          p.satelliteTimers[type] = spec.cd;
 
-            state.addBattleLog(`${PLANETARY_DATA[planetId].name} 위성 ${spec.name} 공격! (데미지 ${dmg})`);
+          const matchingSats = earthSatellites.filter(sat => sat.type === type);
+          matchingSats.forEach((sat) => {
+            const target = updatedEnemies[Math.floor(Math.random() * updatedEnemies.length)];
+            if (target) {
+              const dmg = spec.dmg;
+              target.hp -= dmg;
 
-            if (type === 'emp') {
-              target.stunTimer = 3.0;
-            } else if (type === 'gravityBomb') {
-              target.slowTimer = 3.0;
-              target.slowAmount = 0.4;
-            } else if (type === 'clusterMissile') {
-              target.hp -= spec.dmg * count * 2; // total 3 hits
+              state.addBattleLog(`${PLANETARY_DATA[planetId].name} 위성 ${spec.name} 공격! (데미지 ${dmg})`);
+
+              if (type === 'emp') {
+                target.stunTimer = 3.0;
+              } else if (type === 'gravityBomb') {
+                target.slowTimer = 3.0;
+                target.slowAmount = 0.4;
+              } else if (type === 'clusterMissile') {
+                target.hp -= spec.dmg * 2;
+              }
+
+              // 위성 위치 계산
+              const rotationSpeed = 0.015;
+              const currentRotation = (Date.now() * rotationSpeed) % 360;
+              const baseAngle = (360 / earthSatellites.length) * sat.globalIndex;
+              const angleDeg = baseAngle + currentRotation;
+              const angleRad = (angleDeg * Math.PI) / 180;
+              const orbitRadius = 125;
+              const satX = EARTH_CENTER_X + orbitRadius * Math.cos(angleRad);
+              const satY = EARTH_CENTER_Y + orbitRadius * Math.sin(angleRad);
+
+              const dx = target.x - satX;
+              const dy = target.y - satY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const speed = 400;
+              const vx = dist > 0 ? (dx / dist) * speed : 0;
+              const vy = dist > 0 ? (dy / dist) * speed : 0;
+
+              updatedProjectiles.push({
+                id: Math.random().toString(),
+                type: 'energy',
+                x: satX,
+                y: satY,
+                vx: vx,
+                vy: vy,
+                damage: 0,
+                isEnemy: false
+              });
             }
-
-            updatedProjectiles.push({
-              id: Math.random().toString(),
-              type: 'energy',
-              x: target.x - 20,
-              y: target.y - 40,
-              vx: 400,
-              vy: 800,
-              damage: 0,
-              isEnemy: false
-            });
-          }
+          });
         }
       });
 
