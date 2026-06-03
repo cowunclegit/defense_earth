@@ -1415,18 +1415,8 @@ export const useGameStore = create((set, get) => ({
             const target = updatedEnemies[Math.floor(Math.random() * updatedEnemies.length)];
             if (target) {
               const dmg = spec.dmg;
-              target.hp -= dmg;
 
               state.addBattleLog(`${PLANETARY_DATA[planetId].name} 위성 ${spec.name} 공격! (데미지 ${dmg})`);
-
-              if (type === 'emp') {
-                target.stunTimer = 3.0;
-              } else if (type === 'gravityBomb') {
-                target.slowTimer = 3.0;
-                target.slowAmount = 0.4;
-              } else if (type === 'clusterMissile') {
-                target.hp -= spec.dmg * 2;
-              }
 
               // 위성 위치 계산
               const currentRotation = nextRotation % 360;
@@ -1441,18 +1431,28 @@ export const useGameStore = create((set, get) => ({
               const dy = target.y - satY;
               const dist = Math.sqrt(dx * dx + dy * dy);
               const speed = 400;
-              const vx = dist > 0 ? (dx / dist) * speed : 0;
-              const vy = dist > 0 ? (dy / dist) * speed : 0;
 
-              updatedProjectiles.push({
-                id: Math.random().toString(),
-                type: 'energy',
-                x: satX,
-                y: satY,
-                vx: vx,
-                vy: vy,
-                damage: 0,
-                isEnemy: false
+              const targetAngle = Math.atan2(dy, dx);
+              const anglesToSpawn = type === 'clusterMissile' ? [-0.2, 0, 0.2] : [0];
+
+              anglesToSpawn.forEach((angleOffset) => {
+                const angle = targetAngle + angleOffset;
+                const vx = dist > 0 ? Math.cos(angle) * speed : 0;
+                const vy = dist > 0 ? Math.sin(angle) * speed : 0;
+
+                updatedProjectiles.push({
+                  id: Math.random().toString(),
+                  type: type === 'clusterMissile' ? 'kinetic' : 'energy',
+                  x: satX,
+                  y: satY,
+                  vx: vx,
+                  vy: vy,
+                  damage: dmg,
+                  isEnemy: false,
+                  targetEnemyId: target.id,
+                  emp: type === 'emp',
+                  gravityBomb: type === 'gravityBomb'
+                });
               });
             }
           });
@@ -2087,6 +2087,14 @@ export const useGameStore = create((set, get) => ({
         if (hitEnemy) {
           projectilesToRemove.add(proj.id);
           hitEnemy.hp -= proj.damage;
+
+          if (proj.emp) {
+            hitEnemy.stunTimer = 3.0;
+          }
+          if (proj.gravityBomb) {
+            hitEnemy.slowTimer = 3.0;
+            hitEnemy.slowAmount = 0.4;
+          }
           
           updatedParticles.push({
             id: Math.random().toString(),
