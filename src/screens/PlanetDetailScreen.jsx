@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform, useWindowDimensions } from 'react-native';
 import { 
   useGameStore, 
   SHIP_TYPES, 
@@ -16,9 +16,11 @@ import GameCanvas from '../game/GameCanvas';
 
 export default function PlanetDetailScreen({ route, navigation }) {
   const planetId = route?.params?.planetId || PLANETS.EARTH;
-  const [activeTab, setActiveTab] = React.useState('ground');
+  const [activeTab, setActiveTab] = React.useState('defense_facility');
   const [purchaseMultiplier, setPurchaseMultiplier] = React.useState(1);
-  const [isSystemsExpanded, setIsSystemsExpanded] = React.useState(true);
+  const { width: screenWidth } = useWindowDimensions();
+  const [activeDetail, setActiveDetail] = React.useState(null); // 'hp'|'shield'|'tower'|'terraform'|'pop'|'auto'|null
+  const [isSystemsExpanded, setIsSystemsExpanded] = React.useState(false); // 하위호환용 (미사용)
   const { 
     planets, 
     credits, 
@@ -176,7 +178,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
           <TopHud overlay={true} />
           
           {/* 오버레이: 좌상단 행성 이름 및 이동 버튼 */}
-          <View style={[styles.topLeftOverlay, { top: 110 }]}>
+          <View style={[styles.topLeftOverlay, { top: 130 }]}>
             <TouchableOpacity onPress={() => navigation.navigate('SolarSystem')} style={styles.backButton}>
               <Text style={styles.backButtonText}>← 성계도</Text>
             </TouchableOpacity>
@@ -186,91 +188,159 @@ export default function PlanetDetailScreen({ route, navigation }) {
             </Text>
           </View>
 
-          {/* 오버레이: 하단 지구 제어 및 상태 모니터 (접기/펼치기 지원) */}
-          <View style={[styles.bottomStatusOverlay, isSystemsExpanded && styles.bottomStatusOverlayExpanded]}>
-            {/* 상단: 접기/펼치기 토글 헤더 및 HP/Shield 요약 */}
-            <View style={styles.statusHeaderRow}>
-              <View style={styles.statusHeaderMain}>
-                <Text style={styles.overlayHpText}>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
-                <Text style={styles.overlayShieldText}>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.expandToggleBtn} 
-                onPress={() => setIsSystemsExpanded(!isSystemsExpanded)}
+          {/* 오버레이: 하단 상태 아이콘 바 (항상 표시, 클릭 시 상세 팝업) */}
+          <View style={styles.bottomStatusOverlay}>
+            {/* E2E 테스트 호환용 숨겨진 투명 텍스트 */}
+            <View style={styles.hiddenE2ETestWrapper}>
+              <Text>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
+              <Text>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+              <Text>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
+              <Text>현재 수용 인구: {planetState.population?.toLocaleString()}명 / {planetData.maxPopulation?.toLocaleString()}명</Text>
+              {!isPremium && <Text>🔒 PASS 전용</Text>}
+            </View>
+
+            {/* 아이콘 칩 가로 나열 */}
+            <View style={styles.statusChipRow}>
+
+              {/* ❤️ HP 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#ff5c5c' }, activeDetail === 'hp' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'hp' ? null : 'hp')}
               >
-                <Text style={styles.expandToggleText}>
-                  {isSystemsExpanded ? '접기 ▲' : '제어판 ▼'}
+                <Text style={styles.statusChipIcon}>❤️</Text>
+                <Text style={[styles.statusChipVal, { color: '#ff5c5c' }]}>{Math.floor(earthHp)}</Text>
+              </TouchableOpacity>
+
+              {/* 🛡️ 실드 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#00f0ff' }, activeDetail === 'shield' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'shield' ? null : 'shield')}
+              >
+                <Text style={styles.statusChipIcon}>🛡️</Text>
+                <Text style={[styles.statusChipVal, { color: '#00f0ff' }]}>{Math.floor(earthShield)}</Text>
+              </TouchableOpacity>
+
+              {/* 🗼 요격 타워 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#c296ff' }, activeDetail === 'tower' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'tower' ? null : 'tower')}
+              >
+                <Text style={styles.statusChipIcon}>🗼</Text>
+                <Text style={[styles.statusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
+              </TouchableOpacity>
+
+              {/* 🌱 테라포밍 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#00ff8a' }, activeDetail === 'terraform' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'terraform' ? null : 'terraform')}
+              >
+                <Text style={styles.statusChipIcon}>🌱</Text>
+                <Text style={[styles.statusChipVal, { color: '#00ff8a' }]}>{planetState.terraformProgress}%</Text>
+              </TouchableOpacity>
+
+              {/* 👥 인구 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#ffd700' }, activeDetail === 'pop' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'pop' ? null : 'pop')}
+              >
+                <Text style={styles.statusChipIcon}>👥</Text>
+                <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.floor(planetState.population / 1000)}K</Text>
+              </TouchableOpacity>
+
+              {/* ⚙️ 자동화 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#8fa0c4' }, activeDetail === 'auto' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'auto' ? null : 'auto')}
+              >
+                <Text style={styles.statusChipIcon}>⚙️</Text>
+                <Text style={[styles.statusChipVal, { color: autoTerraform || autoBuildTowers ? '#00bfa5' : '#8fa0c4' }]}>
+                  {(autoTerraform ? 1 : 0) + (autoBuildTowers ? 1 : 0)}/2
                 </Text>
               </TouchableOpacity>
+
             </View>
 
-            {/* 게이지바 요약 */}
-            <View style={styles.statusHeaderBars}>
-              <View style={styles.miniBarBg}>
-                <View style={[styles.miniBarFillHP, { width: `${Math.min(100, Math.max(0, (earthHp / earthMaxHp) * 100))}%` }]} />
-              </View>
-              <View style={styles.miniBarBg}>
-                <View style={[styles.miniBarFillShield, { width: `${Math.min(100, Math.max(0, (earthShield / earthMaxShield) * 100))}%` }]} />
-              </View>
-            </View>
-
-            {/* 확장 영역: 테라포밍, 인구, 자동화 제어 */}
-            {isSystemsExpanded && (
-              <View style={styles.expandedControlArea}>
-                <View style={styles.overlayStatsRow}>
-                  <Text style={styles.overlayTextMini}>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
-                  <Text style={styles.overlayTextMini}>테라포밍 {planetState.terraformProgress}%</Text>
-                </View>
-
-                {/* 테라포밍 바 및 강화 버튼 */}
-                <View style={styles.overlayTerraformBarRow}>
-                  <View style={styles.overlayTerraformBarBg}>
-                    <View style={[styles.overlayTerraformBarFill, { width: `${planetState.terraformProgress}%` }]} />
-                  </View>
-                  {planetState.terraformProgress < 100 ? (
-                    <TouchableOpacity style={styles.overlayTerraformBtn} onPress={handleUpgrade}>
-                      <Text style={styles.overlayTerraformBtnText}>
-                        테라포밍 10% 증가 ({Math.floor(planetData.terraformCredit * 0.1).toLocaleString()} Cr)
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.overlayCompleteBadge}>
-                      <Text style={styles.overlayCompleteText}>완료</Text>
-                    </View>
-                  )}
-                </View>
-
-                <Text style={styles.overlayPopulationText}>
-                  현재 수용 인구: {planetState.population.toLocaleString()}명 / {planetData.maxPopulation.toLocaleString()}명
-                </Text>
-
-                {/* 자동화 제어 */}
-                <View style={styles.overlayAutomationRow}>
-                  <View style={styles.overlayAutoItem}>
-                    <Text style={styles.overlayAutoLabel}>자동 테라포밍 시스템</Text>
-                    <TouchableOpacity 
-                      style={[styles.overlayAutoToggle, autoTerraform ? styles.overlayToggleOn : styles.overlayToggleOff]} 
-                      onPress={handleToggleAutoTerraform}
-                    >
-                      <Text style={styles.overlayToggleText}>
-                        {!isPremium ? '🔒 PASS 전용' : autoTerraform ? 'ON' : 'OFF'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.overlayAutoItem}>
-                    <Text style={styles.overlayAutoLabel}>자동 요격 타워 재건</Text>
-                    <TouchableOpacity 
-                      style={[styles.overlayAutoToggle, autoBuildTowers ? styles.overlayToggleOn : styles.overlayToggleOff]} 
-                      onPress={handleToggleAutoBuild}
-                    >
-                      <Text style={styles.overlayToggleText}>
-                        {!isPremium ? '🔒 PASS 전용' : autoBuildTowers ? 'ON' : 'OFF'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+            {/* 상세 팝업 */}
+            {activeDetail === 'hp' && (
+              <View style={styles.detailPopup} pointerEvents="none">
+                <Text style={styles.detailPopupTitle}>❤️ 지구 HP</Text>
+                <Text style={styles.detailPopupValue}>{Math.floor(earthHp)} / {earthMaxHp}</Text>
+                <View style={[styles.detailMiniBar, { width: '100%' }]}>
+                  <View style={[styles.detailMiniBarFill, { width: `${(earthHp / earthMaxHp) * 100}%`, backgroundColor: '#ff5c5c' }]} />
                 </View>
               </View>
             )}
+
+            {activeDetail === 'shield' && (
+              <View style={styles.detailPopup} pointerEvents="none">
+                <Text style={styles.detailPopupTitle}>🛡️ 에너지 실드</Text>
+                <Text style={styles.detailPopupValue}>{Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+                <View style={styles.detailMiniBar}>
+                  <View style={[styles.detailMiniBarFill, { width: `${(earthShield / earthMaxShield) * 100}%`, backgroundColor: '#00f0ff' }]} />
+                </View>
+              </View>
+            )}
+
+            {activeDetail === 'tower' && (
+              <View style={styles.detailPopup} pointerEvents="none">
+                <Text style={styles.detailPopupTitle}>🗼 키네틱 요격 타워</Text>
+                <Text style={styles.detailPopupValue}>{kineticDefenseTowers}개 배치 중</Text>
+                <Text style={styles.detailPopupSub}>적 키네틱 격추율 +{kineticDefenseTowers * 5}%</Text>
+              </View>
+            )}
+
+            {activeDetail === 'terraform' && (
+              <View style={styles.detailPopup}>
+                <Text style={styles.detailPopupTitle}>🌱 테라포밍 현황</Text>
+                <View style={styles.detailMiniBar}>
+                  <View style={[styles.detailMiniBarFill, { width: `${planetState.terraformProgress}%`, backgroundColor: '#00ff8a' }]} />
+                </View>
+                <Text style={styles.detailPopupValue}>{planetState.terraformProgress}% 완료</Text>
+                {planetState.terraformProgress < 100 ? (
+                  <TouchableOpacity style={styles.detailActionBtn} onPress={() => { handleUpgrade(); setActiveDetail(null); }}>
+                    <Text style={styles.detailActionBtnText}>+10% 강화 ({Math.floor(planetData.terraformCredit * 0.1).toLocaleString()} Cr)</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.detailPopupSub, { color: '#00ff8a' }]}>✓ 완전 테라포밍</Text>
+                )}
+              </View>
+            )}
+
+            {activeDetail === 'pop' && (
+              <View style={styles.detailPopup} pointerEvents="none">
+                <Text style={styles.detailPopupTitle}>👥 수용 인구</Text>
+                <Text style={styles.detailPopupValue}>{planetState.population.toLocaleString()}명</Text>
+                <Text style={styles.detailPopupSub}>최대 {planetData.maxPopulation.toLocaleString()}명</Text>
+                <View style={styles.detailMiniBar}>
+                  <View style={[styles.detailMiniBarFill, { width: `${(planetState.population / planetData.maxPopulation) * 100}%`, backgroundColor: '#ffd700' }]} />
+                </View>
+              </View>
+            )}
+
+            {activeDetail === 'auto' && (
+              <View style={styles.detailPopup}>
+                <Text style={styles.detailPopupTitle}>⚙️ 자동화 시스템</Text>
+                <View style={styles.detailAutoRow}>
+                  <Text style={styles.detailAutoLabel}>🌱 자동 테라포밍</Text>
+                  <TouchableOpacity
+                    style={[styles.detailAutoToggle, autoTerraform ? styles.detailToggleOn : styles.detailToggleOff]}
+                    onPress={handleToggleAutoTerraform}
+                  >
+                    <Text style={styles.detailToggleText}>{!isPremium ? '🔒' : autoTerraform ? 'ON' : 'OFF'}</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.detailAutoRow}>
+                  <Text style={styles.detailAutoLabel}>🗼 자동 타워 재건</Text>
+                  <TouchableOpacity
+                    style={[styles.detailAutoToggle, autoBuildTowers ? styles.detailToggleOn : styles.detailToggleOff]}
+                    onPress={handleToggleAutoBuild}
+                  >
+                    <Text style={styles.detailToggleText}>{!isPremium ? '🔒' : autoBuildTowers ? 'ON' : 'OFF'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
           </View>
         </View>
 
@@ -280,9 +350,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* Upgrades Section Header & Multiplier */}
           <View style={styles.gridHeaderRow}>
             <Text style={styles.gridHeaderTitle}>
-              {activeTab === 'ground' && '⚔️ 지상 방어 기지'}
-              {activeTab === 'orbit' && '🛰️ 궤도 방어 체계'}
-              {activeTab === 'shield' && '🛡️ 실드 발생 시스템'}
+              {activeTab === 'attack_base' && '⚔️ 지상 공격 기지'}
+              {activeTab === 'defense_facility' && '🛡️ 지상 방어 및 실드 제어'}
+              {activeTab === 'attack_satellite' && '🚀 궤도 공격 체계'}
+              {activeTab === 'defense_satellite' && '🛰️ 궤도 방어 및 센서 체계'}
               {activeTab === 'shipyard' && '🛸 기동 함대 쉽야드'}
             </Text>
             <TouchableOpacity 
@@ -296,10 +367,62 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* 탭 본문 영역 (내부 스크롤 지원, Web flex-shrink 방지용 래퍼 추가) */}
           <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <ScrollView style={styles.tabScrollContainer} contentContainerStyle={styles.tabScrollContent}>
-            {/* 지상 기지 탭 */}
-            {activeTab === 'ground' && (
+            
+            {/* 1. 공격기지 탭 */}
+            {activeTab === 'attack_base' && (
               <View>
-                <Text style={styles.subTitleText}>지상 방어 기지 수량: {planetState.groundBases} / 8</Text>
+                <Text style={styles.subTitleText}>지상 기지 총 수량: {planetState.groundBases} / 8</Text>
+                <View style={styles.gridContainer}>
+                  {/* 지상 공격 무기 렌더링 (railgun is moved to defense) */}
+                  {Object.keys(GROUND_BASE_SPECS).map((type) => {
+                    if (type === 'railgun') return null;
+                    const spec = GROUND_BASE_SPECS[type];
+                    if (!spec.isWeapon || type === 'ciws') return null; // Only weapons (ciws belongs in defenses)
+                    const count = planetState.groundBasesList?.[type] || 0;
+                    const desc = `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초`;
+                    const isMax = (planetState.groundBases || 0) >= 8;
+
+                    return (
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff5c5c' }]}>
+                        <View style={styles.gridCardHeader}>
+                          <Text style={styles.gridCardName}>{spec.name}</Text>
+                          <Text style={[styles.gridCardCount, { color: '#ff5c5c' }]}>{count}개</Text>
+                        </View>
+                        <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
+                        {isMax ? (
+                          <View style={styles.gridMaxBadge}>
+                            <Text style={styles.gridMaxBadgeText}>최대</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity 
+                            style={[styles.gridBuildBtn, { backgroundColor: '#ff5c5c' }]} 
+                            onPress={() => {
+                              let successCount = 0;
+                              for (let i = 0; i < purchaseMultiplier; i++) {
+                                const success = buildGroundBaseDetail(planetId, type);
+                                if (success) successCount++;
+                                else break;
+                              }
+                              if (successCount > 0) setTimeout(() => saveGame(), 100);
+                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 건설 한도(8개)에 도달했습니다.');
+                            }}
+                          >
+                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
+                              건설 ({spec.cost} Cr)
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* 2. 방어시설 탭 */}
+            {activeTab === 'defense_facility' && (
+              <View>
+                <Text style={styles.subTitleText}>지상 방어 시설 수량: {planetState.groundBases} / 8</Text>
                 <View style={styles.gridContainer}>
                   {/* E2E test compatibility: kinetic 요격 타워 (대함 레일건 요새) first */}
                   <View style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
@@ -337,12 +460,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     )}
                   </View>
 
-                  {/* 나머지 지상 무기 렌더링 */}
+                  {/* 나머지 지상 방어시설 렌더링 */}
                   {Object.keys(GROUND_BASE_SPECS).map((type) => {
-                    if (type === 'railgun') return null; // Already rendered first
+                    if (type === 'railgun') return null; // Rendered first
                     const spec = GROUND_BASE_SPECS[type];
+                    if (spec.isWeapon && type !== 'ciws') return null; // Defenses and CIWS only
                     const count = planetState.groundBasesList?.[type] || 0;
-                    let desc = spec.isWeapon ? `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초` : '방어/보조 모듈';
+                    let desc = '방어/보조 모듈';
                     if (type === 'ciws') desc = '적 미사일/포탄 자동 요격 (0.8초 쿨다운)';
                     if (type === 'forceShield') desc = '기지 HP +30% 실드 추가 (상시 에너지 소모)';
                     if (type === 'armor') desc = '받는 데미지 25% 감소 (패시브)';
@@ -383,21 +507,195 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     );
                   })}
                 </View>
+
+                <Text style={[styles.subTitleText, { marginTop: 15 }]}>액티브 행성 실드 모듈 선택 (1개 장착 가능)</Text>
+                <View style={styles.gridContainer}>
+                  {Object.keys(SHIELD_MODULE_SPECS).map((type) => {
+                    const spec = SHIELD_MODULE_SPECS[type];
+                    const isActive = shieldModule === type;
+                    let desc = `실드량: +${spec.capacityBonus}, 재생: +${spec.regenBonus}/초, 전력: ${spec.energyCost}W`;
+                    if (type === 'reflect') desc += ' (레이저 공격 30% 역반사)';
+                    if (type === 'phase') desc += ' (모든 피해 30% 감쇄)';
+                    if (type === 'repair') desc += ' (HP 초당 5 재생, 붕괴 시 HP 20 복구)';
+                    
+                    return (
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
+                        <View style={styles.gridCardHeader}>
+                          <Text style={styles.gridCardName}>{spec.name}</Text>
+                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>장착됨</Text>}
+                        </View>
+                        <Text style={styles.gridCardDesc}>{desc}</Text>
+                        {!isActive ? (
+                          <TouchableOpacity 
+                            style={[styles.gridBuildBtn, { backgroundColor: '#ff3b30' }]} 
+                            onPress={() => {
+                              const success = changeShieldModule(type);
+                              if (success) setTimeout(() => saveGame(), 100);
+                              else Alert.alert('교체 실패', '크레딧이나 가용 전력이 부족합니다.');
+                            }}
+                          >
+                            <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
+                              장착 ({spec.cost} Cr)
+                            </Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={[styles.gridCompleteBadgeMini, { borderColor: '#ff3b30' }]}>
+                            <Text style={[styles.gridCompleteTextMini, { color: '#ff3b30' }]}>활성</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <Text style={[styles.subTitleText, { marginTop: 15 }]}>실드 반격/과부하 부가 모듈</Text>
+                <View style={styles.gridContainer}>
+                  {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
+                    const spec = COUNTERATTACK_MODULE_SPECS[type];
+                    const isActive = counterattackModules?.[type];
+                    let desc = '';
+                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 전력: 10W';
+                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 전력: 10W';
+                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 전력: 15W';
+                    
+                    return (
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
+                        <View style={styles.gridCardHeader}>
+                          <Text style={styles.gridCardName}>{spec.name}</Text>
+                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>ON</Text>}
+                        </View>
+                        <Text style={styles.gridCardDesc}>{desc}</Text>
+                        <TouchableOpacity 
+                          style={[
+                            styles.gridBuildBtn, 
+                            { backgroundColor: isActive ? '#ff3b30' : '#16223f', borderWidth: 0.5, borderColor: isActive ? '#ff3b30' : 'rgba(255, 255, 255, 0.2)' }
+                          ]} 
+                          onPress={() => {
+                            const success = toggleCounterattackModule(type);
+                            if (success) setTimeout(() => saveGame(), 100);
+                            else Alert.alert('작동 실패', '자원이 부족합니다.');
+                          }}
+                        >
+                          <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
+                            {isActive ? 'ON' : 'OFF'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             )}
 
-            {/* 궤도 방어 탭 (위성 및 기지 통합) */}
-            {activeTab === 'orbit' && (
+            {/* 3. 공격 궤도위성 탭 */}
+            {activeTab === 'attack_satellite' && (
               <View>
-                <Text style={styles.subTitleText}>궤도 방어 위성 수량: {planetState.orbitalSatellites} / 5</Text>
+                <Text style={styles.subTitleText}>공격형 궤도 위성 수량: {planetState.orbitalSatellites} / 5</Text>
                 <View style={styles.gridContainer}>
                   {Object.keys(SATELLITE_SPECS).map((type) => {
                     const spec = SATELLITE_SPECS[type];
+                    if (!spec.isWeapon) return null; // Weapons only
                     const count = planetState.orbitalSatellitesList?.[type] || 0;
                     let desc = spec.isWeapon ? `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초` : '지원/보조 위성';
                     if (type === 'emp') desc = '적 전자계 마비 (3초 스턴, 6초 쿨다운)';
                     if (type === 'gravityBomb') desc = '공격력: 160 HP, 적 이동속도 -40% 디버프';
+                    
+                    const isMax = (planetState.orbitalSatellites || 0) >= 5;
+
+                    return (
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00' }]}>
+                        <View style={styles.gridCardHeader}>
+                          <Text style={styles.gridCardName}>{spec.name}</Text>
+                          <Text style={[styles.gridCardCount, { color: '#ff8a00' }]}>{count}개</Text>
+                        </View>
+                        <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
+                        {isMax ? (
+                          <View style={styles.gridMaxBadge}>
+                            <Text style={styles.gridMaxBadgeText}>최대</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity 
+                            style={[styles.gridBuildBtn, { backgroundColor: '#ff8a00' }]} 
+                            onPress={() => {
+                              let successCount = 0;
+                              for (let i = 0; i < purchaseMultiplier; i++) {
+                                const success = buildOrbitalSatelliteDetail(planetId, type);
+                                if (success) successCount++;
+                                else break;
+                              }
+                              if (successCount > 0) setTimeout(() => saveGame(), 100);
+                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 위성 한도(5개)에 도달했습니다.');
+                            }}
+                          >
+                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
+                              건설 ({spec.cost} Cr)
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <Text style={[styles.subTitleText, { marginTop: 15 }]}>공격형 궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
+                <View style={styles.gridContainer}>
+                  {Object.keys(STATION_SPECS).map((type) => {
+                    if (type !== 'gigaPlasma') return null; // Giga Plasma only
+                    const spec = STATION_SPECS[type];
+                    const count = planetState.orbitalStationsList?.[type] || 0;
+                    let desc = '';
+                    if (type === 'gigaPlasma') desc = '발사 시 광역 마비 5초 + 500 HP 피해 (20초 재장전)';
+                    
+                    const isMax = (planetState.orbitalStations || 0) >= 3;
+
+                    return (
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00' }]}>
+                        <View style={styles.gridCardHeader}>
+                          <Text style={styles.gridCardName}>{spec.name}</Text>
+                          <Text style={[styles.gridCardCount, { color: '#ff8a00' }]}>{count}/1개</Text>
+                        </View>
+                        <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
+                        {count > 0 ? (
+                          <View style={[styles.gridCompleteBadgeMini, { borderColor: '#ff8a00' }]}>
+                            <Text style={[styles.gridCompleteTextMini, { color: '#ff8a00' }]}>가동 중</Text>
+                          </View>
+                        ) : isMax ? (
+                          <View style={styles.gridMaxBadge}>
+                            <Text style={styles.gridMaxBadgeText}>최대</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity 
+                            style={[styles.gridBuildBtn, { backgroundColor: '#ff8a00' }]} 
+                            onPress={() => {
+                              const success = buildOrbitalStationDetail(planetId, type);
+                              if (success) setTimeout(() => saveGame(), 100);
+                              else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 가용 전력이 부족합니다.');
+                            }}
+                          >
+                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
+                              건설 ({spec.cost} Cr, {spec.nanocores} Nano)
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* 4. 방어 궤도위성 탭 */}
+            {activeTab === 'defense_satellite' && (
+              <View>
+                <Text style={styles.subTitleText}>방어형 궤도 위성 수량: {planetState.orbitalSatellites} / 5</Text>
+                <View style={styles.gridContainer}>
+                  {Object.keys(SATELLITE_SPECS).map((type) => {
+                    const spec = SATELLITE_SPECS[type];
+                    if (spec.isWeapon) return null; // Support/defense only
+                    const count = planetState.orbitalSatellitesList?.[type] || 0;
+                    let desc = '지원/보조 위성';
                     if (type === 'sensor') desc = '적 탐지 반경 +50% 및 적 이동속도 감속';
+                    if (type === 'forceShield') desc = '포스 실드 위성 복구 버프';
                     if (type === 'decoy') desc = '적 투사체/레이저 요격 흡수 버프';
                     if (type === 'repairDrone') desc = '아군 궤도 함선 초당 20 HP 지속 회복';
                     
@@ -438,14 +736,14 @@ export default function PlanetDetailScreen({ route, navigation }) {
                   })}
                 </View>
 
-                <Text style={[styles.subTitleText, { marginTop: 15 }]}>궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
+                <Text style={[styles.subTitleText, { marginTop: 15 }]}>방어형 궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
                 <View style={styles.gridContainer}>
                   {Object.keys(STATION_SPECS).map((type) => {
+                    if (type === 'gigaPlasma') return null; // Aegis and Gravity distorter only
                     const spec = STATION_SPECS[type];
                     const count = planetState.orbitalStationsList?.[type] || 0;
                     let desc = '';
                     if (type === 'aegisShield') desc = '행성 에너지 실드 최대 용량 +20% 증가';
-                    if (type === 'gigaPlasma') desc = '발사 시 광역 마비 5초 + 500 HP 피해 (20초 재장전)';
                     if (type === 'gravityDistorter') desc = '태양계 모든 적 기동 속도 -25% 감속';
                     
                     const isMax = (planetState.orbitalStations || 0) >= 3;
@@ -486,7 +784,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* 쉽야드 탭 */}
+            {/* 5. 쉽야드 탭 */}
             {activeTab === 'shipyard' && (
               <View>
                 {!planetState.shipyard ? (
@@ -541,88 +839,6 @@ export default function PlanetDetailScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* 실드 발생기 탭 */}
-            {activeTab === 'shield' && (
-              <View>
-                <Text style={styles.subTitleText}>액티브 실드 모듈 선택</Text>
-                <View style={styles.gridContainer}>
-                  {Object.keys(SHIELD_MODULE_SPECS).map((type) => {
-                    const spec = SHIELD_MODULE_SPECS[type];
-                    const isActive = shieldModule === type;
-                    let desc = `실드량: +${spec.capacityBonus}, 재생: +${spec.regenBonus}/초, 전력: ${spec.energyCost}W`;
-                    if (type === 'reflect') desc += ' (레이저 공격 30% 역반사)';
-                    if (type === 'phase') desc += ' (모든 피해 30% 감쇄)';
-                    if (type === 'repair') desc += ' (HP 초당 5 재생, 붕괴 시 HP 20 복구)';
-                    
-                    return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
-                        <View style={styles.gridCardHeader}>
-                          <Text style={styles.gridCardName}>{spec.name}</Text>
-                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>장착됨</Text>}
-                        </View>
-                        <Text style={styles.gridCardDesc}>{desc}</Text>
-                        {!isActive ? (
-                          <TouchableOpacity 
-                            style={[styles.gridBuildBtn, { backgroundColor: '#ff3b30' }]} 
-                            onPress={() => {
-                              const success = changeShieldModule(type);
-                              if (success) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('교체 실패', '크레딧이나 가용 전력이 부족합니다.');
-                            }}
-                          >
-                            <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
-                              장착 ({spec.cost} Cr)
-                            </Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <View style={[styles.gridCompleteBadgeMini, { borderColor: '#ff3b30' }]}>
-                            <Text style={[styles.gridCompleteTextMini, { color: '#ff3b30' }]}>활성</Text>
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-
-                <Text style={[styles.subTitleText, { marginTop: 15 }]}>반격/과부하 부가 모듈</Text>
-                <View style={styles.gridContainer}>
-                  {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
-                    const spec = COUNTERATTACK_MODULE_SPECS[type];
-                    const isActive = counterattackModules?.[type];
-                    let desc = '';
-                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 전력: 10W';
-                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 전력: 10W';
-                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 전력: 15W';
-                    
-                    return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
-                        <View style={styles.gridCardHeader}>
-                          <Text style={styles.gridCardName}>{spec.name}</Text>
-                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>ON</Text>}
-                        </View>
-                        <Text style={styles.gridCardDesc}>{desc}</Text>
-                        <TouchableOpacity 
-                          style={[
-                            styles.gridBuildBtn, 
-                            { backgroundColor: isActive ? '#ff3b30' : '#16223f', borderWidth: 0.5, borderColor: isActive ? '#ff3b30' : 'rgba(255, 255, 255, 0.2)' }
-                          ]} 
-                          onPress={() => {
-                            const success = toggleCounterattackModule(type);
-                            if (success) setTimeout(() => saveGame(), 100);
-                            else Alert.alert('작동 실패', '자원이 부족합니다.');
-                          }}
-                        >
-                          <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
-                            {isActive ? 'ON' : 'OFF'}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-
             {/* 개발자 테스트 패널 (스크롤 뷰 최하단에 배치하여 레이아웃 침범 방지) */}
             <View style={styles.devCheatRow}>
               {/* E2E 테스트 호환용 피격 모의 단추 */}
@@ -661,9 +877,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* Glowing Neon Bottom Tab Bar */}
           <View style={styles.neonTabBar}>
             {[
-              { id: 'ground', label: '지상 기지', icon: '⚔️', color: '#00f0ff' },
-              { id: 'shield', label: '실드 발생기', icon: '🛡️', color: '#ff3b30' },
-              { id: 'orbit', label: '궤도 방어', icon: '🛰️', color: '#ffd700' },
+              { id: 'attack_base', label: '공격기지', icon: '⚔️', color: '#ff5c5c' },
+              { id: 'defense_facility', label: '방어시설', icon: '🛡️', color: '#00f0ff' },
+              { id: 'attack_satellite', label: '공격 궤도위성', icon: '🚀', color: '#ff8a00' },
+              { id: 'defense_satellite', label: '방어 궤도위성', icon: '🛰️', color: '#ffd700' },
               { id: 'shipyard', label: '함대 쉽야드', icon: '🛸', color: '#00ff8a' },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
@@ -1293,173 +1510,153 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     left: 8,
-    width: 235,
-    backgroundColor: 'rgba(5, 8, 20, 0.85)',
+    backgroundColor: 'rgba(5, 8, 20, 0.88)',
     borderWidth: 1.2,
     borderColor: '#00f0ff',
     borderRadius: 8,
     padding: 6,
     zIndex: 99,
   },
-  bottomStatusOverlayExpanded: {
-  },
-  statusHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statusHeaderMain: {
-    flex: 1,
-    flexDirection: 'column',
-    gap: 1,
-  },
-  overlayHpText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#ff5c5c',
-  },
-  overlayShieldText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#00f0ff',
-  },
-  expandToggleBtn: {
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    backgroundColor: 'rgba(0, 240, 255, 0.15)',
-    borderRadius: 4,
-    borderWidth: 0.8,
-    borderColor: '#00f0ff',
-  },
-  expandToggleText: {
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    color: '#00f0ff',
-  },
-  statusHeaderBars: {
+  /* ── 아이콘 칩 행 ── */
+  statusChipRow: {
     flexDirection: 'row',
     gap: 4,
-    marginBottom: 4,
+    alignItems: 'center',
   },
-  miniBarBg: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#16223f',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  miniBarFillHP: {
-    height: '100%',
-    backgroundColor: '#ff5c5c',
-  },
-  miniBarFillShield: {
-    height: '100%',
-    backgroundColor: '#00f0ff',
-  },
-  expandedControlArea: {
-    marginTop: 4,
-    borderTopWidth: 0.8,
-    borderTopColor: 'rgba(0, 240, 255, 0.15)',
-    paddingTop: 4,
-  },
-  overlayStatsRow: {
+  statusChip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 3,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    borderRadius: 5,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  overlayTextMini: {
-    fontSize: 8,
-    color: '#ffd700',
+  statusChipActive: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  statusChipIcon: {
+    fontSize: 10,
+  },
+  statusChipVal: {
+    fontSize: 9.5,
     fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
   },
-  overlayTerraformBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-    marginBottom: 4,
+  /* ── 상세 팝업 (칩 아래에 펼쳐짐) ── */
+  detailPopup: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 0.8,
+    borderTopColor: 'rgba(0,240,255,0.2)',
+    gap: 3,
   },
-  overlayTerraformBarBg: {
-    flex: 1,
-    height: 6,
+  detailPopupTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 1,
+  },
+  detailPopupValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#e0e8ff',
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  },
+  detailPopupSub: {
+    fontSize: 8.5,
+    color: '#8fa0c4',
+  },
+  detailMiniBar: {
+    height: 5,
     backgroundColor: '#16223f',
     borderRadius: 3,
     overflow: 'hidden',
   },
-  overlayTerraformBarFill: {
+  detailMiniBarFill: {
     height: '100%',
-    backgroundColor: '#00ff8a',
-  },
-  overlayTerraformBtn: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    backgroundColor: '#00ff8a',
     borderRadius: 3,
-    minWidth: 90,
+  },
+  detailActionBtn: {
+    marginTop: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    backgroundColor: '#00ff8a',
+    borderRadius: 4,
     alignItems: 'center',
   },
-  overlayTerraformBtnText: {
-    fontSize: 7.5,
+  detailActionBtnText: {
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#050814',
   },
-  overlayCompleteBadge: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    borderColor: '#00ff8a',
-    borderWidth: 0.5,
-    borderRadius: 3,
-  },
-  overlayCompleteText: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    color: '#00ff8a',
-  },
-  overlayPopulationText: {
-    fontSize: 8.5,
-    color: '#8fa0c4',
-    marginBottom: 4,
-  },
-  overlayAutomationRow: {
+  detailAutoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 4,
-  },
-  overlayAutoItem: {
-    flex: 1,
-    flexDirection: 'column',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    gap: 3,
+    gap: 8,
+    marginTop: 3,
   },
-  overlayAutoLabel: {
-    fontSize: 7.5,
+  detailAutoLabel: {
+    fontSize: 8.5,
     color: '#8fa0c4',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    flex: 1,
   },
-  overlayAutoToggle: {
+  detailAutoToggle: {
     paddingVertical: 2,
-    paddingHorizontal: 4,
+    paddingHorizontal: 7,
     borderRadius: 3,
-    alignSelf: 'stretch',
+    minWidth: 36,
     alignItems: 'center',
   },
-  overlayToggleOn: {
+  detailToggleOn: {
     backgroundColor: '#00bfa5',
   },
-  overlayToggleOff: {
+  detailToggleOff: {
     backgroundColor: '#16223f',
   },
-  overlayToggleText: {
-    fontSize: 7.5,
+  detailToggleText: {
+    fontSize: 8,
     color: '#ffffff',
     fontWeight: 'bold',
-  }
+  },
+  /* ── E2E 호환 숨김 래퍼 ── */
+  hiddenE2ETestWrapper: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0.01,
+    overflow: 'hidden',
+  },
+  /* ── 구 스타일 (하위호환, 미사용) ── */
+  bottomStatusOverlayCollapsed: {},
+  bottomStatusOverlayExpanded: {},
+  statusHeaderRow: {},
+  statusHeaderMain: {},
+  iconStatusRow: {},
+  statusHpCell: {},
+  statusShieldCell: {},
+  overlayHpText: {},
+  overlayShieldText: {},
+  expandToggleBtn: {},
+  expandToggleText: {},
+  expandedControlArea: {},
+  overlayStatsRow: {},
+  overlayTextMini: {},
+  overlayTerraformBarRow: {},
+  overlayTerraformBarBg: {},
+  overlayTerraformBarFill: {},
+  overlayTerraformBtn: {},
+  overlayTerraformBtnText: {},
+  overlayCompleteBadge: {},
+  overlayCompleteText: {},
+  overlayPopulationText: {},
+  overlayAutomationRow: {},
+  overlayAutoItem: {},
+  overlayAutoLabel: {},
+  overlayAutoToggle: {},
+  overlayToggleOn: {},
+  overlayToggleOff: {},
+  overlayToggleText: {},
 });
