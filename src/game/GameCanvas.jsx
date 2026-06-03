@@ -3,7 +3,11 @@ import { StyleSheet, View, Platform, Text, TouchableOpacity, Dimensions } from '
 import { useGameStore, SHIP_TYPES } from '../store/gameStore';
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
-const canvasSize = Math.min(320, windowHeight * 0.45);
+// On Web landscape views (like desktop), we constrain the canvas size to free up vertical space for upgrades.
+const isLandscapeWeb = Platform.OS === 'web' && windowWidth > windowHeight;
+const canvasSize = isLandscapeWeb 
+  ? Math.min(200, windowHeight * 0.28) 
+  : Math.min(320, windowHeight * 0.45);
 
 // Conditionally load Skia on native platforms to prevent web bundler/WASM errors
 let Canvas, Circle, Rect, Group, Line, Paint;
@@ -110,21 +114,29 @@ export default function GameCanvas() {
         <svg viewBox="0 0 540 540" style={{ width: '100%', height: '100%' }}>
           <g transform={`translate(${panX + 270}, ${panY + 270}) scale(${zoom}) translate(-270, -270)`}>
             {/* 심연의 우주배경 그리드 세로선/가로선 */}
-          {/* 심연의 우주배경 그리드 세로선/가로선 */}
-          <line x1={90} y1={0} x2={90} y2={540} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={180} y1={0} x2={180} y2={540} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={270} y1={0} x2={270} y2={540} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={360} y1={0} x2={360} y2={540} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={450} y1={0} x2={450} y2={540} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={0} y1={90} x2={540} y2={90} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={0} y1={180} x2={540} y2={180} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={0} y1={270} x2={540} y2={270} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={0} y1={360} x2={540} y2={360} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-          <line x1={0} y1={450} x2={540} y2={450} stroke="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
+          <line x1={90} y1={0} x2={90} y2={540} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={180} y1={0} x2={180} y2={540} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={270} y1={0} x2={270} y2={540} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={360} y1={0} x2={360} y2={540} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={450} y1={0} x2={450} y2={540} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={0} y1={90} x2={540} y2={90} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={0} y1={180} x2={540} y2={180} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={0} y1={270} x2={540} y2={270} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={0} y1={360} x2={540} y2={360} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+          <line x1={0} y1={450} x2={540} y2={450} stroke="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+
+          {/* 세로 골든 스타 트랙 (The Tower 느낌의 세로 배경 보케 효과) */}
+          <line x1={45} y1={0} x2={45} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="3, 15" />
+          <line x1={135} y1={0} x2={135} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="5, 20" />
+          <line x1={225} y1={0} x2={225} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="4, 18" />
+          <line x1={315} y1={0} x2={315} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="6, 25" />
+          <line x1={405} y1={0} x2={405} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="4, 15" />
+          <line x1={495} y1={0} x2={495} y2={540} stroke="rgba(255, 215, 0, 0.12)" strokeWidth={1} strokeDasharray="5, 22" />
 
           {/* 1. 지구 본체 렌더링 (하단 구형 반경) */}
           <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} fill={earthColor} />
           <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} fill="rgba(0, 240, 255, 0.08)" />
+          <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} fill="transparent" stroke="#00f0ff" strokeWidth={1.5} opacity={0.5} />
 
           {/* 지구 표면 지상 기지 시각화 */}
           {earthBases.map((base) => {
@@ -158,8 +170,9 @@ export default function GameCanvas() {
             );
           })}
 
-          {/* 2. 이원화 에너지 실드 아크 (반투명 서클막) */}
-          <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={SHIELD_RADIUS} fill={shieldColor} stroke={shieldBorderColor} strokeWidth={1.8} />
+          {/* 2. 이원화 에너지 실드 아크 (반투명 서클막 + 고화질 네온 이중 장벽) */}
+          <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={SHIELD_RADIUS} fill={shieldColor} stroke={shieldBorderColor} strokeWidth={2.2} strokeDasharray="10, 6" />
+          <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={SHIELD_RADIUS + 4} fill="transparent" stroke={shieldBorderColor} strokeWidth={0.8} strokeDasharray="40, 10" />
 
           {/* 3. 아군 궤도 기동대 렌더링 (요격기, 호위함, 구축함 구분) */}
           {fleet.map((ship) => {
@@ -233,16 +246,29 @@ export default function GameCanvas() {
             if (proj.type === 'energy') {
               const dx = proj.vx * 0.05;
               const dy = proj.vy * 0.05;
+              const color = proj.color || (proj.isEnemy ? '#00f0ff' : '#ff5500');
               return (
-                <line 
-                  key={proj.id}
-                  x1={proj.x}
-                  y1={proj.y}
-                  x2={proj.x - dx}
-                  y2={proj.y - dy}
-                  stroke={proj.color || (proj.isEnemy ? '#00f0ff' : '#00ff8a')}
-                  strokeWidth={2}
-                />
+                <g key={proj.id}>
+                  {/* Glow layer */}
+                  <line 
+                    x1={proj.x}
+                    y1={proj.y}
+                    x2={proj.x - dx}
+                    y2={proj.y - dy}
+                    stroke={color}
+                    strokeWidth={5.5}
+                    opacity={0.35}
+                  />
+                  {/* Core layer */}
+                  <line 
+                    x1={proj.x}
+                    y1={proj.y}
+                    x2={proj.x - dx}
+                    y2={proj.y - dy}
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                  />
+                </g>
               );
             } else {
               return (
@@ -250,7 +276,7 @@ export default function GameCanvas() {
                   key={proj.id} 
                   cx={proj.x} 
                   cy={proj.y} 
-                  r={2} 
+                  r={2.5} 
                   fill={proj.color || (proj.isEnemy ? '#ffcc00' : '#ffd700')} 
                 />
               );
@@ -308,17 +334,25 @@ export default function GameCanvas() {
       <Canvas style={styles.skiaCanvas}>
         <Group transform={[{ scale: scaleFactor }]}>
           <Group transform={[{ translateX: panX + 270 }, { translateY: panY + 270 }, { scale: zoom }, { translateX: -270 }, { translateY: -270 }]}>
-          {/* 심연의 우주배경 그리드 세로선/가로선 */}
-        <Line p1={{ x: 90, y: 0 }} p2={{ x: 90, y: 540 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 180, y: 0 }} p2={{ x: 180, y: 540 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 270, y: 0 }} p2={{ x: 270, y: 540 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 360, y: 0 }} p2={{ x: 360, y: 540 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 450, y: 0 }} p2={{ x: 450, y: 540 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 0, y: 90 }} p2={{ x: 540, y: 90 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 0, y: 180 }} p2={{ x: 540, y: 180 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 0, y: 270 }} p2={{ x: 540, y: 270 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 0, y: 360 }} p2={{ x: 540, y: 360 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
-        <Line p1={{ x: 0, y: 450 }} p2={{ x: 540, y: 450 }} color="rgba(30, 48, 94, 0.15)" strokeWidth={1} />
+        {/* 심연의 우주배경 그리드 세로선/가로선 */}
+        <Line p1={{ x: 90, y: 0 }} p2={{ x: 90, y: 540 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 180, y: 0 }} p2={{ x: 180, y: 540 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 270, y: 0 }} p2={{ x: 270, y: 540 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 360, y: 0 }} p2={{ x: 360, y: 540 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 450, y: 0 }} p2={{ x: 450, y: 540 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 0, y: 90 }} p2={{ x: 540, y: 90 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 0, y: 180 }} p2={{ x: 540, y: 180 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 0, y: 270 }} p2={{ x: 540, y: 270 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 0, y: 360 }} p2={{ x: 540, y: 360 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+        <Line p1={{ x: 0, y: 450 }} p2={{ x: 540, y: 450 }} color="rgba(0, 240, 255, 0.08)" strokeWidth={1} />
+
+        {/* 세로 골든 스타 트랙 */}
+        <Line p1={{ x: 45, y: 0 }} p2={{ x: 45, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
+        <Line p1={{ x: 135, y: 0 }} p2={{ x: 135, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
+        <Line p1={{ x: 225, y: 0 }} p2={{ x: 225, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
+        <Line p1={{ x: 315, y: 0 }} p2={{ x: 315, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
+        <Line p1={{ x: 405, y: 0 }} p2={{ x: 405, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
+        <Line p1={{ x: 495, y: 0 }} p2={{ x: 495, y: 540 }} color="rgba(255, 215, 0, 0.12)" strokeWidth={1} />
 
         {/* 1. 지구 본체 렌더링 (하단 구형 반경) */}
         <Circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} color={earthColor} />
@@ -356,7 +390,7 @@ export default function GameCanvas() {
           );
         })}
 
-        {/* 2. 이원화 에너지 실드 아크 (반투명 서클막) */}
+        {/* 2. 이원화 에너지 실드 아크 (반투명 서클막 + 고화질 네온 이중 장벽) */}
         <Circle 
           cx={EARTH_CENTER_X} 
           cy={EARTH_CENTER_Y} 
@@ -369,7 +403,15 @@ export default function GameCanvas() {
           r={SHIELD_RADIUS} 
           color="transparent" 
         >
-          <Paint style="stroke" strokeWidth={1.8} color={shieldBorderColor} />
+          <Paint style="stroke" strokeWidth={2.2} color={shieldBorderColor} />
+        </Circle>
+        <Circle 
+          cx={EARTH_CENTER_X} 
+          cy={EARTH_CENTER_Y} 
+          r={SHIELD_RADIUS + 4} 
+          color="transparent" 
+        >
+          <Paint style="stroke" strokeWidth={0.8} color={shieldBorderColor} />
         </Circle>
 
         {/* 3. 아군 궤도 기동대 렌더링 (요격기, 호위함, 구축함 구분) */}
@@ -461,14 +503,25 @@ export default function GameCanvas() {
           if (proj.type === 'energy') {
             const dx = proj.vx * 0.05;
             const dy = proj.vy * 0.05;
+            const color = proj.color || (proj.isEnemy ? '#00f0ff' : '#ff5500');
             return (
-              <Line 
-                key={proj.id}
-                p1={{ x: proj.x, y: proj.y }}
-                p2={{ x: proj.x - dx, y: proj.y - dy }}
-                color={proj.color || (proj.isEnemy ? '#00f0ff' : '#00ff8a')}
-                strokeWidth={2}
-              />
+              <Group key={proj.id}>
+                {/* Glow layer */}
+                <Line 
+                  p1={{ x: proj.x, y: proj.y }}
+                  p2={{ x: proj.x - dx, y: proj.y - dy }}
+                  color={color}
+                  strokeWidth={5.5}
+                  opacity={0.35}
+                />
+                {/* Core layer */}
+                <Line 
+                  p1={{ x: proj.x, y: proj.y }}
+                  p2={{ x: proj.x - dx, y: proj.y - dy }}
+                  color="#ffffff"
+                  strokeWidth={1.5}
+                />
+              </Group>
             );
           } else {
             return (
@@ -476,7 +529,7 @@ export default function GameCanvas() {
                 key={proj.id} 
                 cx={proj.x} 
                 cy={proj.y} 
-                r={2} 
+                r={2.5} 
                 color={proj.color || (proj.isEnemy ? '#ffcc00' : '#ffd700')} 
               />
             );
