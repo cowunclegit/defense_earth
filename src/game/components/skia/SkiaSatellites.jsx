@@ -9,24 +9,15 @@ try {
   Paint = Skia.Paint;
 } catch (e) {}
 
-export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
-  const [time, setTime] = React.useState(Date.now());
+import { useGameStore } from '../../../store/gameStore';
 
-  React.useEffect(() => {
-    let animId;
-    const update = () => {
-      setTime(Date.now());
-      animId = requestAnimationFrame(update);
-    };
-    animId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(animId);
-  }, []);
+export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
+  const satelliteRotation = useGameStore(state => state.satelliteRotation || 0);
 
   if (!Group || !Rect || !Circle || !Paint) return null;
   if (!earthSatellites || earthSatellites.length === 0) return null;
 
-  const rotationSpeed = 0.015; // degrees per millisecond
-  const currentRotation = (time * rotationSpeed) % 360;
+  const currentRotation = satelliteRotation % 360;
 
   return (
     <>

@@ -1,23 +1,12 @@
 import React from 'react';
-import { SATELLITE_SPECS } from '../../../store/gameStore';
+import { SATELLITE_SPECS, useGameStore } from '../../../store/gameStore';
 
 export default function WebSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
-  const [time, setTime] = React.useState(Date.now());
-
-  React.useEffect(() => {
-    let animId;
-    const update = () => {
-      setTime(Date.now());
-      animId = requestAnimationFrame(update);
-    };
-    animId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(animId);
-  }, []);
+  const satelliteRotation = useGameStore(state => state.satelliteRotation || 0);
 
   if (!earthSatellites || earthSatellites.length === 0) return null;
 
-  const rotationSpeed = 0.015; // degrees per millisecond
-  const currentRotation = (time * rotationSpeed) % 360;
+  const currentRotation = satelliteRotation % 360;
 
   return (
     <>

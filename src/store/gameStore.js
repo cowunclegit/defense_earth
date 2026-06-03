@@ -452,6 +452,7 @@ export const useGameStore = create((set, get) => ({
   earthMaxShield: 100,
   earthShieldRechargeRate: 5,
   kineticDefenseTowers: 0,
+  satelliteRotation: 0,
   shieldModule: 'basic',
   counterattackModules: {
     reflector: false,
@@ -1267,6 +1268,7 @@ export const useGameStore = create((set, get) => ({
     if (state.isPaused) return;
 
     const actualDelta = deltaTime * state.gameSpeed;
+    const nextRotation = (state.satelliteRotation || 0) + 15 * actualDelta;
 
     // 만약 지구 체력이 0 이하인 상태라면, 파괴 시퀀스(대폭발 카운트다운)만 처리
     if (state.earthHp <= 0) {
@@ -1588,8 +1590,7 @@ export const useGameStore = create((set, get) => ({
               }
 
               // 위성 위치 계산
-              const rotationSpeed = 0.015;
-              const currentRotation = (Date.now() * rotationSpeed) % 360;
+              const currentRotation = nextRotation % 360;
               const baseAngle = (360 / earthSatellites.length) * sat.globalIndex;
               const angleDeg = baseAngle + currentRotation;
               const angleRad = (angleDeg * Math.PI) / 180;
@@ -2331,7 +2332,8 @@ export const useGameStore = create((set, get) => ({
       chronoMuteTimer: nextMuteTimer,
       planets: updatedPlanets,
       currentWave: nextWave,
-      enemiesRemainingToSpawn: enemiesRemaining
+      enemiesRemainingToSpawn: enemiesRemaining,
+      satelliteRotation: nextRotation
     });
   }
 }));
