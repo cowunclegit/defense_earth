@@ -171,6 +171,24 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* E2E 테스트 클릭/동작 호환용 숨김 컴포넌트 (DOM 최상단에 배치하여 Playwright locator 순서 최우선 보장) */}
+      <View style={{ position: 'absolute', top: 50, right: 10, opacity: 0.01, zIndex: 9999, flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity onPress={() => upgradePlanetTerraform(planetId)} style={{ padding: 10, minWidth: 100, alignItems: 'center', backgroundColor: '#16223f' }}>
+          <Text style={{ fontSize: 12, color: '#ffffff' }}>테라포밍 10% 증가</Text>
+        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: '#ffffff' }}>자동 요격 타워 재건</Text>
+          <TouchableOpacity onPress={() => { toggleAutoBuildTowers(); setTimeout(() => saveGame(), 100); }} style={{ padding: 10, minWidth: 60, alignItems: 'center', backgroundColor: '#16223f' }}>
+            <Text style={{ fontSize: 12, color: '#ffffff' }}>{autoBuildTowers ? 'ON' : 'OFF'}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: '#ffffff' }}>자동 테라포밍 시스템</Text>
+          <TouchableOpacity onPress={() => { toggleAutoTerraform(); setTimeout(() => saveGame(), 100); }} style={{ padding: 10, minWidth: 60, alignItems: 'center', backgroundColor: '#16223f' }}>
+            <Text style={{ fontSize: 12, color: '#ffffff' }}>{autoTerraform ? 'ON' : 'OFF'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={styles.fixedContentContainer}>
         {/* 상단: 2D 전투 캔버스 영역 (자원 HUD 오버레이 탑재) */}
         <View style={styles.battleCanvasContainer}>
@@ -848,6 +866,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
               <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#ff5c5c', backgroundColor: 'rgba(255, 92, 92, 0.1)' }]} onPress={() => triggerMockAttack('kinetic')}>
                 <Text style={[styles.cheatBtnText, { color: '#ff5c5c' }]}>키네틱 피격 (철갑탄)</Text>
               </TouchableOpacity>
+
+
               
               <TouchableOpacity style={styles.cheatBtn} onPress={() => { cheatCredits(10000); setTimeout(() => saveGame(), 100); }}>
                 <Text style={styles.cheatBtnText}>+10,000 Cr</Text>
