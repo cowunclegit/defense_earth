@@ -349,6 +349,7 @@ const ALIEN_SPECS = {
 const EARTH_CENTER_X = 270;
 const EARTH_CENTER_Y = 270;
 const SHIELD_RADIUS = 100;
+const ENEMY_SPAWN_RADIUS = 750;
 
 const calculateSynergies = (planets, chronosUpgrades) => {
   const synergies = {
@@ -1776,8 +1777,8 @@ export const useGameStore = create((set, get) => ({
         };
 
         const spawnAngle = Math.random() * 2 * Math.PI;
-        const startX = EARTH_CENTER_X + 380 * Math.cos(spawnAngle);
-        const startY = EARTH_CENTER_Y + 380 * Math.sin(spawnAngle);
+        const startX = EARTH_CENTER_X + ENEMY_SPAWN_RADIUS * Math.cos(spawnAngle);
+        const startY = EARTH_CENTER_Y + ENEMY_SPAWN_RADIUS * Math.sin(spawnAngle);
 
         updatedEnemies.push({
           id: Math.random().toString(),
@@ -1820,8 +1821,8 @@ export const useGameStore = create((set, get) => ({
         };
 
         const spawnAngle = Math.random() * 2 * Math.PI;
-        const startX = EARTH_CENTER_X + 380 * Math.cos(spawnAngle);
-        const startY = EARTH_CENTER_Y + 380 * Math.sin(spawnAngle);
+        const startX = EARTH_CENTER_X + ENEMY_SPAWN_RADIUS * Math.cos(spawnAngle);
+        const startY = EARTH_CENTER_Y + ENEMY_SPAWN_RADIUS * Math.sin(spawnAngle);
         
         updatedEnemies.push({
           id: Math.random().toString(),
