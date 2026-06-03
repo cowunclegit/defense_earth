@@ -16,7 +16,7 @@ import GameCanvas from '../game/GameCanvas';
 
 export default function PlanetDetailScreen({ route, navigation }) {
   const planetId = route?.params?.planetId || PLANETS.EARTH;
-  const [activeTab, setActiveTab] = React.useState('defense_facility');
+  const [activeTab, setActiveTab] = React.useState('attack_satellite');
   const [purchaseMultiplier, setPurchaseMultiplier] = React.useState(1);
   const { width: screenWidth } = useWindowDimensions();
   const [activeDetail, setActiveDetail] = React.useState(null); // 'hp'|'shield'|'tower'|'terraform'|'pop'|'auto'|null
@@ -238,12 +238,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 <Text style={[styles.statusChipVal, { color: '#00f0ff' }]}>{Math.floor(earthShield)}</Text>
               </TouchableOpacity>
 
-              {/* 🗼 요격 타워 칩 */}
+              {/* 🛰️ 요격 위성 칩 */}
               <TouchableOpacity
                 style={[styles.statusChip, { borderColor: '#c296ff' }, activeDetail === 'tower' && styles.statusChipActive]}
                 onPress={() => setActiveDetail(activeDetail === 'tower' ? null : 'tower')}
               >
-                <Text style={styles.statusChipIcon}>🗼</Text>
+                <Text style={styles.statusChipIcon}>🛰️</Text>
                 <Text style={[styles.statusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
               </TouchableOpacity>
 
@@ -301,9 +301,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
             {activeDetail === 'tower' && (
               <View style={styles.detailPopup} pointerEvents="none">
-                <Text style={styles.detailPopupTitle}>🗼 키네틱 요격 타워</Text>
-                <Text style={styles.detailPopupValue}>{kineticDefenseTowers}개 배치 중</Text>
-                <Text style={styles.detailPopupSub}>적 키네틱 격추율 +{kineticDefenseTowers * 5}%</Text>
+                <Text style={styles.detailPopupTitle}>🛰️ 키네틱 요격 위성</Text>
+                <Text style={styles.detailPopupValue}>{kineticDefenseTowers}개 가동 중</Text>
+                <Text style={styles.detailPopupSub}>적 키네틱 격추율 +{kineticDefenseTowers * 8}%</Text>
               </View>
             )}
 
@@ -368,8 +368,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* Upgrades Section Header & Multiplier */}
           <View style={styles.gridHeaderRow}>
             <Text style={styles.gridHeaderTitle}>
-              {activeTab === 'attack_base' && '⚔️ 지상 공격 기지'}
-              {activeTab === 'defense_facility' && '🛡️ 지상 방어 및 실드 제어'}
+              {activeTab === 'defense_facility' && '🛡️ 실드 및 반격 제어'}
               {activeTab === 'attack_satellite' && '🚀 궤도 공격 체계'}
               {activeTab === 'defense_satellite' && '🛰️ 궤도 방어 및 센서 체계'}
               {activeTab === 'shipyard' && '🛸 기동 함대 쉽야드'}
@@ -386,179 +385,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
           <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <ScrollView style={styles.tabScrollContainer} contentContainerStyle={styles.tabScrollContent}>
             
-            {/* 1. 공격기지 탭 */}
-            {activeTab === 'attack_base' && (
-              <View>
-                <Text style={styles.subTitleText}>지상 기지 총 수량: {planetState.groundBases}개</Text>
-                <View style={styles.gridContainer}>
-                  {/* 지상 공격 무기 렌더링 (railgun is moved to defense) */}
-                  {Object.keys(GROUND_BASE_SPECS).map((type) => {
-                    if (type === 'railgun') return null;
-                    const spec = GROUND_BASE_SPECS[type];
-                    if (!spec.isWeapon || type === 'ciws') return null; // Only weapons (ciws belongs in defenses)
-                    const count = planetState.groundBasesList?.[type] || 0;
-                    const desc = `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초`;
-                    const isMax = count >= (spec.maxCount || 8);
-
-                    return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#ff5c5c' }]}>
-                        <View style={styles.gridCardHeader}>
-                          <Text style={styles.gridCardName}>{spec.name}</Text>
-                          <Text style={[styles.gridCardCount, { color: '#ff5c5c' }]}>{count} / {spec.maxCount || 8}개</Text>
-                        </View>
-                        <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
-                        {isMax ? (
-                          <View style={styles.gridMaxBadge}>
-                            <Text style={styles.gridMaxBadgeText}>최대</Text>
-                          </View>
-                        ) : (
-                          <TouchableOpacity 
-                            style={[styles.gridBuildBtn, { backgroundColor: '#ff5c5c' }]} 
-                            onPress={() => {
-                              let successCount = 0;
-                              for (let i = 0; i < purchaseMultiplier; i++) {
-                                const success = buildGroundBaseDetail(planetId, type);
-                                if (success) successCount++;
-                                else break;
-                              }
-                              if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else {
-                                const count = planetState.groundBasesList?.[type] || 0;
-                                if (count >= (spec.maxCount || 8)) {
-                                  Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
-                                } else if (credits < spec.cost) {
-                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
-                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
-                                } else {
-                                  Alert.alert('건설 실패', '자원이 부족합니다.');
-                                }
-                              }
-                            }}
-                          >
-                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                              건설 ({spec.cost} Cr)
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-
-            {/* 2. 방어시설 탭 */}
+            {/* 1. 실드 및 반격 탭 */}
             {activeTab === 'defense_facility' && (
               <View>
-                <Text style={styles.subTitleText}>지상 방어 시설 총 수량: {planetState.groundBases}개</Text>
-                <View style={styles.gridContainer}>
-                  {/* E2E test compatibility: kinetic 요격 타워 (대함 레일건 요새) first */}
-                  <View style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
-                    <View style={styles.gridCardHeader}>
-                      <Text style={styles.gridCardName}>키네틱 요격 타워</Text>
-                      <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>
-                        {planetState.groundBasesList?.railgun || 0} / {GROUND_BASE_SPECS.railgun.maxCount || 8}개
-                      </Text>
-                    </View>
-                    <Text style={styles.gridCardDesc}>
-                      적 키네틱 탄환 요격 성공 확률 +5%
-                    </Text>
-                    {(planetState.groundBasesList?.railgun || 0) >= (GROUND_BASE_SPECS.railgun.maxCount || 8) ? (
-                      <View style={styles.gridMaxBadge}>
-                        <Text style={styles.gridMaxBadgeText}>최대</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity 
-                        style={[styles.gridBuildBtn, { backgroundColor: '#00f0ff' }]} 
-                        onPress={() => {
-                          let successCount = 0;
-                          for (let i = 0; i < purchaseMultiplier; i++) {
-                            const success = buildGroundBaseDetail(planetId, 'railgun');
-                            if (success) successCount++;
-                            else break;
-                          }
-                          if (successCount > 0) setTimeout(() => saveGame(), 100);
-                          else {
-                            const count = planetState.groundBasesList?.railgun || 0;
-                            const spec = GROUND_BASE_SPECS.railgun;
-                            if (count >= (spec.maxCount || 8)) {
-                              Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
-                            } else if (credits < spec.cost) {
-                              Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                            } else if ((maxEnergy - usedEnergy) < spec.energy) {
-                              Alert.alert('건설 실패', '가용 전력이 부족합니다.');
-                            } else {
-                              Alert.alert('건설 실패', '자원이 부족합니다.');
-                            }
-                          }
-                        }}
-                      >
-                        <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                          건설 ({GROUND_BASE_SPECS.railgun.cost} Cr)
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* 나머지 지상 방어시설 렌더링 */}
-                  {Object.keys(GROUND_BASE_SPECS).map((type) => {
-                    if (type === 'railgun') return null; // Rendered first
-                    const spec = GROUND_BASE_SPECS[type];
-                    if (spec.isWeapon && type !== 'ciws') return null; // Defenses and CIWS only
-                    const count = planetState.groundBasesList?.[type] || 0;
-                    let desc = '방어/보조 모듈';
-                    if (type === 'ciws') desc = '적 미사일/포탄 자동 요격 (0.8초 쿨다운)';
-                    if (type === 'forceShield') desc = '기지 HP +30% 실드 추가 (상시 에너지 소모)';
-                    if (type === 'armor') desc = '받는 데미지 25% 감소 (패시브)';
-                    
-                    const isMax = count >= (spec.maxCount || 8);
-
-                    return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
-                        <View style={styles.gridCardHeader}>
-                          <Text style={styles.gridCardName}>{spec.name}</Text>
-                          <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>{count} / {spec.maxCount || 8}개</Text>
-                        </View>
-                        <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
-                        {isMax ? (
-                          <View style={styles.gridMaxBadge}>
-                            <Text style={styles.gridMaxBadgeText}>최대</Text>
-                          </View>
-                        ) : (
-                          <TouchableOpacity 
-                            style={[styles.gridBuildBtn, { backgroundColor: '#00f0ff' }]} 
-                            onPress={() => {
-                              let successCount = 0;
-                              for (let i = 0; i < purchaseMultiplier; i++) {
-                                const success = buildGroundBaseDetail(planetId, type);
-                                if (success) successCount++;
-                                else break;
-                              }
-                              if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else {
-                                const count = planetState.groundBasesList?.[type] || 0;
-                                if (count >= (spec.maxCount || 8)) {
-                                  Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
-                                } else if (credits < spec.cost) {
-                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
-                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
-                                } else {
-                                  Alert.alert('건설 실패', '자원이 부족합니다.');
-                                }
-                              }
-                            }}
-                          >
-                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                              건설 ({spec.cost} Cr)
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>액티브 행성 실드 모듈 선택 (1개 장착 가능)</Text>
                 <View style={styles.gridContainer}>
@@ -953,8 +782,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* Glowing Neon Bottom Tab Bar */}
           <View style={styles.neonTabBar}>
             {[
-              { id: 'attack_base', label: '공격기지', icon: '⚔️', color: '#ff5c5c' },
-              { id: 'defense_facility', label: '방어시설', icon: '🛡️', color: '#00f0ff' },
+              { id: 'defense_facility', label: '실드&반격', icon: '🛡️', color: '#00f0ff' },
               { id: 'attack_satellite', label: '공격 궤도위성', icon: '🚀', color: '#ff8a00' },
               { id: 'defense_satellite', label: '방어 궤도위성', icon: '🛰️', color: '#ffd700' },
               { id: 'shipyard', label: '함대 쉽야드', icon: '🛸', color: '#00ff8a' },

@@ -31,14 +31,6 @@ export default function WebCanvas({ zoom, panX, panY }) {
 
   const earthPlanet = planets ? planets.earth : null;
   const earthBases = [];
-  if (earthPlanet && earthPlanet.groundBasesList) {
-    Object.keys(earthPlanet.groundBasesList).forEach((type) => {
-      const count = earthPlanet.groundBasesList[type] || 0;
-      for (let i = 0; i < count; i++) {
-        earthBases.push({ type, globalIndex: earthBases.length });
-      }
-    });
-  }
 
   const earthSatellites = [];
   if (earthPlanet && earthPlanet.orbitalSatellitesList) {

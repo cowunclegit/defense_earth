@@ -187,14 +187,14 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     const postCredits = await getHUDCredit(page);
     expect(postCredits).toBeGreaterThan(initCredits);
 
-    // 5. Kinetic intercept: build 8 kinetic towers -> 100% intercept rate
-    // Click +10,000 Cr twice to get at least 20,000 Cr (8 towers cost 18,000 Cr total)
+    // 5. Kinetic intercept: build 5 laser satellites -> 100% intercept rate
+    // Click +10,000 Cr twice to get at least 20,000 Cr
     await page.locator('text=+10,000 Cr').filter({ visible: true }).first().click();
     await page.locator('text=+10,000 Cr').filter({ visible: true }).first().click();
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 5; i++) {
       await page.locator('text=건설').filter({ visible: true }).first().click();
     }
-    await expect(page.locator('text=키네틱 요격 타워: 8개').filter({ visible: true }).first()).toBeVisible();
+    await expect(page.locator('text=키네틱 요격 타워: 5개').filter({ visible: true }).first()).toBeVisible();
 
     // Verify HP and population don't decrease after kinetic hits (due to 100% intercept)
     const initHpText = await page.locator('text=지구 HP:').filter({ visible: true }).first().textContent();

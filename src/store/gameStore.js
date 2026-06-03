@@ -515,19 +515,15 @@ export const useGameStore = create((set, get) => ({
     const base = 0.60;
     const upgradeBonus = state.chronosUpgrades.kineticIntercept * 0.02;
     
-    let totalGroundBases = 0;
+    let totalSatellites = 0;
     Object.keys(state.planets).forEach((planetId) => {
       const p = state.planets[planetId];
       if (p.unlocked) {
-        if (planetId === PLANETS.EARTH) {
-          totalGroundBases += Math.max(state.kineticDefenseTowers || 0, p.groundBases || 0);
-        } else {
-          totalGroundBases += (p.groundBases || 0);
-        }
+        totalSatellites += p.orbitalSatellites || 0;
       }
     });
 
-    const towerBonus = totalGroundBases * 0.05;
+    const towerBonus = totalSatellites * 0.08;
     return Math.min(1.0, base + upgradeBonus + towerBonus);
   },
 
@@ -634,48 +630,11 @@ export const useGameStore = create((set, get) => ({
   },
 
   buildGroundBaseDetail: (planetId, type) => {
-    const state = get();
-    const planet = state.planets[planetId];
-    if (!planet || !planet.unlocked) return false;
-    
-    const spec = GROUND_BASE_SPECS[type];
-    if (!spec) return false;
-
-    const currentCount = planet.groundBasesList[type] || 0;
-    const maxLimit = spec.maxCount || 8;
-    if (currentCount >= maxLimit) return false;
-
-    const cost = spec.cost;
-    const energyCost = spec.energy;
-
-    if (state.credits < cost || state.getAvailableEnergy() < energyCost) return false;
-
-    const currentTotal = planet.groundBases || 0;
-    const updatedPlanets = {
-      ...state.planets,
-      [planetId]: {
-        ...planet,
-        groundBases: currentTotal + 1,
-        groundBasesList: {
-          ...planet.groundBasesList,
-          [type]: currentCount + 1
-        }
-      }
-    };
-
-    set({
-      credits: state.credits - cost,
-      usedEnergy: state.usedEnergy + energyCost,
-      planets: updatedPlanets,
-      kineticDefenseTowers: planetId === 'earth' && type === 'railgun' ? currentCount + 1 : state.kineticDefenseTowers
-    });
-
-    state.addBattleLog(`${PLANETARY_DATA[planetId].name}에 ${spec.name}을 건설했습니다.`);
-    return true;
+    return false;
   },
 
   buildGroundBase: (planetId) => {
-    return get().buildGroundBaseDetail(planetId, 'railgun');
+    return false;
   },
 
   buildOrbitalSatelliteDetail: (planetId, type) => {
@@ -707,10 +666,15 @@ export const useGameStore = create((set, get) => ({
       }
     };
 
+    const updatedKineticDefenseTowers = (type === 'laser' && planetId === 'earth')
+      ? (currentCount + 1)
+      : state.kineticDefenseTowers;
+
     set({
       credits: state.credits - cost,
       usedEnergy: state.usedEnergy + energyCost,
-      planets: updatedPlanets
+      planets: updatedPlanets,
+      kineticDefenseTowers: updatedKineticDefenseTowers
     });
 
     state.addBattleLog(`${PLANETARY_DATA[planetId].name} 궤도에 ${spec.name}을 배치했습니다.`);
@@ -859,7 +823,7 @@ export const useGameStore = create((set, get) => ({
 
   buildKineticTower: () => {
     const state = get();
-    return state.buildGroundBase('earth');
+    return state.buildOrbitalSatelliteDetail('earth', 'laser');
   },
 
   buyResearchUpgrade: (researchKey) => set((state) => {
@@ -1389,137 +1353,11 @@ export const useGameStore = create((set, get) => ({
       if (!p.orbitalStationsList) p.orbitalStationsList = {};
       if (!p.stationTimers) p.stationTimers = {};
 
-      // 1. 지상 방어 기지 공격
-      // 지구/행성의 전체 건설된 기지 플랫 매핑 (8개 슬롯 인덱스 계산용)
-      const planetBases = [];
-      Object.keys(p.groundBasesList).forEach((typeKey) => {
-        const count = p.groundBasesList[typeKey] || 0;
-        for (let i = 0; i < count; i++) {
-          planetBases.push({ type: typeKey, timerIndex: i });
-        }
-      });
+      // 1. 지상 방어 기지 공격 [폐지]
+      // 지상 기지는 모두 없애고 궤도 위성으로 일원화하므로 틱 공격 처리를 하지 않습니다.
 
-      // 개별 기지별로 쿨타임을 관리하고 개별 발사 처리
-      planetBases.forEach((base, globalIndex) => {
-        const { type, timerIndex } = base;
-        const spec = GROUND_BASE_SPECS[type];
-        if (!spec || !spec.isWeapon) return;
-
-        // 타이머를 개별 수량 배열로 마이그레이션 및 동적 크기 유지
-        let timers = p.groundBaseTimers[type];
-        if (!Array.isArray(timers)) {
-          const oldVal = typeof timers === 'number' ? timers : 0;
-          timers = Array(p.groundBasesList[type] || 1).fill(0).map((_, idx) => (idx === 0 ? oldVal : Math.random() * spec.cd));
-        }
-        while (timers.length < (p.groundBasesList[type] || 0)) {
-          timers.push(Math.random() * spec.cd);
-        }
-        if (timers.length > (p.groundBasesList[type] || 0)) {
-          timers = timers.slice(0, p.groundBasesList[type] || 0);
-        }
-        p.groundBaseTimers[type] = timers;
-
-        let timer = timers[timerIndex] || 0;
-        if (timer > 0) {
-          timers[timerIndex] = Math.max(0, timer - actualDelta);
-        }
-
-        if (timers[timerIndex] <= 0 && updatedEnemies.length > 0) {
-          // Nuclear torpedo check credits (시선 확보 여부에 따라 차감하기 위해 여기서 체크만 하고 차감은 격발 시 처리)
-          if (type === 'nuclearTorpedo' && updatedCredits < 200) return;
-
-          // 개별 기지의 포탑 렌더링 위치 계산 (360도 전방향)
-          let baseX = EARTH_CENTER_X;
-          let baseY = EARTH_CENTER_Y;
-          if (planetId === PLANETS.EARTH) {
-            const angles = [0, 180, 90, 270, 45, 225, 135, 315];
-            const angleDeg = angles[globalIndex % angles.length];
-            const angleRad = (angleDeg * Math.PI) / 180;
-            baseX = EARTH_CENTER_X + 80 * Math.cos(angleRad);
-            baseY = EARTH_CENTER_Y + 80 * Math.sin(angleRad);
-          }
-
-          // 지구 지상기지의 경우 시선(지구 관통) 체크
-          let visibleEnemies = updatedEnemies;
-          if (planetId === PLANETS.EARTH) {
-            visibleEnemies = updatedEnemies.filter(e => {
-              const nx = baseX - EARTH_CENTER_X;
-              const ny = baseY - EARTH_CENTER_Y;
-              const vx = e.x - baseX;
-              const vy = e.y - baseY;
-              return (nx * vx + ny * vy) > 0; // 내적 > 0 이면 지구 바깥 방향 (시야 확보)
-            });
-          }
-
-          if (visibleEnemies.length > 0) {
-            // Targeting logic
-            let target = null;
-            if (type === 'sniperCannon') {
-              target = visibleEnemies.find(e => e.type === ALIEN_TYPES.BOSS_APOCALYPSE || e.type === ALIEN_TYPES.BOSS_CHRONO);
-            }
-            if (!target) {
-              target = visibleEnemies[Math.floor(Math.random() * visibleEnemies.length)];
-            }
-
-            if (target) {
-              if (type === 'nuclearTorpedo') {
-                updatedCredits -= 200;
-              }
-
-              const dmg = spec.dmg; // 개별 데미지
-              target.hp -= dmg;
-              timers[timerIndex] = spec.cd;
-
-              state.addBattleLog(`${PLANETARY_DATA[planetId].name} 지상 ${spec.name} 발사! (데미지 ${dmg})`);
-
-              if (type === 'plasmaBomber' || type === 'nuclearTorpedo') {
-                const splashRadius = type === 'nuclearTorpedo' ? 120 : 50;
-                const splashDmg = type === 'nuclearTorpedo' ? 400 : 100;
-                updatedEnemies.forEach(e => {
-                  if (e.id !== target.id) {
-                    const dx = e.x - target.x;
-                    const dy = e.y - target.y;
-                    if (Math.sqrt(dx * dx + dy * dy) <= splashRadius) {
-                      e.hp -= splashDmg;
-                    }
-                  }
-                });
-              } else if (type === 'electricTurret') {
-                target.slowTimer = 2.0;
-                target.slowAmount = 0.3;
-              }
-
-              const isEnergy = type === 'energyCannon' || type === 'plasmaBomber' || type === 'electricTurret' || type === 'sniperCannon';
-              let projColor = '#ffd700';
-              if (type === 'railgun') projColor = '#ff5500';
-              else if (type === 'energyCannon') projColor = '#00f0ff';
-              else if (type === 'missileSilo') projColor = '#ffaa00';
-              else if (type === 'plasmaBomber') projColor = '#941aff';
-              else if (type === 'electricTurret') projColor = '#bf5cff';
-              else if (type === 'sniperCannon') projColor = '#33ff33';
-              else if (type === 'gatling') projColor = '#ffcc00';
-              else if (type === 'nuclearTorpedo') projColor = '#ff0000';
-              else if (type === 'ciws') projColor = '#ffffff';
-
-              // Spawn visual projectile
-              updatedProjectiles.push({
-                id: Math.random().toString(),
-                type: isEnergy ? 'energy' : 'kinetic',
-                x: baseX,
-                y: baseY,
-                vx: (target.x - baseX) * 2.0,
-                vy: (target.y - baseY) * 2.0,
-                damage: 0,
-                isEnemy: false,
-                color: projColor
-              });
-            }
-          }
-        }
-      });
-
-      // 2. CIWS (미사일 방어막) 요격 로직 (요격 쿨타임은 ciws_intercept로 분리하여 무기 발사 쿨타임과 혼선 방지)
-      const ciwsCount = p.groundBasesList.ciws || 0;
+      // 2. CIWS (미사일 방어막) 요격 로직 (지상 ciws 대신 decoy 위성 개수를 참조하여 요격)
+      const ciwsCount = p.orbitalSatellitesList.decoy || 0;
       if (ciwsCount > 0) {
         let ciwsTimer = p.groundBaseTimers.ciws_intercept || 0;
         if (ciwsTimer > 0) {
@@ -1880,16 +1718,23 @@ export const useGameStore = create((set, get) => ({
       }
     }
 
-    // 5-2. 자동 타워 건설 옵션
-    if (state.autoBuildTowers && state.kineticDefenseTowers < 8) {
-      const cost = 500 * (state.kineticDefenseTowers + 1);
-      if (updatedCredits >= cost) {
-        updatedCredits -= cost;
-        const newCount = state.kineticDefenseTowers + 1;
-        set({ kineticDefenseTowers: newCount });
-        updatedPlanets[PLANETS.EARTH].groundBases = Math.max(updatedPlanets[PLANETS.EARTH].groundBases || 0, newCount);
-        updatedPlanets[PLANETS.EARTH].groundBasesList.railgun = Math.max(updatedPlanets[PLANETS.EARTH].groundBasesList.railgun || 0, newCount);
-        state.addBattleLog(`방어 요새 자동 복구: 키네틱 요격 타워 자동 건설 (${newCount}개).`);
+    // 5-2. 자동 위성 건설 옵션
+    const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
+    if (state.autoBuildTowers && earthSats < 5) {
+      const spec = SATELLITE_SPECS.laser;
+      const availableEnergy = (calculatedMaxEnergy + state.cheatEnergyBonus) - targetUsedEnergy;
+      if (updatedCredits >= spec.cost && availableEnergy >= spec.energy) {
+        updatedCredits -= spec.cost;
+        targetUsedEnergy += spec.energy;
+        
+        const currentCount = updatedPlanets[PLANETS.EARTH].orbitalSatellitesList?.laser || 0;
+        updatedPlanets[PLANETS.EARTH].orbitalSatellites = earthSats + 1;
+        if (!updatedPlanets[PLANETS.EARTH].orbitalSatellitesList) {
+          updatedPlanets[PLANETS.EARTH].orbitalSatellitesList = {};
+        }
+        updatedPlanets[PLANETS.EARTH].orbitalSatellitesList.laser = currentCount + 1;
+        
+        state.addBattleLog(`방어 위성 자동 복구: 지구 궤도에 타겟팅 레이저 위성 자동 건설.`);
       }
     }
 
@@ -2333,7 +2178,8 @@ export const useGameStore = create((set, get) => ({
       planets: updatedPlanets,
       currentWave: nextWave,
       enemiesRemainingToSpawn: enemiesRemaining,
-      satelliteRotation: nextRotation
+      satelliteRotation: nextRotation,
+      kineticDefenseTowers: updatedPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0
     });
   }
 }));

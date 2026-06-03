@@ -141,7 +141,15 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
     // 2. 키네틱 공격: 요격 확률 기본 60%
     // 요격 확률 100%로 강제 조정하여 완벽 방격 검증
-    useGameStore.setState({ kineticDefenseTowers: 8 }); // 요격 타워 8개 (기본 60% + 40% = 100%)
+    useGameStore.setState({
+      planets: {
+        ...useGameStore.getState().planets,
+        [PLANETS.EARTH]: {
+          ...useGameStore.getState().planets[PLANETS.EARTH],
+          orbitalSatellites: 5
+        }
+      }
+    }); // 위성 5개 (기본 60% + 40% = 100%)
     expect(useGameStore.getState().getKineticInterceptRate()).toBe(1.0);
 
     const initialHp = useGameStore.getState().earthHp;
@@ -153,7 +161,15 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(useGameStore.getState().planets[PLANETS.EARTH].population).toBe(initialPopulation);
 
     // 요격 확률 0%로 강제 조정하여 피격 및 인구 사망 패널티 검증
-    useGameStore.setState({ kineticDefenseTowers: 0 });
+    useGameStore.setState({
+      planets: {
+        ...useGameStore.getState().planets,
+        [PLANETS.EARTH]: {
+          ...useGameStore.getState().planets[PLANETS.EARTH],
+          orbitalSatellites: 0
+        }
+      }
+    });
     // 요격률을 강제로 0%로 오버라이드하기 위해 임시 목업
     const originalGetRate = store.getKineticInterceptRate;
     useGameStore.setState({
@@ -231,18 +247,15 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const store = useGameStore.getState();
     useGameStore.setState({ credits: 2000, maxEnergy: 500 });
     
-    // Gatling tower: cost 30, energy 6
+    // 지상 기지는 더 이상 건설할 수 없음
     const successGatling = store.buildGroundBaseDetail('earth', 'gatling');
-    expect(successGatling).toBe(true);
-    expect(useGameStore.getState().credits).toBe(1970);
-    expect(useGameStore.getState().usedEnergy).toBe(26);
-    expect(useGameStore.getState().planets.earth.groundBasesList.gatling).toBe(1);
+    expect(successGatling).toBe(false);
 
     // Laser satellite: cost 200, energy 5
     const successLaser = store.buildOrbitalSatelliteDetail('earth', 'laser');
     expect(successLaser).toBe(true);
-    expect(useGameStore.getState().credits).toBe(1770);
-    expect(useGameStore.getState().usedEnergy).toBe(31);
+    expect(useGameStore.getState().credits).toBe(1800);
+    expect(useGameStore.getState().usedEnergy).toBe(25);
     expect(useGameStore.getState().planets.earth.orbitalSatellitesList.laser).toBe(1);
   });
 
