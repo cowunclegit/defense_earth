@@ -238,17 +238,17 @@ export const SHIP_SPECS = {
 };
 
 export const GROUND_BASE_SPECS = {
-  railgun: { name: '대함 레일건 요새', cost: 100, energy: 10, isWeapon: true, dmg: 200, cd: 5.0 },
-  energyCannon: { name: '지대공 에너지 캐논', cost: 80, energy: 5, isWeapon: true, dmg: 80, cd: 2.0 },
-  missileSilo: { name: '지상 요격 미사일 사일로', cost: 120, energy: 8, isWeapon: true, dmg: 120, cd: 3.0 },
-  plasmaBomber: { name: '플라즈마 폭격기', cost: 250, energy: 12, isWeapon: true, dmg: 250, cd: 7.0 },
-  electricTurret: { name: '전기 방출 포탑', cost: 150, energy: 10, isWeapon: true, dmg: 150, cd: 4.0 },
-  sniperCannon: { name: '초전도 스나이퍼 캐논', cost: 350, energy: 15, isWeapon: true, dmg: 350, cd: 10.0 },
-  gatling: { name: '속사 개틀링 포탑', cost: 30, energy: 6, isWeapon: true, dmg: 30, cd: 0.4 },
-  nuclearTorpedo: { name: '핵 어뢰 사일로', cost: 800, energy: 25, isWeapon: true, dmg: 800, cd: 30.0 },
-  forceShield: { name: '지상 포스필드 배리어', cost: 150, energy: 10, isWeapon: false },
-  ciws: { name: '미사일 방어막 (CIWS)', cost: 100, energy: 8, isWeapon: true, dmg: 50, cd: 0.8 },
-  armor: { name: '강화 장갑 플레이팅', cost: 100, energy: 0, isWeapon: false }
+  railgun: { name: '대함 레일건 요새', cost: 100, energy: 10, isWeapon: true, dmg: 200, cd: 5.0, maxCount: 8 },
+  energyCannon: { name: '지대공 에너지 캐논', cost: 80, energy: 5, isWeapon: true, dmg: 80, cd: 2.0, maxCount: 8 },
+  missileSilo: { name: '지상 요격 미사일 사일로', cost: 120, energy: 8, isWeapon: true, dmg: 120, cd: 3.0, maxCount: 8 },
+  plasmaBomber: { name: '플라즈마 폭격기', cost: 250, energy: 12, isWeapon: true, dmg: 250, cd: 7.0, maxCount: 8 },
+  electricTurret: { name: '전기 방출 포탑', cost: 150, energy: 10, isWeapon: true, dmg: 150, cd: 4.0, maxCount: 8 },
+  sniperCannon: { name: '초전도 스나이퍼 캐논', cost: 350, energy: 15, isWeapon: true, dmg: 350, cd: 10.0, maxCount: 8 },
+  gatling: { name: '속사 개틀링 포탑', cost: 30, energy: 6, isWeapon: true, dmg: 30, cd: 0.4, maxCount: 8 },
+  nuclearTorpedo: { name: '핵 어뢰 사일로', cost: 800, energy: 25, isWeapon: true, dmg: 800, cd: 30.0, maxCount: 8 },
+  forceShield: { name: '지상 포스필드 배리어', cost: 150, energy: 10, isWeapon: false, maxCount: 8 },
+  ciws: { name: '미사일 방어막 (CIWS)', cost: 100, energy: 8, isWeapon: true, dmg: 50, cd: 0.8, maxCount: 8 },
+  armor: { name: '강화 장갑 플레이팅', cost: 100, energy: 0, isWeapon: false, maxCount: 8 }
 };
 
 export const SATELLITE_SPECS = {
@@ -637,18 +637,19 @@ export const useGameStore = create((set, get) => ({
     const planet = state.planets[planetId];
     if (!planet || !planet.unlocked) return false;
     
-    const currentTotal = planet.groundBases || 0;
-    if (currentTotal >= 8) return false;
-
     const spec = GROUND_BASE_SPECS[type];
     if (!spec) return false;
+
+    const currentCount = planet.groundBasesList[type] || 0;
+    const maxLimit = spec.maxCount || 8;
+    if (currentCount >= maxLimit) return false;
 
     const cost = spec.cost;
     const energyCost = spec.energy;
 
     if (state.credits < cost || state.getAvailableEnergy() < energyCost) return false;
 
-    const currentCount = planet.groundBasesList[type] || 0;
+    const currentTotal = planet.groundBases || 0;
     const updatedPlanets = {
       ...state.planets,
       [planetId]: {
@@ -665,7 +666,7 @@ export const useGameStore = create((set, get) => ({
       credits: state.credits - cost,
       usedEnergy: state.usedEnergy + energyCost,
       planets: updatedPlanets,
-      kineticDefenseTowers: planetId === 'earth' ? currentTotal + 1 : state.kineticDefenseTowers
+      kineticDefenseTowers: planetId === 'earth' && type === 'railgun' ? currentCount + 1 : state.kineticDefenseTowers
     });
 
     state.addBattleLog(`${PLANETARY_DATA[planetId].name}에 ${spec.name}을 건설했습니다.`);

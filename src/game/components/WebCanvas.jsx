@@ -3,6 +3,7 @@ import { useGameStore } from '../../store/gameStore';
 import WebBackground from './web/WebBackground';
 import WebEarth from './web/WebEarth';
 import WebShield from './web/WebShield';
+import WebSatellites from './web/WebSatellites';
 import WebFleet from './web/WebFleet';
 import WebEnemies from './web/WebEnemies';
 import WebProjectiles from './web/WebProjectiles';
@@ -39,6 +40,16 @@ export default function WebCanvas({ zoom, panX, panY }) {
     });
   }
 
+  const earthSatellites = [];
+  if (earthPlanet && earthPlanet.orbitalSatellitesList) {
+    Object.keys(earthPlanet.orbitalSatellitesList).forEach((type) => {
+      const count = earthPlanet.orbitalSatellitesList[type] || 0;
+      for (let i = 0; i < count; i++) {
+        earthSatellites.push({ type, globalIndex: earthSatellites.length });
+      }
+    });
+  }
+
   const hpRatio = earthHp / earthMaxHp;
   const earthColor = `rgb(${Math.floor(13 + (1 - hpRatio) * 120)}, ${Math.floor(31 * hpRatio + 10)}, ${Math.floor(61 * hpRatio + 15)})`;
 
@@ -65,6 +76,12 @@ export default function WebCanvas({ zoom, panX, panY }) {
           EARTH_CENTER_X={EARTH_CENTER_X} 
           EARTH_CENTER_Y={EARTH_CENTER_Y} 
           SHIELD_RADIUS={SHIELD_RADIUS} 
+        />
+
+        <WebSatellites 
+          earthSatellites={earthSatellites} 
+          EARTH_CENTER_X={EARTH_CENTER_X} 
+          EARTH_CENTER_Y={EARTH_CENTER_Y} 
         />
         
         <WebFleet 

@@ -389,7 +389,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
             {/* 1. 공격기지 탭 */}
             {activeTab === 'attack_base' && (
               <View>
-                <Text style={styles.subTitleText}>지상 기지 총 수량: {planetState.groundBases} / 8</Text>
+                <Text style={styles.subTitleText}>지상 기지 총 수량: {planetState.groundBases}개</Text>
                 <View style={styles.gridContainer}>
                   {/* 지상 공격 무기 렌더링 (railgun is moved to defense) */}
                   {Object.keys(GROUND_BASE_SPECS).map((type) => {
@@ -398,13 +398,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     if (!spec.isWeapon || type === 'ciws') return null; // Only weapons (ciws belongs in defenses)
                     const count = planetState.groundBasesList?.[type] || 0;
                     const desc = `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초`;
-                    const isMax = (planetState.groundBases || 0) >= 8;
+                    const isMax = count >= (spec.maxCount || 8);
 
                     return (
                       <View key={type} style={[styles.gridCard, { borderColor: '#ff5c5c' }]}>
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
-                          <Text style={[styles.gridCardCount, { color: '#ff5c5c' }]}>{count}개</Text>
+                          <Text style={[styles.gridCardCount, { color: '#ff5c5c' }]}>{count} / {spec.maxCount || 8}개</Text>
                         </View>
                         <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
                         {isMax ? (
@@ -422,7 +422,18 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else break;
                               }
                               if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 건설 한도(8개)에 도달했습니다.');
+                              else {
+                                const count = planetState.groundBasesList?.[type] || 0;
+                                if (count >= (spec.maxCount || 8)) {
+                                  Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
+                                } else if (credits < spec.cost) {
+                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
+                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                } else {
+                                  Alert.alert('건설 실패', '자원이 부족합니다.');
+                                }
+                              }
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
@@ -440,20 +451,20 @@ export default function PlanetDetailScreen({ route, navigation }) {
             {/* 2. 방어시설 탭 */}
             {activeTab === 'defense_facility' && (
               <View>
-                <Text style={styles.subTitleText}>지상 방어 시설 수량: {planetState.groundBases} / 8</Text>
+                <Text style={styles.subTitleText}>지상 방어 시설 총 수량: {planetState.groundBases}개</Text>
                 <View style={styles.gridContainer}>
                   {/* E2E test compatibility: kinetic 요격 타워 (대함 레일건 요새) first */}
                   <View style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
                     <View style={styles.gridCardHeader}>
                       <Text style={styles.gridCardName}>키네틱 요격 타워</Text>
                       <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>
-                        {planetState.groundBasesList?.railgun || 0}개
+                        {planetState.groundBasesList?.railgun || 0} / {GROUND_BASE_SPECS.railgun.maxCount || 8}개
                       </Text>
                     </View>
                     <Text style={styles.gridCardDesc}>
                       적 키네틱 탄환 요격 성공 확률 +5%
                     </Text>
-                    {(planetState.groundBases || 0) >= 8 ? (
+                    {(planetState.groundBasesList?.railgun || 0) >= (GROUND_BASE_SPECS.railgun.maxCount || 8) ? (
                       <View style={styles.gridMaxBadge}>
                         <Text style={styles.gridMaxBadgeText}>최대</Text>
                       </View>
@@ -468,7 +479,19 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             else break;
                           }
                           if (successCount > 0) setTimeout(() => saveGame(), 100);
-                          else Alert.alert('건설 실패', '자원이 부족하거나 최대 건설 한도(8개)에 도달했습니다.');
+                          else {
+                            const count = planetState.groundBasesList?.railgun || 0;
+                            const spec = GROUND_BASE_SPECS.railgun;
+                            if (count >= (spec.maxCount || 8)) {
+                              Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
+                            } else if (credits < spec.cost) {
+                              Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                            } else if ((maxEnergy - usedEnergy) < spec.energy) {
+                              Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                            } else {
+                              Alert.alert('건설 실패', '자원이 부족합니다.');
+                            }
+                          }
                         }}
                       >
                         <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
@@ -489,13 +512,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     if (type === 'forceShield') desc = '기지 HP +30% 실드 추가 (상시 에너지 소모)';
                     if (type === 'armor') desc = '받는 데미지 25% 감소 (패시브)';
                     
-                    const isMax = (planetState.groundBases || 0) >= 8;
+                    const isMax = count >= (spec.maxCount || 8);
 
                     return (
                       <View key={type} style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
-                          <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>{count}개</Text>
+                          <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>{count} / {spec.maxCount || 8}개</Text>
                         </View>
                         <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
                         {isMax ? (
@@ -513,7 +536,18 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else break;
                               }
                               if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 건설 한도(8개)에 도달했습니다.');
+                              else {
+                                const count = planetState.groundBasesList?.[type] || 0;
+                                if (count >= (spec.maxCount || 8)) {
+                                  Alert.alert('건설 실패', `최대 건설 한도(${spec.maxCount || 8}개)에 도달했습니다.`);
+                                } else if (credits < spec.cost) {
+                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
+                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                } else {
+                                  Alert.alert('건설 실패', '자원이 부족합니다.');
+                                }
+                              }
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
@@ -642,7 +676,18 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else break;
                               }
                               if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 위성 한도(5개)에 도달했습니다.');
+                              else {
+                                const currentTotal = planetState.orbitalSatellites || 0;
+                                if (currentTotal >= 5) {
+                                  Alert.alert('건설 실패', '최대 위성 한도(5개)에 도달했습니다.');
+                                } else if (credits < spec.cost) {
+                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
+                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                } else {
+                                  Alert.alert('건설 실패', '자원이 부족합니다.');
+                                }
+                              }
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
@@ -741,7 +786,18 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else break;
                               }
                               if (successCount > 0) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '자원이 부족하거나 최대 위성 한도(5개)에 도달했습니다.');
+                              else {
+                                const currentTotal = planetState.orbitalSatellites || 0;
+                                if (currentTotal >= 5) {
+                                  Alert.alert('건설 실패', '최대 위성 한도(5개)에 도달했습니다.');
+                                } else if (credits < spec.cost) {
+                                  Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                                } else if ((maxEnergy - usedEnergy) < spec.energy) {
+                                  Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                } else {
+                                  Alert.alert('건설 실패', '자원이 부족합니다.');
+                                }
+                              }
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
