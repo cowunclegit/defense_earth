@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useGameStore } from '../store/gameStore';
 
-export default function TopHud() {
+export default function TopHud({ overlay }) {
   const { 
     credits, 
     maxEnergy, 
@@ -83,8 +83,11 @@ export default function TopHud() {
   };
 
   return (
-    <View style={styles.hudContainer}>
-      <View style={styles.hudContentRow}>
+    <View 
+      style={[styles.hudContainer, overlay && styles.hudContainerOverlay]}
+      pointerEvents={overlay ? "box-none" : "auto"}
+    >
+      <View style={styles.hudContentRow} pointerEvents={overlay ? "box-none" : "auto"}>
         {/* 좌측: 세로로 정렬된 자원 목록 (네온 스타일 카드) */}
         <View style={styles.leftResourcesColumn}>
           <View style={styles.resourceItem}>
@@ -162,6 +165,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
+  },
+  hudContainerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+    paddingTop: 8,
+    paddingHorizontal: 15,
+    zIndex: 100,
   },
   hudContentRow: {
     flexDirection: 'row',

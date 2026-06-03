@@ -144,108 +144,128 @@ export default function ChronosLabScreen() {
   return (
     <View style={styles.container}>
       <TopHud />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* 헤더 정보 */}
-        <View style={styles.header}>
-          <Text style={styles.title}>크로노스 시간 연구소</Text>
-          <Text style={styles.subtitle}>시공의 입자(TP)를 활용한 지구 방어선 영구 업그레이드</Text>
-        </View>
-
-        {/* 타임 루프 가동 장치 */}
-        <View style={styles.rebirthPanel}>
-          <Text style={styles.panelTitle}>시공간 타임머신 코어</Text>
-          <View style={styles.gaugeRow}>
-            <View style={styles.gaugeBg}>
-              <View style={[styles.gaugeFill, { width: `${timeMachineGauge}%` }]} />
-            </View>
-            <Text style={styles.gaugeText}>{Math.floor(timeMachineGauge)}%</Text>
-          </View>
-          <Text style={styles.panelDesc}>
-            지구가 함락되거나, 타임머신 게이지가 100% 차오르면 자발적으로 루프에 들어갈 수 있습니다.
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.loopBtn,
-              timeMachineGauge >= 100 ? styles.loopBtnActive : styles.loopBtnDisabled
-            ]}
-            onPress={handleTimeLoop}
-            disabled={timeMachineGauge < 100}
-          >
-            <Text style={[
-              styles.loopBtnText,
-              timeMachineGauge >= 100 ? styles.loopBtnTextActive : styles.loopBtnTextDisabled
-            ]}>
-              {timeMachineGauge >= 100 ? '시간 루프 가동 (자발적 회귀)' : '타임머신 충전 중...'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 외계 아티팩트 역공학 연구소 (Phase 4 추가) */}
-        <View style={styles.upgradeSection}>
-          <Text style={[styles.sectionTitle, { color: '#00f0ff' }]}>보스 전리품: 역공학 연구실</Text>
-          <Text style={styles.sectionDesc}>보스 격퇴 시 획득하는 나노코어로 아티팩트 잠금해제 (회귀 시 초기화)</Text>
-
-          {researchSpecs.map((spec) => {
-            const isCompleted = researchUpgrades[spec.key];
-            return (
-              <View key={spec.key} style={[styles.upgradeNode, isCompleted && styles.researchNodeActive]}>
-                <View style={styles.nodeMain}>
-                  <View style={styles.nodeMeta}>
-                    <Text style={[styles.nodeCategory, { color: '#00f0ff' }]}>아티팩트 리버스 연구</Text>
-                    <Text style={[styles.nodeLevel, { color: isCompleted ? '#00f0ff' : '#8fa0c4' }]}>
-                      {isCompleted ? '연구 완성' : '연구 대기'}
-                    </Text>
-                  </View>
-                  <Text style={styles.nodeName}>{spec.name}</Text>
-                  <Text style={styles.nodeDesc}>{spec.desc}</Text>
-                </View>
-                
-                <TouchableOpacity
-                  style={[styles.nodeBuyBtn, { backgroundColor: isCompleted ? '#007f8a' : '#00bfa5' }]}
-                  onPress={() => handleResearch(spec.key, spec.name)}
-                  disabled={isCompleted}
-                >
-                  <Text style={styles.buyBtnText}>{isCompleted ? '완료' : '연구'}</Text>
-                  <Text style={styles.buyBtnCost}>15 Nano</Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* 업그레이드 노드 리스트 */}
-        <View style={styles.upgradeSection}>
-          <Text style={styles.sectionTitle}>크로노스 과학 연구 트리</Text>
+      <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           
-          {upgradeSpecs.map((spec) => {
-            const level = chronosUpgrades[spec.key] || 0;
-            const cost = Math.pow(3, level) * 5;
+          {/* 헤더 정보 */}
+          <View style={styles.header}>
+            <Text style={styles.title}>크로노스 시간 연구소</Text>
+            <Text style={styles.subtitle}>시공의 입자(TP)를 활용한 지구 방어선 영구 업그레이드</Text>
+          </View>
 
-            return (
-              <View key={spec.key} style={styles.upgradeNode}>
-                <View style={styles.nodeMain}>
-                  <View style={styles.nodeMeta}>
-                    <Text style={styles.nodeCategory}>{spec.category}</Text>
-                    <Text style={styles.nodeLevel}>Lv.{level}</Text>
-                  </View>
-                  <Text style={styles.nodeName}>{spec.name}</Text>
-                  <Text style={styles.nodeDesc}>{spec.desc}</Text>
-                </View>
-                
-                <TouchableOpacity
-                  style={styles.nodeBuyBtn}
-                  onPress={() => handleUpgrade(spec.key, spec.name)}
-                >
-                  <Text style={styles.buyBtnText}>강화</Text>
-                  <Text style={styles.buyBtnCost}>{cost} TP</Text>
-                </TouchableOpacity>
+          {/* 타임 루프 가동 장치 */}
+          <View style={styles.rebirthPanel}>
+            <Text style={styles.panelTitle}>시공간 타임머신 코어</Text>
+            <View style={styles.gaugeRow}>
+              <View style={styles.gaugeBg}>
+                <View style={[styles.gaugeFill, { width: `${timeMachineGauge}%` }]} />
               </View>
-            );
-          })}
-        </View>
+              <Text style={styles.gaugeText}>{Math.floor(timeMachineGauge)}%</Text>
+            </View>
+            <Text style={styles.panelDesc}>
+              지구가 함락되거나, 타임머신 게이지가 100% 차오르면 자발적으로 루프에 들어갈 수 있습니다.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.loopBtn,
+                timeMachineGauge >= 100 ? styles.loopBtnActive : styles.loopBtnDisabled
+              ]}
+              onPress={handleTimeLoop}
+              disabled={timeMachineGauge < 100}
+            >
+              <Text style={[
+                styles.loopBtnText,
+                timeMachineGauge >= 100 ? styles.loopBtnTextActive : styles.loopBtnTextDisabled
+              ]}>
+                {timeMachineGauge >= 100 ? '시간 루프 가동 (자발적 회귀)' : '타임머신 충전 중...'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-      </ScrollView>
+          {/* 외계 아티팩트 역공학 연구소 */}
+          <View style={styles.upgradeSection}>
+            <Text style={[styles.sectionTitle, { color: '#00f0ff' }]}>보스 전리품: 역공학 연구실</Text>
+            <Text style={styles.sectionDesc}>보스 격퇴 시 획득하는 나노코어로 아티팩트 잠금해제 (회귀 시 초기화)</Text>
+
+            <View style={styles.gridContainer}>
+              {researchSpecs.map((spec) => {
+                const isCompleted = researchUpgrades[spec.key];
+                return (
+                  <View 
+                    key={spec.key} 
+                    style={[
+                      styles.gridCard, 
+                      { borderColor: '#00f0ff' },
+                      isCompleted && { 
+                        backgroundColor: 'rgba(0, 240, 255, 0.05)',
+                        borderColor: '#00f0ff',
+                        shadowColor: '#00f0ff',
+                        shadowOpacity: 0.25,
+                        shadowRadius: 6,
+                      }
+                    ]}
+                  >
+                    <View style={styles.gridCardHeader}>
+                      <Text style={[styles.gridCardCategory, { color: '#00f0ff' }]}>아티팩트 리버스</Text>
+                      <Text style={[styles.gridCardStatusText, { color: isCompleted ? '#00f0ff' : '#8fa0c4' }]}>
+                        {isCompleted ? '연구 완성' : '대기'}
+                      </Text>
+                    </View>
+                    <Text style={styles.gridCardName}>{spec.name}</Text>
+                    <Text style={styles.gridCardDesc}>{spec.desc}</Text>
+                    
+                    {isCompleted ? (
+                      <View style={[styles.gridCompleteBadgeMini, { borderColor: '#00f0ff' }]}>
+                        <Text style={[styles.gridCompleteTextMini, { color: '#00f0ff' }]}>연구 완성</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.gridBuildBtn, { backgroundColor: '#00bfa5' }]}
+                        onPress={() => handleResearch(spec.key, spec.name)}
+                      >
+                        <Text style={styles.buyBtnText}>연구</Text>
+                        <Text style={styles.buyBtnCost}>15 Nano</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* 업그레이드 노드 리스트 */}
+          <View style={styles.upgradeSection}>
+            <Text style={[styles.sectionTitle, { color: '#bf5cff' }]}>크로노스 과학 연구 트리</Text>
+            
+            <View style={styles.gridContainer}>
+              {upgradeSpecs.map((spec) => {
+                const level = chronosUpgrades[spec.key] || 0;
+                const cost = Math.pow(3, level) * 5;
+
+                return (
+                  <View key={spec.key} style={[styles.gridCard, { borderColor: '#bf5cff' }]}>
+                    <View style={styles.gridCardHeader}>
+                      <Text style={[styles.gridCardCategory, { color: '#bf5cff' }]}>{spec.category}</Text>
+                      <Text style={[styles.gridCardStatusText, { color: '#ffd700' }]}>Lv.{level}</Text>
+                    </View>
+                    <Text style={styles.gridCardName}>{spec.name}</Text>
+                    <Text style={styles.gridCardDesc}>{spec.desc}</Text>
+                    
+                    <TouchableOpacity
+                      style={[styles.gridBuildBtn, { backgroundColor: '#bf5cff' }]}
+                      onPress={() => handleUpgrade(spec.key, spec.name)}
+                    >
+                      <Text style={styles.buyBtnText}>강화</Text>
+                      <Text style={styles.buyBtnCost}>{cost} TP</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -254,9 +274,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#050814',
+    overflow: 'hidden',
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 80,
   },
   header: {
     padding: 20,
@@ -278,9 +299,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     padding: 20,
     borderRadius: 12,
-    backgroundColor: 'rgba(191, 92, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(191, 92, 255, 0.25)',
+    backgroundColor: 'rgba(191, 92, 255, 0.05)',
+    borderWidth: 1.5,
+    borderColor: '#bf5cff',
+    shadowColor: '#bf5cff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
   },
   panelTitle: {
     fontSize: 16,
@@ -296,13 +322,19 @@ const styles = StyleSheet.create({
   gaugeBg: {
     flex: 1,
     height: 12,
-    backgroundColor: '#1c142b',
+    backgroundColor: '#161125',
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(191, 92, 255, 0.2)',
     overflow: 'hidden',
   },
   gaugeFill: {
     height: '100%',
     backgroundColor: '#bf5cff',
+    shadowColor: '#bf5cff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
   },
   gaugeText: {
     color: '#bf5cff',
@@ -325,7 +357,12 @@ const styles = StyleSheet.create({
   },
   loopBtnActive: {
     backgroundColor: '#bf5cff',
-    borderColor: '#c66eff',
+    borderColor: '#d28cff',
+    shadowColor: '#bf5cff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 3,
   },
   loopBtnDisabled: {
     backgroundColor: 'rgba(191, 92, 255, 0.02)',
@@ -351,72 +388,84 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 12,
   },
-  upgradeNode: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: 'rgba(10, 20, 45, 0.5)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
-    marginVertical: 6,
-  },
-  nodeMain: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  nodeMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  nodeCategory: {
-    fontSize: 10,
-    color: '#bf5cff',
-    fontWeight: 'bold',
-  },
-  nodeLevel: {
-    fontSize: 10,
-    color: '#ffd700',
-    fontWeight: 'bold',
-  },
-  nodeName: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  nodeDesc: {
-    color: '#8fa0c4',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  nodeBuyBtn: {
-    width: 65,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#bf5cff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buyBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  buyBtnCost: {
-    color: '#ffffff',
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: 'bold',
-  },
   sectionDesc: {
     fontSize: 11,
     color: '#8fa0c4',
     marginBottom: 10,
     marginTop: -8,
   },
-  researchNodeActive: {
-    borderColor: 'rgba(0, 240, 255, 0.3)',
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  gridCard: {
+    width: '49%',
+    backgroundColor: 'rgba(10, 20, 45, 0.75)',
+    borderWidth: 1.5,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
+    justifyContent: 'space-between',
+    minHeight: 132,
+  },
+  gridCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 2,
+  },
+  gridCardCategory: {
+    fontSize: 9.5,
+    fontWeight: 'bold',
+    flex: 1,
+    paddingRight: 2,
+  },
+  gridCardStatusText: {
+    fontSize: 9.5,
+    fontWeight: 'bold',
+    fontFamily: 'Courier New',
+  },
+  gridCardName: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  gridCardDesc: {
+    color: '#8fa0c4',
+    fontSize: 8.5,
+    marginVertical: 4,
+    lineHeight: 11.5,
+  },
+  gridBuildBtn: {
+    paddingVertical: 5,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  gridCompleteBadgeMini: {
+    paddingVertical: 5,
+    borderRadius: 4,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 4,
     backgroundColor: 'rgba(0, 240, 255, 0.05)',
+  },
+  gridCompleteTextMini: {
+    fontSize: 9.5,
+    fontWeight: 'bold',
+  },
+  buyBtnText: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+  },
+  buyBtnCost: {
+    color: '#ffffff',
+    fontSize: 8.5,
+    marginTop: 1,
+    fontWeight: 'bold',
   }
 });

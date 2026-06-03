@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { 
   useGameStore, 
   SHIP_TYPES, 
@@ -168,14 +168,14 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <TopHud />
       <View style={styles.fixedContentContainer}>
-        {/* 상단: 2D 전투 캔버스 영역 */}
+        {/* 상단: 2D 전투 캔버스 영역 (자원 HUD 오버레이 탑재) */}
         <View style={styles.battleCanvasContainer}>
           <GameCanvas />
+          <TopHud overlay={true} />
           
           {/* 오버레이: 좌상단 행성 이름 및 이동 버튼 */}
-          <View style={styles.topLeftOverlay}>
+          <View style={[styles.topLeftOverlay, { top: 110 }]}>
             <TouchableOpacity onPress={() => navigation.navigate('SolarSystem')} style={styles.backButton}>
               <Text style={styles.backButtonText}>← 성계도</Text>
             </TouchableOpacity>
@@ -184,27 +184,30 @@ export default function PlanetDetailScreen({ route, navigation }) {
               시너지: {planetState.terraformProgress >= 80 ? '활성' : '대기'}
             </Text>
           </View>
-
-          {/* 오버레이: 우상단 지구 HP & 보호막 정보 */}
-          <View style={styles.topRightOverlay}>
-            <Text style={styles.hpText}>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
-            <Text style={styles.shieldText}>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
-            <Text style={styles.kineticText}>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
-          </View>
-
-          {/* 오버레이: 좌하단 테스트용 피격 버튼 */}
-          <View style={styles.bottomLeftOverlay}>
-            <TouchableOpacity style={styles.miniMockBtn} onPress={() => triggerMockAttack('energy')}>
-              <Text style={styles.miniMockText}>에너지 피격 (빔)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.miniMockBtn, { backgroundColor: '#c23b3b' }]} onPress={() => triggerMockAttack('kinetic')}>
-              <Text style={styles.miniMockText}>키네틱 피격 (철갑탄)</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* 하단 제어판 및 조작 버튼 */}
         <View style={styles.controlPanel}>
+          {/* 고품격 지구 상태 오버레이 (시안 스타일의 체력/실드 통합 패널) */}
+          <View style={styles.compactStatusPanel}>
+            <View style={styles.statusProgressItem}>
+              <Text style={styles.statusProgressLabel}>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
+              <View style={styles.statusProgressBarBg}>
+                <View style={[styles.statusProgressBarFillHP, { width: `${Math.min(100, Math.max(0, (earthHp / earthMaxHp) * 100))}%` }]} />
+              </View>
+            </View>
+            
+            <View style={styles.statusProgressItem}>
+              <Text style={styles.statusProgressLabel}>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+              <View style={styles.statusProgressBarBg}>
+                <View style={[styles.statusProgressBarFillShield, { width: `${Math.min(100, Math.max(0, (earthShield / earthMaxShield) * 100))}%` }]} />
+              </View>
+            </View>
+            
+            <View style={styles.kineticTowerBadge}>
+              <Text style={styles.kineticTowerBadgeText}>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
+            </View>
+          </View>
           {/* 테라포밍 프로젝트 줄 (매우 콤팩트하게) */}
           <View style={styles.compactTerraformRow}>
             <Text style={styles.terraformProgressText}>테라포밍 {planetState.terraformProgress}%</Text>
@@ -601,6 +604,14 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
             {/* 개발자 테스트 패널 (스크롤 뷰 최하단에 배치하여 레이아웃 침범 방지) */}
             <View style={styles.devCheatRow}>
+              {/* E2E 테스트 호환용 피격 모의 단추 */}
+              <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#ff8a00' }]} onPress={() => triggerMockAttack('energy')}>
+                <Text style={[styles.cheatBtnText, { color: '#ff8a00' }]}>에너지 피격 (빔)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#ff5c5c', backgroundColor: 'rgba(255, 92, 92, 0.1)' }]} onPress={() => triggerMockAttack('kinetic')}>
+                <Text style={[styles.cheatBtnText, { color: '#ff5c5c' }]}>키네틱 피격 (철갑탄)</Text>
+              </TouchableOpacity>
+              
               <TouchableOpacity style={styles.cheatBtn} onPress={() => { cheatCredits(10000); setTimeout(() => saveGame(), 100); }}>
                 <Text style={styles.cheatBtnText}>+10,000 Cr</Text>
               </TouchableOpacity>
@@ -674,23 +685,28 @@ const styles = StyleSheet.create({
   fixedContentContainer: {
     flex: 1,
     flexDirection: 'column',
-    paddingHorizontal: 15,
     paddingBottom: 10,
     overflow: 'hidden',
   },
   battleCanvasContainer: {
     position: 'relative',
-    alignSelf: 'center',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#1e305e',
+    alignSelf: 'stretch',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#1e305e',
     overflow: 'hidden',
     backgroundColor: '#050814',
+    ...Platform.select({
+      web: {
+        height: '50%',
+        width: '100%',
+      },
+      default: {}
+    }),
   },
   topLeftOverlay: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    left: 15,
     zIndex: 10,
   },
   backButton: {
@@ -1054,6 +1070,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 8,
     overflow: 'hidden',
+    paddingHorizontal: 15,
   },
   tabScrollContainer: {
     flex: 1,
@@ -1250,5 +1267,67 @@ const styles = StyleSheet.create({
     color: '#ff5c5c',
     fontSize: 9.5,
     fontWeight: 'bold',
+  },
+  compactStatusPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(10, 20, 45, 0.6)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(0, 240, 255, 0.15)',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+    marginBottom: 4,
+    gap: 8,
+  },
+  statusProgressItem: {
+    flex: 1.1,
+    flexDirection: 'column',
+    gap: 3,
+  },
+  statusProgressLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  statusProgressBarBg: {
+    height: 7,
+    backgroundColor: '#16223f',
+    borderRadius: 3.5,
+    overflow: 'hidden',
+  },
+  statusProgressBarFillHP: {
+    height: '100%',
+    backgroundColor: '#ff5c5c',
+    shadowColor: '#ff5c5c',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+  },
+  statusProgressBarFillShield: {
+    height: '100%',
+    backgroundColor: '#00f0ff',
+    shadowColor: '#00f0ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+  },
+  kineticTowerBadge: {
+    flex: 0.8,
+    backgroundColor: 'rgba(191, 92, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: '#bf5cff',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kineticTowerBadgeText: {
+    color: '#bf5cff',
+    fontSize: 8.5,
+    fontWeight: 'bold',
+    textAlign: 'center',
   }
 });
