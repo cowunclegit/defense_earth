@@ -485,4 +485,73 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const state = useGameStore.getState();
     expect(state.planets.earth.orbitalSatellites).toBe(40);
   });
+
+  test('위성 무기 카테고리별 업그레이드(데미지, 속도, 범위) 레벨 상승, 크레딧 차감, 스펙 비율 상승 및 회귀(Rebirth) 시 리셋 검증', () => {
+    const store = useGameStore.getState();
+    
+    // 데이터베이스 초기화
+    store.resetDatabase();
+    
+    const s1 = useGameStore.getState();
+    expect(s1.satelliteLevels.laser).toEqual({ damage: 1, speed: 1, range: 1 });
+
+    // 1. 데미지 레벨 1 -> 2 업그레이드 (비용 300 Cr)
+    useGameStore.setState({ credits: 1000 });
+    const successUpg1 = store.upgradeSatellite('laser', 'damage');
+    expect(successUpg1).toBe(true);
+    
+    const s2 = useGameStore.getState();
+    expect(s2.satelliteLevels.laser.damage).toBe(2);
+    expect(s2.credits).toBe(700); // 1000 - 300
+
+    // 2. 데미지 레벨 2 -> 3 업그레이드 (비용 200 * 2 * 1.5 = 600 Cr)
+    const successUpg2 = store.upgradeSatellite('laser', 'damage');
+    expect(successUpg2).toBe(true);
+
+    const s3 = useGameStore.getState();
+    expect(s3.satelliteLevels.laser.damage).toBe(3);
+    expect(s3.credits).toBe(100); // 700 - 600
+
+    // 3. 공격속도 레벨 1 -> 2 업그레이드 (비용 300 Cr - 크레딧 부족)
+    const successUpgFail = store.upgradeSatellite('laser', 'speed');
+    expect(successUpgFail).toBe(false);
+    expect(useGameStore.getState().satelliteLevels.laser.speed).toBe(1);
+
+    // 4. 전투 틱에서 데미지 레벨 3 공격력 반영 검증 (기본 120 * 1.30 = 156)
+    // 지구 궤도에 타겟팅 레이저 위성 1개 설치
+    useGameStore.setState({ credits: 10000, maxEnergy: 1000 });
+    store.buildOrbitalSatelliteDetail('earth', 'laser');
+    
+    // 기존 적/투사체 초기화 및 테스트 적 스폰
+    useGameStore.setState({
+      enemies: [{
+        id: 'upgrade-test-enemy',
+        type: 'scout',
+        x: 100, // 지구 근처
+        y: 100,
+        hp: 200,
+        maxHp: 200,
+        speed: 10,
+        level: 1,
+        spec: { name: '정찰선', speed: 40, hp: 40, creditReward: 15, coreChance: 0.05 }
+      }],
+      projectiles: []
+    });
+
+    // 쿨타임 0 상태로 만들기 위해 타이머 강제 초기화
+    const earthPlanet = useGameStore.getState().planets.earth;
+    earthPlanet.satelliteTimers = { laser: 0 };
+    
+    // 틱 실행하여 레이저 발사
+    store.tick(0.001);
+
+    const shotState = useGameStore.getState();
+    expect(shotState.projectiles.length).toBe(1);
+    expect(shotState.projectiles[0].damage).toBe(156); // 120 * 1.3 = 156
+
+    // 5. 시간 회귀(triggerTimeLoop) 시 레벨 리셋 검증
+    store.triggerTimeLoop();
+    const rebirthState = useGameStore.getState();
+    expect(rebirthState.satelliteLevels.laser).toEqual({ damage: 1, speed: 1, range: 1 });
+  });
 });

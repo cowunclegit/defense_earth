@@ -261,12 +261,12 @@ export const getSatelliteCost = (type, currentCount) => {
 };
 
 export const SATELLITE_SPECS = {
-  laser: { name: '타겟팅 레이저 위성', cost: 200, energy: 5, isWeapon: true, dmg: 120, cd: 3.0 },
-  plasmaLaser: { name: '플라즈마 레이저 위성', cost: 180, energy: 8, isWeapon: true, dmg: 180, cd: 5.0 },
-  emp: { name: 'EMP 위성', cost: 150, energy: 7, isWeapon: true, dmg: 0, cd: 6.0 },
-  clusterMissile: { name: '클러스터 미사일 위성', cost: 250, energy: 10, isWeapon: true, dmg: 90, cd: 8.0 },
-  gravityBomb: { name: '중력 포탄 위성', cost: 160, energy: 9, isWeapon: true, dmg: 160, cd: 6.0 },
-  antimatter: { name: '반물질 포 위성', cost: 400, energy: 15, isWeapon: true, dmg: 400, cd: 15.0 },
+  laser: { name: '타겟팅 레이저 위성', cost: 200, energy: 5, isWeapon: true, dmg: 120, cd: 3.0, range: 400 },
+  plasmaLaser: { name: '플라즈마 레이저 위성', cost: 180, energy: 8, isWeapon: true, dmg: 180, cd: 5.0, range: 350 },
+  emp: { name: 'EMP 위성', cost: 150, energy: 7, isWeapon: true, dmg: 0, cd: 6.0, range: 300 },
+  clusterMissile: { name: '클러스터 미사일 위성', cost: 250, energy: 10, isWeapon: true, dmg: 90, cd: 8.0, range: 450 },
+  gravityBomb: { name: '중력 포탄 위성', cost: 160, energy: 9, isWeapon: true, dmg: 160, cd: 6.0, range: 280 },
+  antimatter: { name: '반물질 포 위성', cost: 400, energy: 15, isWeapon: true, dmg: 400, cd: 15.0, range: 500 },
   sensor: { name: '조기 경보 센서 위성', cost: 150, energy: 8, isWeapon: false },
   forceShield: { name: '포스 실드 위성', cost: 250, energy: 12, isWeapon: false },
   decoy: { name: '디코이 위성', cost: 100, energy: 5, isWeapon: false },
@@ -468,6 +468,15 @@ export const useGameStore = create((set, get) => ({
   closeAlert: (id) => set((state) => ({
     activeAlerts: state.activeAlerts.filter(a => a.id !== id)
   })),
+
+  satelliteLevels: {
+    laser: { damage: 1, speed: 1, range: 1 },
+    plasmaLaser: { damage: 1, speed: 1, range: 1 },
+    emp: { damage: 1, speed: 1, range: 1 },
+    clusterMissile: { damage: 1, speed: 1, range: 1 },
+    gravityBomb: { damage: 1, speed: 1, range: 1 },
+    antimatter: { damage: 1, speed: 1, range: 1 }
+  },
 
   earthHp: 100,
   earthMaxHp: 100,
@@ -716,6 +725,34 @@ export const useGameStore = create((set, get) => ({
 
   buildOrbitalSatellite: (planetId) => {
     return get().buildOrbitalSatelliteDetail(planetId, 'laser');
+  },
+
+  upgradeSatellite: (type, category) => {
+    const state = get();
+    const weaponLevels = state.satelliteLevels[type] || { damage: 1, speed: 1, range: 1 };
+    const currentLevel = weaponLevels[category] || 1;
+    const spec = SATELLITE_SPECS[type];
+    if (!spec) return false;
+
+    const cost = Math.floor(spec.cost * currentLevel * 1.5);
+    if (state.credits < cost) return false;
+
+    const categoryNames = { damage: '데미지', speed: '공격속도', range: '사거리' };
+    const categoryName = categoryNames[category] || category;
+
+    set({
+      credits: state.credits - cost,
+      satelliteLevels: {
+        ...state.satelliteLevels,
+        [type]: {
+          ...weaponLevels,
+          [category]: currentLevel + 1
+        }
+      }
+    });
+
+    state.addBattleLog(`${spec.name}의 ${categoryName}을 Lv.${currentLevel + 1}로 업그레이드했습니다.`);
+    return true;
   },
 
   buildOrbitalStationDetail: (planetId, type) => {
@@ -1129,7 +1166,15 @@ export const useGameStore = create((set, get) => ({
         [SHIP_TYPES.BARRIER_SHIP]: 0,
       },
       shipyardQueue: null,
-      battleLogs: []
+      battleLogs: [],
+      satelliteLevels: {
+        laser: { damage: 1, speed: 1, range: 1 },
+        plasmaLaser: { damage: 1, speed: 1, range: 1 },
+        emp: { damage: 1, speed: 1, range: 1 },
+        clusterMissile: { damage: 1, speed: 1, range: 1 },
+        gravityBomb: { damage: 1, speed: 1, range: 1 },
+        antimatter: { damage: 1, speed: 1, range: 1 }
+      }
     });
 
     get().addBattleLog('데이터베이스(세이브)가 초기화되었습니다.');
@@ -1199,6 +1244,14 @@ export const useGameStore = create((set, get) => ({
           selfRepair: false,
           tachionTargeting: false
         },
+        satelliteLevels: {
+          laser: { damage: 1, speed: 1, range: 1 },
+          plasmaLaser: { damage: 1, speed: 1, range: 1 },
+          emp: { damage: 1, speed: 1, range: 1 },
+          clusterMissile: { damage: 1, speed: 1, range: 1 },
+          gravityBomb: { damage: 1, speed: 1, range: 1 },
+          antimatter: { damage: 1, speed: 1, range: 1 }
+        },
         fleet: [],
         enemies: [],
         projectiles: [],
@@ -1231,7 +1284,8 @@ export const useGameStore = create((set, get) => ({
       autoTerraform: state.autoTerraform,
       autoBuildTowers: state.autoBuildTowers,
       shieldModule: state.shieldModule,
-      counterattackModules: state.counterattackModules
+      counterattackModules: state.counterattackModules,
+      satelliteLevels: state.satelliteLevels
     };
     try {
       await AsyncStorage.setItem('DEFENSE_EARTH_SAVE', JSON.stringify(saveObj));
@@ -1246,6 +1300,33 @@ export const useGameStore = create((set, get) => ({
       const dataStr = await AsyncStorage.getItem('DEFENSE_EARTH_SAVE');
       if (dataStr) {
         const loaded = JSON.parse(dataStr);
+        const defaultLevels = {
+          laser: { damage: 1, speed: 1, range: 1 },
+          plasmaLaser: { damage: 1, speed: 1, range: 1 },
+          emp: { damage: 1, speed: 1, range: 1 },
+          clusterMissile: { damage: 1, speed: 1, range: 1 },
+          gravityBomb: { damage: 1, speed: 1, range: 1 },
+          antimatter: { damage: 1, speed: 1, range: 1 }
+        };
+
+        if (loaded.satelliteLevels) {
+          Object.keys(defaultLevels).forEach(key => {
+            const val = loaded.satelliteLevels[key];
+            if (val) {
+              if (typeof val === 'number') {
+                defaultLevels[key] = { damage: val, speed: val, range: val };
+              } else if (typeof val === 'object') {
+                defaultLevels[key] = {
+                  damage: val.damage || 1,
+                  speed: val.speed || 1,
+                  range: val.range || 1
+                };
+              }
+            }
+          });
+        }
+        loaded.satelliteLevels = defaultLevels;
+
         const nextState = {
           ...loaded,
           synergies: calculateSynergies(loaded.planets, loaded.chronosUpgrades)
@@ -1434,30 +1515,47 @@ export const useGameStore = create((set, get) => ({
         const spec = SATELLITE_SPECS[type];
         if (!spec || !spec.isWeapon) return;
 
+        const weaponLevels = state.satelliteLevels[type] || { damage: 1, speed: 1, range: 1 };
+        const dmgLvl = weaponLevels.damage || 1;
+        const spdLvl = weaponLevels.speed || 1;
+        const rngLvl = weaponLevels.range || 1;
+
+        const scaledRange = (spec.range || 9999) * (1 + (rngLvl - 1) * 0.05);
+        const scaledDmg = Math.floor(spec.dmg * (1 + (dmgLvl - 1) * 0.15));
+        const scaledCd = spec.cd * Math.pow(0.95, spdLvl - 1);
+
         let timer = p.satelliteTimers[type] || 0;
         if (timer > 0) {
           p.satelliteTimers[type] = Math.max(0, timer - actualDelta);
         }
 
         if (p.satelliteTimers[type] <= 0 && updatedEnemies.length > 0) {
-          p.satelliteTimers[type] = spec.cd;
-
+          let anyFired = false;
           const matchingSats = earthSatellites.filter(sat => sat.type === type);
+          
           matchingSats.forEach((sat) => {
-            const target = updatedEnemies[Math.floor(Math.random() * updatedEnemies.length)];
-            if (target) {
-              const dmg = spec.dmg;
+            // 위성 위치 계산
+            const currentRotation = nextRotation % 360;
+            const baseAngle = (360 / earthSatellites.length) * sat.globalIndex;
+            const angleDeg = baseAngle + currentRotation;
+            const angleRad = (angleDeg * Math.PI) / 180;
+            const orbitRadius = 125;
+            const satX = EARTH_CENTER_X + orbitRadius * Math.cos(angleRad);
+            const satY = EARTH_CENTER_Y + orbitRadius * Math.sin(angleRad);
 
-              state.addBattleLog(`${PLANETARY_DATA[planetId].name} 위성 ${spec.name} 공격! (데미지 ${dmg})`);
+            // 사정거리 내 적 필터링
+            const enemiesInRange = updatedEnemies.filter(enemy => {
+              const dx = enemy.x - satX;
+              const dy = enemy.y - satY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              return dist <= scaledRange;
+            });
 
-              // 위성 위치 계산
-              const currentRotation = nextRotation % 360;
-              const baseAngle = (360 / earthSatellites.length) * sat.globalIndex;
-              const angleDeg = baseAngle + currentRotation;
-              const angleRad = (angleDeg * Math.PI) / 180;
-              const orbitRadius = 125;
-              const satX = EARTH_CENTER_X + orbitRadius * Math.cos(angleRad);
-              const satY = EARTH_CENTER_Y + orbitRadius * Math.sin(angleRad);
+            if (enemiesInRange.length > 0) {
+              const target = enemiesInRange[Math.floor(Math.random() * enemiesInRange.length)];
+              anyFired = true;
+
+              state.addBattleLog(`${PLANETARY_DATA[planetId].name} 위성 ${spec.name} 공격! (데미지 ${scaledDmg})`);
 
               const dx = target.x - satX;
               const dy = target.y - satY;
@@ -1479,7 +1577,7 @@ export const useGameStore = create((set, get) => ({
                   y: satY,
                   vx: vx,
                   vy: vy,
-                  damage: dmg,
+                  damage: scaledDmg,
                   isEnemy: false,
                   targetEnemyId: target.id,
                   emp: type === 'emp',
@@ -1488,6 +1586,10 @@ export const useGameStore = create((set, get) => ({
               });
             }
           });
+
+          if (anyFired) {
+            p.satelliteTimers[type] = scaledCd;
+          }
         }
       });
 
@@ -2186,7 +2288,7 @@ export const useGameStore = create((set, get) => ({
         }
       }
 
-      if (nextX < -180 || nextX > 720 || nextY < -180 || nextY > 720) {
+      if (nextX < -2000 || nextX > 2500 || nextY < -2000 || nextY > 2500) {
         projectilesToRemove.add(proj.id);
       }
 

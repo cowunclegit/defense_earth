@@ -61,7 +61,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
     changeShieldModule,
     toggleCounterattackModule,
     shieldModule,
-    counterattackModules
+    counterattackModules,
+    satelliteLevels,
+    upgradeSatellite
   } = useGameStore();
 
   React.useEffect(() => {
@@ -492,19 +494,34 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const spec = SATELLITE_SPECS[type];
                       if (!spec.isWeapon) return null; // Weapons only
                       const count = planetState.orbitalSatellitesList?.[type] || 0;
-                      let desc = spec.isWeapon ? `공격: ${spec.dmg} HP, 쿨다운: ${spec.cd}초` : '지원/보조 위성';
-                      if (type === 'emp') desc = '적 전자계 마비 (3초 스턴, 6초 쿨다운)';
-                      if (type === 'gravityBomb') desc = '공격력: 160 HP, 적 이동속도 -40% 디버프';
+                      const weaponLevels = satelliteLevels?.[type] || { damage: 1, speed: 1, range: 1 };
+                      const dmgLvl = weaponLevels.damage || 1;
+                      const spdLvl = weaponLevels.speed || 1;
+                      const rngLvl = weaponLevels.range || 1;
+
+                      const scaledDmg = Math.floor(spec.dmg * (1 + (dmgLvl - 1) * 0.15));
+                      const scaledCd = (spec.cd * Math.pow(0.95, spdLvl - 1)).toFixed(1);
+                      const scaledRange = Math.floor((spec.range || 9999) * (1 + (rngLvl - 1) * 0.05));
+
+                      let desc = spec.isWeapon ? `공격: ${scaledDmg} HP, 쿨다운: ${scaledCd}초, 사거리: ${scaledRange}` : '지원/보조 위성';
+                      if (type === 'emp') desc = `적 전자계 마비 (3초 스턴, ${scaledCd}초 쿨다운), 사거리: ${scaledRange}`;
+                      if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 적 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
                       
                       const isMax = attackSatCount >= MAX_SATELLITES_PER_CATEGORY;
+                      
+                      const dmgUpgradeCost = Math.floor(spec.cost * dmgLvl * 1.5);
+                      const spdUpgradeCost = Math.floor(spec.cost * spdLvl * 1.5);
+                      const rngUpgradeCost = Math.floor(spec.cost * rngLvl * 1.5);
 
                       return (
-                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00' }]}>
+                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 180 }]}>
                           <View style={styles.gridCardHeader}>
                             <Text style={styles.gridCardName}>{spec.name}</Text>
                             <Text style={[styles.gridCardCount, { color: '#ff8a00' }]}>{count}개</Text>
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
+                          
+                          {/* 건설 버튼 */}
                           {isMax ? (
                             <View style={styles.gridMaxBadge}>
                               <Text style={styles.gridMaxBadgeText}>최대</Text>
@@ -534,15 +551,65 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 }
                               }}
                             >
-                            <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                              건설 ({getSatelliteCost(type, planetState.orbitalSatellites || 0)} Cr)
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
+                              <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
+                                건설 ({getSatelliteCost(type, planetState.orbitalSatellites || 0)} Cr)
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+
+                          {/* 3가지 강화 세부 라인 */}
+                          <View style={{ marginTop: 6, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 6, gap: 4 }}>
+                            <Text style={{ fontSize: 9, color: '#ffffff', fontWeight: 'bold', marginBottom: 2 }}>능력치 강화</Text>
+                            
+                            {/* 데미지 강화 */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ fontSize: 8.5, color: '#8fa0c4' }}>데미지 Lv.{dmgLvl}</Text>
+                              <TouchableOpacity 
+                                style={{ backgroundColor: '#00f0ff', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 3 }}
+                                onPress={() => {
+                                  const success = upgradeSatellite(type, 'damage');
+                                  if (success) setTimeout(() => saveGame(), 100);
+                                  else Alert.alert('업그레이드 실패', '크레딧이 부족합니다.');
+                                }}
+                              >
+                                <Text style={{ fontSize: 8, color: '#050814', fontWeight: 'bold' }}>강화 ({dmgUpgradeCost} Cr)</Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            {/* 공격속도 강화 */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ fontSize: 8.5, color: '#8fa0c4' }}>공격속도 Lv.{spdLvl}</Text>
+                              <TouchableOpacity 
+                                style={{ backgroundColor: '#00f0ff', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 3 }}
+                                onPress={() => {
+                                  const success = upgradeSatellite(type, 'speed');
+                                  if (success) setTimeout(() => saveGame(), 100);
+                                  else Alert.alert('업그레이드 실패', '크레딧이 부족합니다.');
+                                }}
+                              >
+                                <Text style={{ fontSize: 8, color: '#050814', fontWeight: 'bold' }}>강화 ({spdUpgradeCost} Cr)</Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            {/* 사거리 강화 */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ fontSize: 8.5, color: '#8fa0c4' }}>사거리 Lv.{rngLvl}</Text>
+                              <TouchableOpacity 
+                                style={{ backgroundColor: '#00f0ff', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 3 }}
+                                onPress={() => {
+                                  const success = upgradeSatellite(type, 'range');
+                                  if (success) setTimeout(() => saveGame(), 100);
+                                  else Alert.alert('업그레이드 실패', '크레딧이 부족합니다.');
+                                }}
+                              >
+                                <Text style={{ fontSize: 8, color: '#050814', fontWeight: 'bold' }}>강화 ({rngUpgradeCost} Cr)</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>공격형 궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
                 <View style={styles.gridContainer}>
