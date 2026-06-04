@@ -431,4 +431,58 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(hitState.projectiles.length).toBe(0); // 투사체 소멸
     expect(hitState.enemies.length).toBe(0);     // hp가 깎여 0 이하가 되었으므로 적 소멸
   });
+
+  test('공격형 위성과 방어형 위성의 독립적 한도(각 20개) 및 글로벌 누진 가격 검증', () => {
+    const store = useGameStore.getState();
+    // 충분한 자원 세팅 (40개 건설 시 가격이 누진되어 천문학적으로 커지므로 충분히 큰 크레딧 부여)
+    useGameStore.setState({ credits: 999999999999, maxEnergy: 100000 });
+
+    // 1. 첫번째 위성 가격 검증 (기본 200, 누적 0개)
+    const initCredits = useGameStore.getState().credits;
+    const success1 = store.buildOrbitalSatelliteDetail('earth', 'laser');
+    expect(success1).toBe(true);
+    expect(useGameStore.getState().credits).toBe(initCredits - 200);
+
+    // 두번째 위성 가격 검증 (200 * 1.5 = 300, 누적 1개)
+    const success2 = store.buildOrbitalSatelliteDetail('earth', 'laser');
+    expect(success2).toBe(true);
+    expect(useGameStore.getState().credits).toBe(initCredits - 200 - 300);
+
+    // 세번째 위성은 다른 종류인 decoy(기본 100)를 만듦 (100 * 1.5^2 = 225, 누적 2개)
+    const preDecoyCredits = useGameStore.getState().credits;
+    const successDecoy = store.buildOrbitalSatelliteDetail('earth', 'decoy');
+    expect(successDecoy).toBe(true);
+    expect(useGameStore.getState().credits).toBe(preDecoyCredits - 225);
+
+    // 네번째 위성 (laser) 가격 검증 (200 * 1.5^3 = 675, 누적 3개)
+    const preLaser3Credits = useGameStore.getState().credits;
+    const successLaser3 = store.buildOrbitalSatelliteDetail('earth', 'laser');
+    expect(successLaser3).toBe(true);
+    expect(useGameStore.getState().credits).toBe(preLaser3Credits - 675);
+
+    // 이제 나머지 한도들을 채우고 한도가 올바르게 작동하는지 검증
+    // 현재 지구 위성 상태: laser 3개, decoy 1개 (총 4개)
+    // 공격형 위성: laser 3개 (최대 20개이므로 17개 더 지을 수 있음)
+    // 방어형 위성: decoy 1개 (최대 20개이므로 19개 더 지을 수 있음)
+
+    for (let i = 0; i < 17; i++) {
+      const success = store.buildOrbitalSatelliteDetail('earth', 'laser');
+      expect(success).toBe(true);
+    }
+    // 21번째 laser 위성 건설 실패 검증 (한도 20개 초과)
+    const successLaser21 = store.buildOrbitalSatelliteDetail('earth', 'laser');
+    expect(successLaser21).toBe(false);
+
+    for (let i = 0; i < 19; i++) {
+      const success = store.buildOrbitalSatelliteDetail('earth', 'decoy');
+      expect(success).toBe(true);
+    }
+    // 21번째 decoy 위성 건설 실패 검증 (한도 20개 초과)
+    const successDecoy21 = store.buildOrbitalSatelliteDetail('earth', 'decoy');
+    expect(successDecoy21).toBe(false);
+
+    // 총 위성 개수가 40개(공격 20개 + 방어 20개)인지 검증
+    const state = useGameStore.getState();
+    expect(state.planets.earth.orbitalSatellites).toBe(40);
+  });
 });

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Alert } from 'react-native';
 import { PLANETS, PLANETARY_DATA } from '../constants/planetaryData';
 
 let AsyncStorage;
@@ -251,6 +252,14 @@ export const GROUND_BASE_SPECS = {
   armor: { name: '강화 장갑 플레이팅', cost: 100, energy: 0, isWeapon: false, maxCount: 8 }
 };
 
+export const MAX_SATELLITES_PER_CATEGORY = 20;
+
+export const getSatelliteCost = (type, currentCount) => {
+  const spec = SATELLITE_SPECS[type];
+  if (!spec) return 0;
+  return Math.floor(spec.cost * Math.pow(1.5, currentCount));
+};
+
 export const SATELLITE_SPECS = {
   laser: { name: '타겟팅 레이저 위성', cost: 200, energy: 5, isWeapon: true, dmg: 120, cd: 3.0 },
   plasmaLaser: { name: '플라즈마 레이저 위성', cost: 180, energy: 8, isWeapon: true, dmg: 180, cd: 5.0 },
@@ -446,6 +455,19 @@ export const useGameStore = create((set, get) => ({
   nanocores: 0,
   timeParticles: 0,
   cheatEnergyBonus: 0,
+
+  activeAlerts: [],
+  showAlert: (title, message, buttons) => set((state) => {
+    const newAlert = { id: Math.random().toString(), title, message, buttons };
+    let updated = [...state.activeAlerts, newAlert];
+    if (updated.length > 4) {
+      updated.shift();
+    }
+    return { activeAlerts: updated };
+  }),
+  closeAlert: (id) => set((state) => ({
+    activeAlerts: state.activeAlerts.filter(a => a.id !== id)
+  })),
 
   earthHp: 100,
   earthMaxHp: 100,
@@ -643,18 +665,28 @@ export const useGameStore = create((set, get) => ({
     const planet = state.planets[planetId];
     if (!planet || !planet.unlocked) return false;
 
-    const currentTotal = planet.orbitalSatellites || 0;
-    if (currentTotal >= 5) return false;
-
     const spec = SATELLITE_SPECS[type];
     if (!spec) return false;
 
-    const cost = spec.cost;
+    // 공격위성과 방어위성 각각 고유의 한도(MAX_SATELLITES_PER_CATEGORY개)를 가짐
+    const category = spec.isWeapon ? 'attack' : 'defense';
+    const currentCategoryCount = Object.keys(planet.orbitalSatellitesList || {}).reduce((sum, t) => {
+      const s = SATELLITE_SPECS[t];
+      if (s && ((category === 'attack' && s.isWeapon) || (category === 'defense' && !s.isWeapon))) {
+        return sum + (planet.orbitalSatellitesList[t] || 0);
+      }
+      return sum;
+    }, 0);
+
+    if (currentCategoryCount >= MAX_SATELLITES_PER_CATEGORY) return false;
+
+    const currentCount = planet.orbitalSatellitesList[type] || 0;
+    const cost = getSatelliteCost(type, planet.orbitalSatellites || 0);
     const energyCost = spec.energy;
 
     if (state.credits < cost || state.getAvailableEnergy() < energyCost) return false;
 
-    const currentCount = planet.orbitalSatellitesList[type] || 0;
+    const currentTotal = planet.orbitalSatellites || 0;
     const updatedPlanets = {
       ...state.planets,
       [planetId]: {
@@ -1720,15 +1752,24 @@ export const useGameStore = create((set, get) => ({
     }
 
     // 5-2. 자동 위성 건설 옵션
-    const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
-    if (state.autoBuildTowers && earthSats < 5) {
+    const earthAttackSats = Object.keys(updatedPlanets[PLANETS.EARTH]?.orbitalSatellitesList || {}).reduce((sum, t) => {
+      const s = SATELLITE_SPECS[t];
+      if (s && s.isWeapon) {
+        return sum + (updatedPlanets[PLANETS.EARTH].orbitalSatellitesList[t] || 0);
+      }
+      return sum;
+    }, 0);
+    if (state.autoBuildTowers && earthAttackSats < MAX_SATELLITES_PER_CATEGORY) {
       const spec = SATELLITE_SPECS.laser;
+      const currentCount = updatedPlanets[PLANETS.EARTH].orbitalSatellitesList?.laser || 0;
+      const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
+      const cost = getSatelliteCost('laser', earthSats);
       const availableEnergy = (calculatedMaxEnergy + state.cheatEnergyBonus) - targetUsedEnergy;
-      if (updatedCredits >= spec.cost && availableEnergy >= spec.energy) {
-        updatedCredits -= spec.cost;
+      if (updatedCredits >= cost && availableEnergy >= spec.energy) {
+        updatedCredits -= cost;
         targetUsedEnergy += spec.energy;
         
-        const currentCount = updatedPlanets[PLANETS.EARTH].orbitalSatellitesList?.laser || 0;
+        const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
         updatedPlanets[PLANETS.EARTH].orbitalSatellites = earthSats + 1;
         if (!updatedPlanets[PLANETS.EARTH].orbitalSatellitesList) {
           updatedPlanets[PLANETS.EARTH].orbitalSatellitesList = {};
@@ -2200,3 +2241,8 @@ export const useGameStore = create((set, get) => ({
     });
   }
 }));
+
+// Route React Native's Alert.alert to our custom alert store state
+Alert.alert = (title, message, buttons) => {
+  useGameStore.getState().showAlert(title, message, buttons);
+};

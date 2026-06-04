@@ -8,6 +8,7 @@ import { useGameStore } from './src/store/gameStore';
 import SolarSystemScreen from './src/screens/SolarSystemScreen';
 import PlanetDetailScreen from './src/screens/PlanetDetailScreen';
 import ChronosLabScreen from './src/screens/ChronosLabScreen';
+import CustomAlert from './src/components/CustomAlert';
 
 const Tab = createBottomTabNavigator();
 
@@ -40,48 +41,51 @@ export default function App() {
   }, [tick]);
 
   return (
-    <NavigationContainer>
-      <StatusBar style="light" />
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: '#00f0ff',
-          tabBarInactiveTintColor: '#8fa0c4',
-          tabBarStyle: {
-            backgroundColor: '#0c1328',
-            borderTopWidth: 1.5,
-            borderTopColor: '#1e305e',
-            height: 52,
-            paddingBottom: 4,
-          },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: 'bold',
-          }
-        }}
-      >
-        <Tab.Screen 
-          name="SolarSystem" 
-          component={SolarSystemScreen} 
-          options={{
-            title: '성계도',
+    <View style={{ flex: 1 }}>
+      <NavigationContainer>
+        <StatusBar style="light" />
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: '#00f0ff',
+            tabBarInactiveTintColor: '#8fa0c4',
+            tabBarStyle: {
+              backgroundColor: '#0c1328',
+              borderTopWidth: 1.5,
+              borderTopColor: '#1e305e',
+              height: 52,
+              paddingBottom: 4,
+            },
+            tabBarLabelStyle: {
+              fontSize: 10,
+              fontWeight: 'bold',
+            }
           }}
-        />
-        <Tab.Screen 
-          name="PlanetDetail" 
-          component={PlanetDetailScreen} 
-          options={{
-            title: '행성 관리',
-          }}
-        />
-        <Tab.Screen 
-          name="ChronosLab" 
-          component={ChronosLabScreen} 
-          options={{
-            title: '시간 연구소',
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+        >
+          <Tab.Screen 
+            name="SolarSystem" 
+            component={SolarSystemScreen} 
+            options={{
+              title: '성계도',
+            }}
+          />
+          <Tab.Screen 
+            name="PlanetDetail" 
+            component={PlanetDetailScreen} 
+            options={{
+              title: '행성 관리',
+            }}
+          />
+          <Tab.Screen 
+            name="ChronosLab" 
+            component={ChronosLabScreen} 
+            options={{
+              title: '시간 연구소',
+            }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+      <CustomAlert />
+    </View>
   );
 }

@@ -265,14 +265,12 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
     await expect(page.locator('text=100%').filter({ visible: true }).first()).toBeVisible();
 
-    // Register dialog handler to auto-accept the rebirth alert
-    page.once('dialog', async dialog => {
-      console.log('Dialog accepted:', dialog.message());
-      await dialog.accept();
-    });
-
     // Click rebirth button
     await page.locator('text=시간 루프 가동 (자발적 회귀)').filter({ visible: true }).first().click();
+    await page.waitForTimeout(200);
+
+    // Click the confirm button in the custom Alert UI
+    await page.locator('text=시간 회귀 실행').filter({ visible: true }).first().click();
 
     // 3. Verify game reset: credits back to 1,000 and WAVE back to 1
     const creditsVal = await getHUDCredit(page);
@@ -307,11 +305,11 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await expect(page.locator('text=🔒 PASS 전용').filter({ visible: true }).first()).toBeVisible();
 
     // 2. Buy Premium Pass via "☆ BUY PASS" button on HUD
-    page.once('dialog', async dialog => {
-      expect(dialog.message()).toContain('구매');
-      await dialog.accept();
-    });
     await page.locator('text=☆ BUY PASS').filter({ visible: true }).first().click();
+    await page.waitForTimeout(200);
+
+    // Click '모의 구매' in custom Alert UI
+    await page.locator('text=모의 구매').filter({ visible: true }).first().click();
 
     // Verify button changes to "★ PREMIUM"
     await expect(page.locator('text=★ PREMIUM').filter({ visible: true }).first()).toBeVisible();
@@ -621,14 +619,12 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     const creditVal = await getHUDCredit(page);
     expect(creditVal).toBeGreaterThanOrEqual(11000);
 
-    // 2. Set up alert listener for dialog acceptance
-    page.once('dialog', async dialog => {
-      expect(dialog.message()).toContain('초기화');
-      await dialog.accept();
-    });
-
     // 3. Click the DB reset button
     await page.locator('text=DB 초기화 (전체 초기화)').filter({ visible: true }).first().click();
+    await page.waitForTimeout(200);
+
+    // Click '초기화' in custom Alert UI (using exact match to avoid background button)
+    await page.locator('text="초기화"').filter({ visible: true }).first().click();
     await page.waitForTimeout(500);
 
     // 4. Verify credits are reset to default in HUD
