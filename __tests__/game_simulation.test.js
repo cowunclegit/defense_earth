@@ -370,4 +370,65 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(state.currentWave).toBe(1);
     expect(state.credits).toBe(1000);
   });
+
+  test('위성 포탄 발사 후 공중 비행 및 실제 충돌/피해 검증', () => {
+    const store = useGameStore.getState();
+
+    // 1. 지구에 타겟팅 레이저 위성을 1개 설치
+    useGameStore.setState({ credits: 2000, maxEnergy: 500 });
+    const successLaser = store.buildOrbitalSatelliteDetail('earth', 'laser');
+    expect(successLaser).toBe(true);
+
+    // 2. 적 스폰 (x: 450, y: 450)
+    const testEnemy = {
+      id: 'test-enemy-1',
+      level: 1,
+      type: 'scout',
+      x: 450,
+      y: 450,
+      hp: 100,
+      maxHp: 100,
+      speed: 0,
+      attackTimer: 0,
+      spec: { name: '정찰선', maxHp: 100, damage: 10, creditReward: 10, coreChance: 0, speed: 0, cooldown: 5, attackType: 'kinetic' }
+    };
+    useGameStore.setState({ enemies: [testEnemy], projectiles: [], enemySpawnTimer: 0, enemiesRemainingToSpawn: 0 });
+
+    // 위성 쿨타임 초기화
+    const earth = useGameStore.getState().planets.earth;
+    earth.satelliteTimers.laser = 0;
+
+    // 3. 틱을 0.001초 실행하여 공격 유도 (위성은 쿨타임이 0이므로 즉시 공격하여 투사체 생성)
+    store.tick(0.001);
+
+    const postLaunchState = useGameStore.getState();
+    expect(postLaunchState.projectiles.length).toBe(1);
+
+    const proj = postLaunchState.projectiles[0];
+    expect(proj.targetEnemyId).toBe('test-enemy-1');
+
+    // 4. 다음 몇 프레임 틱 진행 시 투사체가 즉시 사라지지 않고 공중을 날아다녀야 함
+    // 0.01초 틱 진행
+    store.tick(0.01);
+    
+    let midFlightState = useGameStore.getState();
+    expect(midFlightState.projectiles.length).toBe(1); // 아직 충돌할 거리가 아니므로 투사체가 살아있어야 함
+    expect(midFlightState.enemies[0].hp).toBe(100);    // 적 체력은 100 유지
+
+    // 5. 소량의 틱(0.05초)을 반복하여 투사체가 날아가 충돌할 때까지 진행
+    let collided = false;
+    for (let i = 0; i < 20; i++) {
+      store.tick(0.05);
+      const state = useGameStore.getState();
+      if (state.projectiles.length === 0) {
+        collided = true;
+        break;
+      }
+    }
+    expect(collided).toBe(true);
+
+    const hitState = useGameStore.getState();
+    expect(hitState.projectiles.length).toBe(0); // 투사체 소멸
+    expect(hitState.enemies.length).toBe(0);     // hp가 깎여 0 이하가 되었으므로 적 소멸
+  });
 });

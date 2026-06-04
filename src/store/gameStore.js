@@ -2073,7 +2073,15 @@ export const useGameStore = create((set, get) => ({
       } else {
         let hitEnemy = null;
         if (proj.targetEnemyId) {
-          hitEnemy = updatedEnemies.find(e => e.id === proj.targetEnemyId);
+          const target = updatedEnemies.find(e => e.id === proj.targetEnemyId);
+          if (target) {
+            const eDx = target.x - nextX;
+            const eDy = target.y - nextY;
+            const checkRadius = target.type.startsWith('boss') ? 35 : 18;
+            if (Math.sqrt(eDx * eDx + eDy * eDy) < checkRadius) {
+              hitEnemy = target;
+            }
+          }
         }
         if (!hitEnemy) {
           hitEnemy = updatedEnemies.find(e => {
