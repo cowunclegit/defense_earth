@@ -2,6 +2,14 @@
 
 지구와 태양계를 위협하는 외계 침공에 맞서 싸우며, 인프라를 구축하고 타임 루프(환생)를 통해 한계를 극복해 나가는 SF 방어/경영 시뮬레이션 게임입니다.
 
+> [!IMPORTANT]
+> **개발 준수 사항 및 상세 스펙 문서 링크**
+> - **개발 규칙 및 가이드라인**: [development_rules.md](file:///Users/cowuncle/dev/defense_earth/development_rules.md)
+> - **방어 시스템 및 아군 함대 상세 스펙**: [spec_satellites.md](file:///Users/cowuncle/dev/defense_earth/spec_satellites.md)
+> - **외계 침공군 및 웨이브 스케일링 상세 스펙**: [spec_enemies.md](file:///Users/cowuncle/dev/defense_earth/spec_enemies.md)
+> 
+> *본 프로젝트의 모든 구현 및 검증은 위 기획서 및 스펙 문서를 바탕으로 진행되어야 합니다.*
+
 ---
 
 ## 1. 게임 개요 (Game Overview)
@@ -157,6 +165,10 @@ graph TD
 ---
 
 ### 3.3. 다층 방어 체계 및 시스템 (Multi-layered Defense System)
+
+> [!TIP]
+> 아군 방어 위성, 기지, 쉽야드 함선, 실드 장치들의 구체적인 수치 데이터와 계산식은 [spec_satellites.md](file:///Users/cowuncle/dev/defense_earth/spec_satellites.md)에서 자세히 다룹니다.
+
 행성 방어망은 지상 기지를 전면 배제하고, 오직 **궤도 방어 위성**, **궤도 방어 기지**, **궤도 쉽야드 및 방어부대**, 그리고 **행성 실드 발생기**의 4중 구조로 궤도 중심의 방어체계를 구축하여 입체감을 높입니다.
 
 #### 1) 지상 방어 기지 (Ground Defense Bases) [폐지]
@@ -523,6 +535,9 @@ $$\text{획득 TP} = \left( \frac{\text{최종 돌파 웨이브 수} \times 10 +
 ---
 
 ### 4.4. 웨이브 진행 및 스케일링 규칙 (Wave Progression & Difficulty Scaling)
+
+> [!TIP]
+> 적 함선의 종류별 기본 스펙 및 난이도 수준/스폰 간격 스케일링 수식은 [spec_enemies.md](file:///Users/cowuncle/dev/defense_earth/spec_enemies.md)에서 상세히 명시하고 있습니다.
 
 웨이브가 증가함에 따라 외계 군세의 종류, 스폰 속도, 총 침공 수량이 단계적으로 강화됩니다. 난이도의 상승은 개별 스펙의 직접적인 수치 상승보다는 물량의 증가와 고급 함선의 순차적인 등장으로 구현됩니다.
 
