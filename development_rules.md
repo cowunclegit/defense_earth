@@ -38,6 +38,6 @@ graph TD
    * 위성과 쉴드의 강화 수치, 적 HP/데미지 배율 공식은 [spec_satellites.md](file:///Users/cowuncle/dev/defense_earth/spec_satellites.md) 및 [spec_enemies.md](file:///Users/cowuncle/dev/defense_earth/spec_enemies.md)에 기술된 수학적 공식을 그대로 코드로 투영해야 합니다.
 2. **자동 플레이테스트 및 기능 검증 하네스 준수**:
    * 새로운 기능(예: 위성 종류 추가, 새로운 적 기믹 추가) 개발 시, `__tests__/` 아래의 Jest 시뮬레이션 테스트를 반드시 함께 업데이트해야 합니다.
-   * `npm run test` 및 `node run-harness.js`가 에러 없이 성공하는 상태를 상시 유지해야 합니다.
+   * `npm run test` 및 `npm run e2e`가 에러 없이 성공하는 상태를 상시 유지해야 합니다.
 3. **환경 페널티 및 과학 연구 기믹 구현**:
    * 행성별 고유 환경 페널티(예: 금성의 부식, 수성의 방사능으로 인한 비용 상승)와 연구 트리를 통한 페널티 무력화 코드는 기획 문서에 지정된 패널티 배율 및 시너지 수치와 정확하게 일치해야 합니다.

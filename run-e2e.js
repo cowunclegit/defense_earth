@@ -72,14 +72,14 @@ async function main() {
     serverProcess = await startServer();
     const success = await runTests();
     if (success) {
-      console.log('Harness check PASSED.');
+      console.log('E2E check PASSED.');
       process.exit(0);
     } else {
-      console.error('Harness check FAILED.');
+      console.error('E2E check FAILED.');
       process.exit(1);
     }
   } catch (error) {
-    console.error('Error running harness:', error);
+    console.error('Error running E2E tests:', error);
     process.exit(1);
   }
 }

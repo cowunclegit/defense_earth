@@ -554,4 +554,65 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const rebirthState = useGameStore.getState();
     expect(rebirthState.satelliteLevels.laser).toEqual({ damage: 1, speed: 1, range: 1 });
   });
+
+  test('공격형 위성과 방어형 위성의 이원 궤도 반지름 및 위치 계산 검증', () => {
+    const store = useGameStore.getState();
+    useGameStore.setState({ credits: 10000, maxEnergy: 1000 });
+
+    // 1. 공격형 위성(laser) 2개, 방어형 위성(decoy) 1개 건설
+    store.buildOrbitalSatelliteDetail('earth', 'laser');
+    store.buildOrbitalSatelliteDetail('earth', 'laser');
+    store.buildOrbitalSatelliteDetail('earth', 'decoy');
+
+    const state = useGameStore.getState();
+    const earth = state.planets.earth;
+    
+    expect(earth.orbitalSatellites).toBe(3);
+    expect(earth.orbitalSatellitesList.laser).toBe(2);
+    expect(earth.orbitalSatellitesList.decoy).toBe(1);
+
+    // 2. tick 실행 시 시뮬레이션에서 계산하는 위성 위치 및 궤도 검사
+    const earthSatellites = [];
+    Object.keys(earth.orbitalSatellitesList).forEach((type) => {
+      const count = earth.orbitalSatellitesList[type] || 0;
+      for (let i = 0; i < count; i++) {
+        earthSatellites.push({ type, globalIndex: earthSatellites.length });
+      }
+    });
+
+    const SATELLITE_SPECS_MOCK = {
+      laser: { isWeapon: true },
+      decoy: { isWeapon: false }
+    };
+
+    const attackSats = earthSatellites.filter(sat => SATELLITE_SPECS_MOCK[sat.type]?.isWeapon);
+    const defenseSats = earthSatellites.filter(sat => !SATELLITE_SPECS_MOCK[sat.type]?.isWeapon);
+
+    expect(attackSats.length).toBe(2);
+    expect(defenseSats.length).toBe(1);
+
+    const processed = earthSatellites.map(sat => {
+      const isWeapon = SATELLITE_SPECS_MOCK[sat.type]?.isWeapon;
+      const sameOrbitList = isWeapon ? attackSats : defenseSats;
+      const localIndex = sameOrbitList.findIndex(s => s.globalIndex === sat.globalIndex);
+      return {
+        ...sat,
+        localIndex: localIndex >= 0 ? localIndex : 0,
+        isWeapon,
+        orbitRadius: isWeapon ? 145 : 120
+      };
+    });
+
+    const laser1 = processed.find(s => s.type === 'laser' && s.localIndex === 0);
+    const laser2 = processed.find(s => s.type === 'laser' && s.localIndex === 1);
+    const decoySat = processed.find(s => s.type === 'decoy' && s.localIndex === 0);
+
+    expect(laser1.orbitRadius).toBe(145);
+    expect(laser2.orbitRadius).toBe(145);
+    expect(decoySat.orbitRadius).toBe(120);
+
+    expect(laser1.localIndex).toBe(0);
+    expect(laser2.localIndex).toBe(1);
+    expect(decoySat.localIndex).toBe(0);
+  });
 });

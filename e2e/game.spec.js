@@ -633,4 +633,37 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     expect(resetCredits).toBeLessThanOrEqual(1020);
   });
 
+  test('Satellite double orbit lines render validation in Web SVG Canvas', async ({ page }) => {
+    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
+
+    // 1. Check if the dual orbit lines are present in the DOM (Web SVG components)
+    // Inner orbit: r="120"
+    const innerOrbit = page.locator('circle[r="120"]').first();
+    await expect(innerOrbit).toBeVisible();
+
+    // Outer orbit: r="145"
+    const outerOrbit = page.locator('circle[r="145"]').first();
+    await expect(outerOrbit).toBeVisible();
+
+    // 2. Inject resources and build 1 Weapon satellite (laser) and 1 Defense satellite (decoy)
+    await page.locator('text=+10,000 Cr').filter({ visible: true }).first().click();
+    await page.locator('text=+10,000 W').filter({ visible: true }).first().click();
+
+    // Build 1 laser (Weapon) via UI (laser is the first "건설" button in the Earth management tab)
+    await page.locator('text=건설').filter({ visible: true }).first().click();
+    
+    // Inject 1 decoy (Defense) via store to bypass tab switching delays
+    await page.evaluate(() => {
+      const store = window.useGameStore.getState();
+      store.buildOrbitalSatelliteDetail('earth', 'decoy');
+    });
+
+    // 3. Verify that both satellites are rendered
+    const satellites = page.locator('svg circle[r="120"] ~ g, svg circle[r="145"] ~ g');
+    // There should be exactly 2 satellites rendered
+    const satCount = await satellites.count();
+    expect(satCount).toBe(2);
+  });
+
 });

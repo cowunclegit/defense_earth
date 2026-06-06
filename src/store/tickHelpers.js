@@ -98,15 +98,23 @@ export const simulatePlanetaryDefenses = (
     }
 
     // 궤도 위성 공격
-    const earthSatellites = [];
+    const attackSatellites = [];
+    const defenseSatellites = [];
     if (p.orbitalSatellitesList) {
       Object.keys(p.orbitalSatellitesList).forEach((t) => {
         const c = p.orbitalSatellitesList[t] || 0;
+        const spec = SATELLITE_SPECS[t];
+        const isWeapon = spec ? spec.isWeapon : false;
         for (let i = 0; i < c; i++) {
-          earthSatellites.push({ type: t, globalIndex: earthSatellites.length });
+          if (isWeapon) {
+            attackSatellites.push({ type: t, globalIndex: attackSatellites.length, isWeapon: true });
+          } else {
+            defenseSatellites.push({ type: t, globalIndex: defenseSatellites.length, isWeapon: false });
+          }
         }
       });
     }
+    const earthSatellites = [...attackSatellites, ...defenseSatellites];
 
     Object.keys(p.orbitalSatellitesList).forEach((type) => {
       const count = p.orbitalSatellitesList[type] || 0;
@@ -135,10 +143,13 @@ export const simulatePlanetaryDefenses = (
         
         matchingSats.forEach((sat) => {
           const currentRotation = nextRotation % 360;
-          const baseAngle = (360 / earthSatellites.length) * sat.globalIndex;
+          const isWeapon = spec ? spec.isWeapon : false;
+          const orbitRadius = isWeapon ? 145 : 120;
+          const satListForAngle = isWeapon ? attackSatellites : defenseSatellites;
+
+          const baseAngle = (360 / Math.max(1, satListForAngle.length)) * sat.globalIndex;
           const angleDeg = baseAngle + currentRotation;
           const angleRad = (angleDeg * Math.PI) / 180;
-          const orbitRadius = 125;
           const satX = EARTH_CENTER_X + orbitRadius * Math.cos(angleRad);
           const satY = EARTH_CENTER_Y + orbitRadius * Math.sin(angleRad);
 
