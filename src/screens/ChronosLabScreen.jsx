@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useGameStore } from '../store/gameStore';
 import TopHud from '../components/TopHud';
 
-export default function ChronosLabScreen() {
+export default function ChronosLabScreen({ navigation }) {
   const { 
     timeParticles, 
     chronosUpgrades, 
@@ -149,6 +149,12 @@ export default function ChronosLabScreen() {
           
           {/* 헤더 정보 */}
           <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('PlanetDetail')} 
+              style={styles.backBtn}
+            >
+              <Text style={styles.backBtnText}>← 전투 화면 복귀</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>크로노스 시간 연구소</Text>
             <Text style={styles.subtitle}>시공의 입자(TP)를 활용한 지구 방어선 영구 업그레이드</Text>
           </View>
@@ -467,5 +473,20 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     marginTop: 1,
     fontWeight: 'bold',
-  }
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(191, 92, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: '#bf5cff',
+    marginBottom: 15,
+  },
+  backBtnText: {
+    color: '#bf5cff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });

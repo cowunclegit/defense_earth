@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,7 +10,7 @@ import PlanetDetailScreen from './src/screens/PlanetDetailScreen';
 import ChronosLabScreen from './src/screens/ChronosLabScreen';
 import CustomAlert from './src/components/CustomAlert';
 
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   const tick = useGameStore((state) => state.tick);
@@ -44,46 +44,25 @@ export default function App() {
     <View style={{ flex: 1 }}>
       <NavigationContainer>
         <StatusBar style="light" />
-        <Tab.Navigator
+        <Stack.Navigator
+          initialRouteName="PlanetDetail"
           screenOptions={{
             headerShown: false,
-            tabBarActiveTintColor: '#00f0ff',
-            tabBarInactiveTintColor: '#8fa0c4',
-            tabBarStyle: {
-              backgroundColor: '#0c1328',
-              borderTopWidth: 1.5,
-              borderTopColor: '#1e305e',
-              height: 52,
-              paddingBottom: 4,
-            },
-            tabBarLabelStyle: {
-              fontSize: 10,
-              fontWeight: 'bold',
-            }
           }}
         >
-          <Tab.Screen 
-            name="SolarSystem" 
-            component={SolarSystemScreen} 
-            options={{
-              title: '성계도',
-            }}
-          />
-          <Tab.Screen 
+          <Stack.Screen 
             name="PlanetDetail" 
             component={PlanetDetailScreen} 
-            options={{
-              title: '행성 관리',
-            }}
           />
-          <Tab.Screen 
+          <Stack.Screen 
+            name="SolarSystem" 
+            component={SolarSystemScreen} 
+          />
+          <Stack.Screen 
             name="ChronosLab" 
             component={ChronosLabScreen} 
-            options={{
-              title: '시간 연구소',
-            }}
           />
-        </Tab.Navigator>
+        </Stack.Navigator>
       </NavigationContainer>
       <CustomAlert />
     </View>

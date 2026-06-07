@@ -210,15 +210,57 @@ export default function PlanetDetailScreen({ route, navigation }) {
           <GameCanvas />
           <TopHud overlay={true} />
           
-          {/* 오버레이: 좌상단 행성 이름 및 이동 버튼 */}
+          {/* 오버레이: 좌상단 행성 이름 */}
           <View style={[styles.topLeftOverlay, { top: 130 }]}>
-            <TouchableOpacity onPress={() => navigation.navigate('SolarSystem')} style={styles.backButton}>
-              <Text style={styles.backButtonText}>← 성계도</Text>
-            </TouchableOpacity>
             <Text style={styles.titleText}>{planetData.name}</Text>
             <Text style={styles.synergyText}>
               시너지: {planetState.terraformProgress >= 80 ? '활성' : '대기'}
             </Text>
+          </View>
+
+          {/* 오버레이: 우상단 네온 숏컷 제어 바 (성계도, 시간 연구소, 저장, 로드 바로 가기) */}
+          <View style={styles.neonShortcutBar}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('SolarSystem')} 
+              style={[styles.shortcutBtn, { borderColor: '#00f0ff' }]}
+              accessibilityLabel="nav-solarsystem"
+            >
+              <Text style={styles.shortcutBtnIcon}>🗺️</Text>
+              <Text style={[styles.shortcutBtnText, { color: '#00f0ff' }]}>성계도</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('ChronosLab')} 
+              style={[styles.shortcutBtn, { borderColor: '#bf5cff' }]}
+              accessibilityLabel="nav-chronoslab"
+            >
+              <Text style={styles.shortcutBtnIcon}>🔬</Text>
+              <Text style={[styles.shortcutBtnText, { color: '#bf5cff' }]}>시간 연구소</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => {
+                saveGame();
+                Alert.alert('저장 완료', '게임 진행도가 안전하게 저장되었습니다.');
+              }} 
+              style={[styles.shortcutBtn, { borderColor: '#00ff8a' }]}
+              accessibilityLabel="nav-save"
+            >
+              <Text style={styles.shortcutBtnIcon}>💾</Text>
+              <Text style={[styles.shortcutBtnText, { color: '#00ff8a' }]}>저장</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => {
+                loadGame();
+                Alert.alert('불러오기 완료', '가장 최근 저장된 세이브 데이터를 불러왔습니다.');
+              }} 
+              style={[styles.shortcutBtn, { borderColor: '#ffd700' }]}
+              accessibilityLabel="nav-load"
+            >
+              <Text style={styles.shortcutBtnIcon}>📂</Text>
+              <Text style={[styles.shortcutBtnText, { color: '#ffd700' }]}>로드</Text>
+            </TouchableOpacity>
           </View>
 
           {/* 오버레이: 하단 상태 아이콘 바 (항상 표시, 클릭 시 상세 팝업) */}
@@ -900,6 +942,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
           </View>
         </View>
       </View>
+
+
     </View>
   );
 }
@@ -1649,4 +1693,37 @@ const styles = StyleSheet.create({
   overlayToggleOn: {},
   overlayToggleOff: {},
   overlayToggleText: {},
+  /* ── 네온 숏컷 제어 바 스타일 ── */
+  neonShortcutBar: {
+    position: 'absolute',
+    top: 130,
+    right: 15,
+    zIndex: 100,
+    flexDirection: 'column',
+    gap: 8,
+  },
+  shortcutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1.2,
+    borderColor: '#00f0ff',
+    backgroundColor: 'rgba(5, 8, 20, 0.75)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 3,
+    minWidth: 80,
+    justifyContent: 'center',
+  },
+  shortcutBtnIcon: {
+    fontSize: 10,
+    marginRight: 4,
+  },
+  shortcutBtnText: {
+    fontSize: 9.5,
+    fontWeight: 'bold',
+  },
 });

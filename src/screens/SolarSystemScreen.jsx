@@ -21,6 +21,12 @@ export default function SolarSystemScreen({ navigation }) {
       <TopHud />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('PlanetDetail')} 
+            style={styles.backBtn}
+          >
+            <Text style={styles.backBtnText}>← 전투 화면 복귀</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>태양계 관제 센터</Text>
           <Text style={styles.subtitle}>태양계 방어선 구축 및 테라포밍 상태</Text>
         </View>
@@ -173,5 +179,20 @@ const styles = StyleSheet.create({
     color: '#00f0ff',
     fontSize: 9,
     fontWeight: 'bold',
-  }
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 240, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: '#00f0ff',
+    marginBottom: 15,
+  },
+  backBtnText: {
+    color: '#00f0ff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });

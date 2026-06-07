@@ -29,12 +29,11 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 
-    // Wait for the app to load (checking for main title "태양계 관제 센터")
-    await expect(page.locator('text=태양계 관제 센터').filter({ visible: true }).first()).toBeVisible({ timeout: 15000 });
-
-    // Pause the game loop immediately to freeze time and make assertions deterministic
+    // Wait for the app to load (checking for the PAUSE button)
     const pauseBtn = page.locator('text=PAUSE').filter({ visible: true }).first();
-    await expect(pauseBtn).toBeVisible({ timeout: 10000 });
+    await expect(pauseBtn).toBeVisible({ timeout: 15000 });
+    
+    // Pause the game loop immediately to freeze time and make assertions deterministic
     await pauseBtn.click();
     await expect(page.locator('text=RESUME').filter({ visible: true }).first()).toBeVisible();
 
@@ -57,8 +56,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     const startNano = await getHUDNanocore(page);
     expect(startNano).toBe(0);
 
-    // Navigate to Planet Detail (행성 관리) and wait for loadGame to settle
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait for loadGame to settle
     await page.waitForTimeout(500);
 
     // 2. Click credit cheat button (+10,000 Cr) and check HUD credit increases
@@ -79,10 +77,11 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   test('Planet unlock wave requirements, terraforming milestones & synergies', async ({ page }) => {
     // 1. Verify Luna is locked initially
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=웨이브 5 돌파 시 해금').filter({ visible: true }).first()).toBeVisible();
 
     // 2. Advance wave to 5 using wave cheat in Planet Detail screen
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.locator('text=← 전투 화면 복귀').first().click();
     await page.waitForTimeout(500);
     
     const waveNumBefore = await getHUDWave(page);
@@ -95,6 +94,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // 3. Go back to SolarSystem and unlock Luna
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=해금 가능 (터치하여 개척)').filter({ visible: true }).first()).toBeVisible();
     await page.locator('text=해금 가능 (터치하여 개척)').filter({ visible: true }).first().click();
 
@@ -131,6 +131,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // Check synergy is waiting (not yet active)
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=시너지 대기').filter({ visible: true }).first()).toBeVisible();
 
     // Go back to Luna details and upgrade to 80% to activate synergy
@@ -150,11 +151,12 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // Check that Luna's synergy (Aegis shield regen) is now active
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=시너지 활성').filter({ visible: true }).first()).toBeVisible();
   });
 
   test('Combat mechanics: dual shielding, kinetic intercept & research upgrades', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // 1. Initial Earth HP & Shield
@@ -169,6 +171,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     // Inject 100 Nanocores first
     await page.locator('text=+100 Nano').filter({ visible: true }).first().click();
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=크로노스 시간 연구소').filter({ visible: true }).first()).toBeVisible();
 
     // Click "연구" for "빔 관통 에너지 환산망"
@@ -177,7 +180,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await expect(researchRow.getByText('연구 완성').filter({ visible: true }).first()).toBeVisible();
 
     // 4. Test "beamConversion" effect: ENERGY hit refunds 10% of damage as Credits
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.locator('text=← 전투 화면 복귀').first().click();
     await page.waitForTimeout(500);
     
     const initCredits = await getHUDCredit(page);
@@ -205,13 +208,15 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   test('Verify remaining research upgrades: selfRepair & tachionTargeting', async ({ page }) => {
     // Navigate to Time Lab
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=크로노스 시간 연구소').filter({ visible: true }).first()).toBeVisible();
 
     // Check we have enough nanocores
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.locator('text=← 전투 화면 복귀').first().click();
     await page.waitForTimeout(500);
     await page.locator('text=+100 Nano').filter({ visible: true }).first().click();
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
 
     // Research "나노 분사 자가 수리망"
     const repairRow = page.locator('div').filter({ hasText: '나노 분사 자가 수리망' }).first();
@@ -232,7 +237,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
       await expect(page.locator('text=PAUSE').filter({ visible: true }).first()).toBeVisible();
     }
 
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // Navigate to Shipyard tab
@@ -257,12 +262,13 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
   test('Time Machine Rebirth process, TP 정산 & permanent upgrades', async ({ page }) => {
     // 1. Charge gauge to max and add credits
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
     await page.locator('text=Gauge Max').filter({ visible: true }).first().click();
 
     // 2. Go to Chronos Lab and check gauge is 100%
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     await expect(page.locator('text=100%').filter({ visible: true }).first()).toBeVisible();
 
     // Click rebirth button
@@ -280,10 +286,11 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await expect(page.locator('text=WAVE 1').filter({ visible: true }).first()).toBeVisible();
 
     // 4. Inject 1,000 TP to test Chronos Lab upgrades
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.locator('text=← 전투 화면 복귀').first().click();
     await page.waitForTimeout(500);
     await page.locator('text=+1,000 TP').filter({ visible: true }).first().click();
     await page.locator('text=시간 연구소').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
 
     // Verify TP shows in bottom HUD (renders as 2000 TP without comma)
     await expect(page.locator('text=2000 TP').filter({ visible: true }).first()).toBeVisible();
@@ -298,7 +305,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   });
 
   test('Premium pass purchase, 4x speed and auto-automation QoL triggers', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // 1. Initial State: Premium auto toggles show "🔒 PASS 전용"
@@ -338,12 +345,13 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   test('Unlocking multiple planets: Luna & Mars requirements and environment costs', async ({ page }) => {
     // Go to Solar System map
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
 
     // Verify Mars requires Wave 10
     await expect(page.locator('text=웨이브 10 돌파 시 해금').filter({ visible: true }).first()).toBeVisible();
 
     // Go to Planet Detail and advance wave by 10 (Wave +5 clicked twice)
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    await page.locator('text=← 전투 화면 복귀').first().click();
     await page.waitForTimeout(500);
     
     const waveNumBefore = await getHUDWave(page);
@@ -357,6 +365,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // Go back to Solar System map
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
 
     // Now Mars should show "해금 가능 (터치하여 개척)"
     const marsNode = page.locator('text=화성 (Mars)').locator('xpath=..');
@@ -371,7 +380,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
   test('Unlock and terraform all remaining planets: Venus, Mercury, Jupiter, Saturn, Uranus, Neptune, Pluto', async ({ page }) => {
     // 1. Navigate to Planet Detail and cheat resources & waves to 45
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
     
     // Cheat a lot of credits, nanocores, and max energy
@@ -389,6 +398,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // 2. Navigate to Solar System map
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
 
     // We will loop through Venus, Mercury, Jupiter, Saturn, Uranus, Neptune, Pluto
     const restPlanets = [
@@ -410,7 +420,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   });
 
   test('Detailed combat, population loss & synergies', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // Initial population check (should be 1,000,000)
@@ -438,6 +448,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
 
     // Go to Solar System screen and then Mars details
     await page.locator('text=성계도').filter({ visible: true }).first().click();
+    await page.waitForTimeout(500);
     const marsNode = page.locator('text=화성 (Mars)').locator('xpath=..');
     await marsNode.click();
     await page.waitForTimeout(500);
@@ -466,7 +477,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
       await expect(page.locator('text=PAUSE').filter({ visible: true }).first()).toBeVisible();
     }
 
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // 1. Spawn Boss Apocalypse (Wave 10)
@@ -560,7 +571,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   });
 
   test('Game Save & Load Persistence', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // Set resource values and toggle premium pass in the store
@@ -611,7 +622,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   });
 
   test('Developer Database Reset Button UI and Functionality', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // 1. Click credit cheat button to change state from default
@@ -634,7 +645,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
   });
 
   test('Satellite double orbit lines render validation in Web SVG Canvas', async ({ page }) => {
-    await page.locator('text=행성 관리').filter({ visible: true }).first().click();
+    // Already on Planet Detail. Wait to settle
     await page.waitForTimeout(500);
 
     // 1. Check if the dual orbit lines are present in the DOM (Web SVG components)
