@@ -469,17 +469,17 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(success2).toBe(true);
     expect(useGameStore.getState().credits).toBe(initCredits - 200 - 300);
 
-    // 세번째 위성은 다른 종류인 decoy(기본 100)를 만듦 (100 * 1.5^2 = 225, 누적 2개)
+    // 세번째 위성은 다른 종류인 decoy(기본 100)를 만듦 (디코이는 0개째이므로 누진세 없이 기본 100 Cr 차감)
     const preDecoyCredits = useGameStore.getState().credits;
     const successDecoy = store.buildOrbitalSatelliteDetail('earth', 'decoy');
     expect(successDecoy).toBe(true);
-    expect(useGameStore.getState().credits).toBe(preDecoyCredits - 225);
+    expect(useGameStore.getState().credits).toBe(preDecoyCredits - 100);
 
-    // 네번째 위성 (laser) 가격 검증 (200 * 1.5^3 = 675, 누적 3개)
+    // 네번째 위성 (laser) 가격 검증 (레이저 위성 2개 보유 상태이므로 200 * 1.5^2 = 450 Cr 차감)
     const preLaser3Credits = useGameStore.getState().credits;
     const successLaser3 = store.buildOrbitalSatelliteDetail('earth', 'laser');
     expect(successLaser3).toBe(true);
-    expect(useGameStore.getState().credits).toBe(preLaser3Credits - 675);
+    expect(useGameStore.getState().credits).toBe(preLaser3Credits - 450);
 
     // 이제 나머지 한도들을 채우고 한도가 올바르게 작동하는지 검증
     // 현재 지구 위성 상태: laser 3개, decoy 1개 (총 4개)

@@ -80,7 +80,7 @@ export const planetActions = (set, get) => ({
     const currentCount = planet.orbitalSatellitesList[type] || 0;
     if (currentCount >= MAX_SATELLITES_PER_TYPE) return false;
 
-    const cost = getSatelliteCost(type, planet.orbitalSatellites || 0);
+    const cost = getSatelliteCost(type, currentCount);
     const energyCost = spec.energy;
 
     if (state.credits < cost || state.getAvailableEnergy() < energyCost) return false;

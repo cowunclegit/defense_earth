@@ -446,8 +446,7 @@ export const simulateQolAutomation = (
   const currentCount = updatedPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0;
   if (state.autoBuildTowers && currentCount < MAX_SATELLITES_PER_TYPE) {
     const spec = SATELLITE_SPECS.laser;
-    const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
-    const cost = getSatelliteCost('laser', earthSats);
+    const cost = getSatelliteCost('laser', currentCount);
     const availableEnergy = (calculatedMaxEnergy + state.cheatEnergyBonus) - targetUsedEnergy;
     if (updatedCredits >= cost && availableEnergy >= spec.energy) {
       updatedCredits -= cost;

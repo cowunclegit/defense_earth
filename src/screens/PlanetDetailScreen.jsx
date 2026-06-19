@@ -744,7 +744,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else {
                                   if (count >= MAX_SATELLITES_PER_TYPE) {
                                     Alert.alert('건설 실패', `해당 위성의 건설 한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
-                                  } else if (credits < getSatelliteCost(type, planetState.orbitalSatellites || 0)) {
+                                  } else if (credits < getSatelliteCost(type, count)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {
                                     Alert.alert('건설 실패', '가용 전력이 부족합니다.');
@@ -755,7 +755,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                               }}
                             >
                               <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                                건설 ({getSatelliteCost(type, planetState.orbitalSatellites || 0)} Cr)
+                                건설 ({getSatelliteCost(type, count)} Cr)
                               </Text>
                             </TouchableOpacity>
                           )}
@@ -906,7 +906,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 else {
                                   if (count >= MAX_SATELLITES_PER_TYPE) {
                                     Alert.alert('건설 실패', `해당 위성의 건설 한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
-                                  } else if (credits < getSatelliteCost(type, planetState.orbitalSatellites || 0)) {
+                                  } else if (credits < getSatelliteCost(type, count)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {
                                     Alert.alert('건설 실패', '가용 전력이 부족합니다.');
@@ -917,7 +917,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                               }}
                             >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                              건설 ({getSatelliteCost(type, planetState.orbitalSatellites || 0)} Cr)
+                              건설 ({getSatelliteCost(type, count)} Cr)
                             </Text>
                           </TouchableOpacity>
                         )}
