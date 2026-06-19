@@ -126,7 +126,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
   }
 
   const renderPowerGraph = () => {
-    const productionPower = 15 * (synergies?.energyProductionMultiplier || 1.0);
+    // productionPower = 현재 maxEnergy (발전소 포함, 시너지 반영된 실제 수치)
+    const productionPower = maxEnergy;
     const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
     
     let counterattackConsumption = 0;

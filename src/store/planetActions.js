@@ -86,11 +86,18 @@ export const planetActions = (set, get) => ({
       extraMaxHp = 20;
     }
 
+    // 발전소 건설 즉시 maxEnergy 증가 (다음 tick 기다리지 않음)
+    let extraMaxEnergy = 0;
+    if (infraType === 'powerPlant') {
+      extraMaxEnergy = 20;
+    }
+
     set({
       credits: state.credits - cost,
       planets: updatedPlanets,
       earthMaxHp: state.earthMaxHp + extraMaxHp,
-      earthHp: state.earthHp + extraMaxHp
+      earthHp: state.earthHp + extraMaxHp,
+      maxEnergy: state.maxEnergy + extraMaxEnergy
     });
 
     const infraNames = {
