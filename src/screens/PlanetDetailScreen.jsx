@@ -126,8 +126,16 @@ export default function PlanetDetailScreen({ route, navigation }) {
   }
 
   const renderPowerGraph = () => {
-    // productionPower = 현재 maxEnergy (발전소 포함, 시너지 반영된 실제 수치)
-    const productionPower = maxEnergy;
+    // productionPower = 기본 15 + 발전소 레벨당 +5 TW/s (tickHelpers와 동일 공식)
+    let baseProdRate = 15;
+    Object.keys(planets || {}).forEach((pId) => {
+      const p = planets[pId];
+      if (p && p.unlocked) {
+        const infra = p.infrastructure || {};
+        baseProdRate += (infra.powerPlant || 0) * 5;
+      }
+    });
+    const productionPower = Math.floor(baseProdRate * (synergies?.energyProductionMultiplier || 1.0));
     const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
     
     let counterattackConsumption = 0;

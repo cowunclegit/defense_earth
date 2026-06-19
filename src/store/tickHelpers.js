@@ -71,6 +71,7 @@ export const harvestResources = (state, updatedPlanets, actualDelta) => {
 
   // 5. Calculate energy capacity (Power Plants)
   let baseEnergy = 100;
+  let baseProdRate = 15; // 기본 충전 속도 TW/s
   Object.keys(updatedPlanets).forEach((planetId) => {
     const p = updatedPlanets[planetId];
     if (p.unlocked) {
@@ -78,10 +79,13 @@ export const harvestResources = (state, updatedPlanets, actualDelta) => {
         baseEnergy += (p.terraformProgress / 100) * 50;
       }
       const infra = p.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
-      baseEnergy += (infra.powerPlant || 0) * 20;
+      const powerPlantLvl = infra.powerPlant || 0;
+      baseEnergy += powerPlantLvl * 20;       // 발전소 1개당 쿄쿵시티 +20 TW
+      baseProdRate += powerPlantLvl * 5;      // 발전소 1개당 충전속도 +5 TW/s
     }
   });
   const calculatedMaxEnergy = Math.floor(baseEnergy * state.synergies.energyProductionMultiplier);
+  const calculatedProductionRate = Math.floor(baseProdRate * state.synergies.energyProductionMultiplier);
 
   const baseNanocoreRate = state.chronosUpgrades.nanocoreGen * 0.1;
   const earnedNanocores = baseNanocoreRate * actualDelta;
@@ -89,6 +93,7 @@ export const harvestResources = (state, updatedPlanets, actualDelta) => {
   return {
     earnedCredits,
     calculatedMaxEnergy,
+    calculatedProductionRate,
     earnedNanocores
   };
 };
@@ -989,7 +994,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   }
 
   // 1. 자원 수확 및 총 에너지 연산
-  const { earnedCredits, calculatedMaxEnergy, earnedNanocores } = harvestResources(state, updatedPlanets, actualDelta);
+  const { earnedCredits, calculatedMaxEnergy, calculatedProductionRate, earnedNanocores } = harvestResources(state, updatedPlanets, actualDelta);
   let updatedCredits = state.credits + earnedCredits;
   let updatedNanocores = state.nanocores + earnedNanocores;
 
@@ -1183,7 +1188,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   }
 
   // 13. 가용 전력(overloadEnergy) 및 생산/소모 연산 (TW/s)
-  const productionPower = 15 * (state.synergies.energyProductionMultiplier || 1.0);
+  // productionPower = 발전소 포함 실제 충전 속도 (15 + 발전소당 +5 TW/s)
+  const productionPower = calculatedProductionRate;
   
   // 13.1. 실드 전력 소모 (TW단위)
   const isShieldOnline = isSystemOnline('shield', null, state.overloadEnergy, state.isPowerOffline);
@@ -1214,7 +1220,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   const netPower = productionPower - totalConsumption;
 
   let newOverloadEnergy = state.overloadEnergy !== undefined ? state.overloadEnergy : 100;
-  const maxOverloadEnergy = 100 * (state.synergies.energyProductionMultiplier || 1.0);
+  // maxOverloadEnergy = 발전소 포함된 배터리 용량 (calculatedMaxEnergy)
+  const maxOverloadEnergy = calculatedMaxEnergy;
 
   newOverloadEnergy = Math.max(0, Math.min(maxOverloadEnergy, newOverloadEnergy + netPower * actualDelta));
 
