@@ -13,7 +13,7 @@ export const earthDamageActions = (set, get) => ({
     if (state.earthHp <= 0) return;
 
     // --- Phase Shield (30% damage reduction) ---
-    if (state.shieldModule === 'phase') {
+    if (state.shieldModule === 'phase' && (state.overloadEnergy || 0) > 0) {
       damage *= 0.7;
     }
 
@@ -35,7 +35,7 @@ export const earthDamageActions = (set, get) => ({
 
     // --- Reflect Shield & Reflector Counterattack ---
     let reflectPercent = 0;
-    if (state.shieldModule === 'reflect' && type === 'energy') reflectPercent += 0.3;
+    if (state.shieldModule === 'reflect' && type === 'energy' && (state.overloadEnergy || 0) > 0) reflectPercent += 0.3;
     if (state.counterattackModules.reflector && (state.overloadEnergy || 0) > 0) reflectPercent += 0.3;
 
     if (reflectPercent > 0 && state.enemies.length > 0) {
@@ -56,7 +56,7 @@ export const earthDamageActions = (set, get) => ({
 
     if (type === 'energy') {
       const energyDamage = damage * 1.5;
-      const currentShield = state.earthShield;
+      const currentShield = (state.overloadEnergy || 0) <= 0 ? 0 : state.earthShield;
       let creditRefunding = 0;
       if (state.researchUpgrades.beamConversion) {
         creditRefunding = energyDamage * 0.1;

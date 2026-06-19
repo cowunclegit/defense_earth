@@ -73,8 +73,10 @@ export const simulatePlanetaryDefenses = (
     if (!p.orbitalStationsList) p.orbitalStationsList = {};
     if (!p.stationTimers) p.stationTimers = {};
 
+    const isOverloadDischarged = (state.overloadEnergy || 0) <= 0;
+
     // CIWS (미사일 방어막) 요격 로직 (decoy 위성 개수를 참조)
-    const ciwsCount = p.orbitalSatellitesList.decoy || 0;
+    const ciwsCount = isOverloadDischarged ? 0 : (p.orbitalSatellitesList.decoy || 0);
     if (ciwsCount > 0) {
       let ciwsTimer = p.groundBaseTimers.ciws_intercept || 0;
       if (ciwsTimer > 0) {
@@ -103,7 +105,7 @@ export const simulatePlanetaryDefenses = (
     // 궤도 위성 공격
     const attackSatellites = [];
     const defenseSatellites = [];
-    if (p.orbitalSatellitesList) {
+    if (p.orbitalSatellitesList && !isOverloadDischarged) {
       Object.keys(p.orbitalSatellitesList).forEach((t) => {
         const c = p.orbitalSatellitesList[t] || 0;
         const spec = SATELLITE_SPECS[t];
@@ -120,7 +122,7 @@ export const simulatePlanetaryDefenses = (
     const earthSatellites = [...attackSatellites, ...defenseSatellites];
 
     Object.keys(p.orbitalSatellitesList).forEach((type) => {
-      const count = p.orbitalSatellitesList[type] || 0;
+      const count = isOverloadDischarged ? 0 : (p.orbitalSatellitesList[type] || 0);
       if (count <= 0) return;
 
       const spec = SATELLITE_SPECS[type];
@@ -260,7 +262,9 @@ export const simulateShieldAndHP = (
   const isPowerShortage = state.usedEnergy > calculatedMaxEnergy;
   const actualRegen = isPowerShortage ? (shieldRegen * 0.5) : shieldRegen;
 
-  if (newShield < maxShield) {
+  if ((state.overloadEnergy || 0) <= 0) {
+    newShield = 0;
+  } else if (newShield < maxShield) {
     newShield = Math.min(maxShield, newShield + actualRegen);
   }
 
@@ -1078,7 +1082,9 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
 
   // 9. 아군 궤도 함선 기동 및 적 추격
   const totalRepairShips = updatedFleet.filter(s => s.type === SHIP_TYPES.REPAIR_SHIP).length;
-  const totalRepairDrones = Object.values(finalPlanets).reduce((acc, p) => acc + (p.orbitalSatellitesList?.repairDrone || 0), 0);
+  const totalRepairDrones = (state.overloadEnergy || 0) <= 0
+    ? 0
+    : Object.values(finalPlanets).reduce((acc, p) => acc + (p.orbitalSatellitesList?.repairDrone || 0), 0);
   updatedFleet = simulateFleetMovementAndCombat(
     state,
     updatedFleet,
@@ -1118,21 +1124,40 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     updatedSpawnTimer = 0;
   }
 
-  // 13. 과부하 에너지(overloadEnergy) 및 최대치 연산
-  let activeOverloadDrain = 0;
-  if (state.counterattackModules.reflector) activeOverloadDrain += 10;
-  if (state.counterattackModules.discharge) activeOverloadDrain += 10;
-  if (state.counterattackModules.electricField) activeOverloadDrain += 15;
+  // 13. 가용 전력(overloadEnergy) 및 생산/소모 연산 (TW/s)
+  const productionPower = 15 * (state.synergies.energyProductionMultiplier || 1.0);
+  
+  // 13.1. 실드 전력 소모 (TW단위)
+  const shieldConsumption = SHIELD_MODULE_SPECS[state.shieldModule || 'basic']?.energyCost || 0;
+  
+  // 13.2. 반격 모듈 전력 소모
+  let counterattackConsumption = 0;
+  if (state.counterattackModules.reflector) counterattackConsumption += 10;
+  if (state.counterattackModules.discharge) counterattackConsumption += 10;
+  if (state.counterattackModules.electricField) counterattackConsumption += 15;
+  
+  // 13.3. 위성 유지 전력 소모 (TW단위)
+  let satelliteConsumption = 0;
+  Object.keys(updatedPlanets).forEach((planetId) => {
+    const p = updatedPlanets[planetId];
+    if (p.unlocked && p.orbitalSatellitesList) {
+      Object.keys(p.orbitalSatellitesList).forEach((type) => {
+        const count = p.orbitalSatellitesList[type] || 0;
+        const spec = SATELLITE_SPECS[type];
+        if (spec && count > 0) {
+          satelliteConsumption += count * spec.energy;
+        }
+      });
+    }
+  });
+
+  const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
+  const netPower = productionPower - totalConsumption;
 
   let newOverloadEnergy = state.overloadEnergy !== undefined ? state.overloadEnergy : 100;
   const maxOverloadEnergy = 100 * (state.synergies.energyProductionMultiplier || 1.0);
-  const rechargeSpeed = 15 * (state.synergies.energyProductionMultiplier || 1.0);
 
-  if (activeOverloadDrain > 0) {
-    newOverloadEnergy = Math.max(0, newOverloadEnergy - activeOverloadDrain * actualDelta);
-  } else {
-    newOverloadEnergy = Math.min(maxOverloadEnergy, newOverloadEnergy + rechargeSpeed * actualDelta);
-  }
+  newOverloadEnergy = Math.max(0, Math.min(maxOverloadEnergy, newOverloadEnergy + netPower * actualDelta));
 
   return {
     newOverloadEnergy,

@@ -77,12 +77,91 @@ export default function PlanetDetailScreen({ route, navigation }) {
     upgradeSatellite
   } = useGameStore();
 
+  const [blinkVisible, setBlinkVisible] = React.useState(true);
+  const isPowerDischarged = (overloadEnergy || 0) <= 0;
+
   React.useEffect(() => {
     loadGame();
   }, []);
 
+  React.useEffect(() => {
+    if (!isPowerDischarged) {
+      setBlinkVisible(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      setBlinkVisible((prev) => !prev);
+    }, 400);
+    return () => clearInterval(interval);
+  }, [isPowerDischarged]);
+
   const planetState = planets[planetId];
   const planetData = PLANETARY_DATA[planetId];
+
+  const renderPowerGraph = () => {
+    const productionPower = 15 * (synergies?.energyProductionMultiplier || 1.0);
+    const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
+    
+    let counterattackConsumption = 0;
+    if (counterattackModules?.reflector) counterattackConsumption += 10;
+    if (counterattackModules?.discharge) counterattackConsumption += 10;
+    if (counterattackModules?.electricField) counterattackConsumption += 15;
+    
+    let satelliteConsumption = 0;
+    Object.keys(planets || {}).forEach((pId) => {
+      const p = planets[pId];
+      if (p && p.unlocked && p.orbitalSatellitesList) {
+        Object.keys(p.orbitalSatellitesList).forEach((satType) => {
+          const count = p.orbitalSatellitesList[satType] || 0;
+          const satSpec = SATELLITE_SPECS[satType];
+          if (satSpec && count > 0) {
+            satelliteConsumption += count * satSpec.energy;
+          }
+        });
+      }
+    });
+    
+    const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
+    const netPower = productionPower - totalConsumption;
+    
+    const maxScale = Math.max(30, productionPower, totalConsumption);
+    const prodWidthPercent = `${Math.min(100, (productionPower / maxScale) * 100)}%`;
+    const consWidthPercent = `${Math.min(100, (totalConsumption / maxScale) * 100)}%`;
+    
+    return (
+      <View style={{ marginTop: 8, padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: 6, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+        <Text style={{ fontSize: 9, color: '#8fa0c4', marginBottom: 6, fontWeight: 'bold' }}>⚡ 실시간 전력 상태 (TW/초)</Text>
+        
+        {/* 생산 전력 바 */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+          <Text style={{ width: 55, fontSize: 8, color: '#00ff8a', fontWeight: 'bold' }}>생산 (+{productionPower.toFixed(1)})</Text>
+          <View style={{ flex: 1, height: 6, backgroundColor: '#101726', borderRadius: 3, overflow: 'hidden' }}>
+            <View style={{ width: prodWidthPercent, height: '100%', backgroundColor: '#00ff8a' }} />
+          </View>
+        </View>
+        
+        {/* 소모 전력 바 */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+          <Text style={{ width: 55, fontSize: 8, color: '#ff3b30', fontWeight: 'bold' }}>소모 (-{totalConsumption.toFixed(1)})</Text>
+          <View style={{ flex: 1, height: 6, backgroundColor: '#101726', borderRadius: 3, overflow: 'hidden' }}>
+            <View style={{ width: consWidthPercent, height: '100%', backgroundColor: '#ff3b30' }} />
+          </View>
+        </View>
+        
+        {/* 세부 내역 */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 0.5, borderTopColor: 'rgba(255, 255, 255, 0.05)' }}>
+          <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>🛡️ 실드: -{shieldConsumption} TW</Text>
+          <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>🛰️ 위성: -{satelliteConsumption} TW</Text>
+          <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>⚡ 반격: -{counterattackConsumption} TW</Text>
+        </View>
+        
+        {/* 증감량 텍스트 */}
+        <Text style={{ fontSize: 8, color: netPower >= 0 ? '#00ff8a' : '#ff3b30', alignSelf: 'flex-end', marginTop: 6, fontWeight: 'bold' }}>
+          {netPower >= 0 ? `순전력: +${netPower.toFixed(1)} TW/초 (충전 중)` : `순전력: -${Math.abs(netPower).toFixed(1)} TW/초 (방전 중)`}
+        </Text>
+      </View>
+    );
+  };
 
   if (!planetState || !planetData) {
     return (
@@ -299,20 +378,37 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
               {/* 🛡️ 실드 칩 */}
               <TouchableOpacity
-                style={[styles.statusChip, { borderColor: '#00f0ff' }, activeDetail === 'shield' && styles.statusChipActive]}
+                style={[
+                  styles.statusChip,
+                  { borderColor: '#00f0ff' },
+                  activeDetail === 'shield' && styles.statusChipActive,
+                  isPowerDischarged && { borderColor: '#8fa0c4', opacity: 0.6 }
+                ]}
                 onPress={() => setActiveDetail(activeDetail === 'shield' ? null : 'shield')}
               >
                 <Text style={styles.statusChipIcon}>🛡️</Text>
-                <Text style={[styles.statusChipVal, { color: '#00f0ff' }]}>{Math.floor(earthShield)}</Text>
+                <Text style={[styles.statusChipVal, { color: '#00f0ff' }, isPowerDischarged && { color: '#8fa0c4' }]}>
+                  {isPowerDischarged ? 'OFF' : Math.floor(earthShield)}
+                </Text>
               </TouchableOpacity>
 
               {/* ⚡ TW 칩 */}
               <TouchableOpacity
-                style={[styles.statusChip, { borderColor: '#ffd700' }, activeDetail === 'ep' && styles.statusChipActive]}
+                style={[
+                  styles.statusChip,
+                  { borderColor: '#ffd700' },
+                  activeDetail === 'ep' && styles.statusChipActive,
+                  isPowerDischarged && {
+                    borderColor: blinkVisible ? '#ffd700' : '#8fa0c4',
+                    backgroundColor: blinkVisible ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.02)'
+                  }
+                ]}
                 onPress={() => setActiveDetail(activeDetail === 'ep' ? null : 'ep')}
               >
-                <Text style={styles.statusChipIcon}>⚡</Text>
-                <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.max(0, Math.floor(overloadEnergy))}TW</Text>
+                <Text style={[styles.statusChipIcon, isPowerDischarged && { opacity: blinkVisible ? 1 : 0.3 }]}>⚡</Text>
+                <Text style={[styles.statusChipVal, { color: '#ffd700' }, isPowerDischarged && { color: blinkVisible ? '#ffd700' : '#8fa0c4' }]}>
+                  {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))}TW`}
+                </Text>
               </TouchableOpacity>
 
               {/* 🛰️ 요격 위성 칩 */}
@@ -402,26 +498,17 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
             {activeDetail === 'ep' && (
               <View style={styles.detailPopup} pointerEvents="none">
-                <Text style={styles.detailPopupTitle}>⚡ 과부하 전력</Text>
+                <Text style={styles.detailPopupTitle}>⚡ 가용 전력</Text>
                 <Text style={styles.detailPopupValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW</Text>
                 <View style={styles.detailMiniBar}>
                   <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: '#ffd700' }]} />
                 </View>
-                <Text style={[styles.detailPopupSub, { color: '#ffd700', marginTop: 4 }]}>
-                  {(() => {
-                    let activeOverloadDrain = 0;
-                    if (counterattackModules?.reflector) activeOverloadDrain += 10;
-                    if (counterattackModules?.discharge) activeOverloadDrain += 10;
-                    if (counterattackModules?.electricField) activeOverloadDrain += 15;
-                    
-                    if (activeOverloadDrain > 0) {
-                      return `전력 소모 중 (초당 -${activeOverloadDrain} TW 소모)`;
-                    } else {
-                      const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
-                      return `전력 충전 중 (초당 +${rechargeSpeed} TW 회복)`;
-                    }
-                  })()}
-                </Text>
+                {isPowerDischarged && (
+                  <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 6, borderRadius: 4, marginTop: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                    <Text style={{ fontSize: 9, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 완전히 방전됨! 실드 및 위성 작동 중지 ⚠️</Text>
+                  </View>
+                )}
+                {renderPowerGraph()}
               </View>
             )}
 
@@ -585,10 +672,14 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     if (type === 'repair') desc += ' (HP 초당 5 재생, 붕괴 시 HP 20 복구)';
                     
                     return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }, isPowerDischarged && isActive && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
-                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>장착됨</Text>}
+                          {isActive && (
+                            <Text style={[styles.gridCardCount, { color: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
+                              {isPowerDischarged ? '장착됨 (동작 정지)' : '장착됨'}
+                            </Text>
+                          )}
                         </View>
                         <Text style={styles.gridCardDesc}>{desc}</Text>
                         {!isActive ? (
@@ -605,8 +696,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             </Text>
                           </TouchableOpacity>
                         ) : (
-                          <View style={[styles.gridCompleteBadgeMini, { borderColor: '#ff3b30' }]}>
-                            <Text style={[styles.gridCompleteTextMini, { color: '#ff3b30' }]}>활성</Text>
+                          <View style={[styles.gridCompleteBadgeMini, { borderColor: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
+                            <Text style={[styles.gridCompleteTextMini, { color: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
+                              {isPowerDischarged ? '정지' : '활성'}
+                            </Text>
                           </View>
                         )}
                       </View>
@@ -616,10 +709,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>실드 반격/과부하 부가 모듈</Text>
                 
-                {/* 과부하 충전 전력 바 */}
+                {/* 가용 전력 상태 */}
                 <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 15, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>⚡ 과부하 충전 전력</Text>
+                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>⚡ 가용 전력 상태</Text>
                     <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>
                       {Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW
                     </Text>
@@ -627,21 +720,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
                   <View style={[styles.detailMiniBar, { height: 8, backgroundColor: '#101726' }]}>
                     <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: overloadEnergy > 0 ? '#ffd700' : '#8fa0c4' }]} />
                   </View>
-                  <Text style={{ fontSize: 8.5, color: '#8fa0c4', marginTop: 6 }}>
-                    {(() => {
-                      let activeOverloadDrain = 0;
-                      if (counterattackModules?.reflector) activeOverloadDrain += 10;
-                      if (counterattackModules?.discharge) activeOverloadDrain += 10;
-                      if (counterattackModules?.electricField) activeOverloadDrain += 15;
-                      
-                      if (activeOverloadDrain > 0) {
-                        return `⚡ 전력 소모 중 (초당 -${activeOverloadDrain} TW 소모 | 잔여 시간: ${(overloadEnergy / activeOverloadDrain).toFixed(1)}초)`;
-                      } else {
-                        const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
-                        return `🔋 전력 충전 중 (초당 +${rechargeSpeed} TW 회복)`;
-                      }
-                    })()}
-                  </Text>
+                  {isPowerDischarged && (
+                    <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 6, borderRadius: 4, marginTop: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                      <Text style={{ fontSize: 9, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 완전히 방전됨! 실드 및 위성 작동 중지 ⚠️</Text>
+                    </View>
+                  )}
+                  {renderPowerGraph()}
                 </View>
 
                 <View style={styles.gridContainer}>
@@ -692,6 +776,11 @@ export default function PlanetDetailScreen({ route, navigation }) {
               const attackSatCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'attack');
               return (
                 <View>
+                  {isPowerDischarged && (
+                    <View style={{ marginHorizontal: 10, marginBottom: 10, padding: 8, backgroundColor: 'rgba(255, 59, 48, 0.15)', borderRadius: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                      <Text style={{ fontSize: 9.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 공격 위성이 정지되었습니다! (가용 전력 충전 필요) ⚠️</Text>
+                    </View>
+                  )}
                   <Text style={styles.subTitleText}>공격형 궤도 위성 수량: {attackSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {
@@ -867,6 +956,11 @@ export default function PlanetDetailScreen({ route, navigation }) {
               const defenseSatCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'defense');
               return (
                 <View>
+                  {isPowerDischarged && (
+                    <View style={{ marginHorizontal: 10, marginBottom: 10, padding: 8, backgroundColor: 'rgba(255, 59, 48, 0.15)', borderRadius: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                      <Text style={{ fontSize: 9.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 방어/센서 위성이 정지되었습니다! (가용 전력 충전 필요) ⚠️</Text>
+                    </View>
+                  )}
                   <Text style={styles.subTitleText}>방어형 궤도 위성 수량: {defenseSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {

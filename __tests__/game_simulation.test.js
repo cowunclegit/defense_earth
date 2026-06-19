@@ -729,6 +729,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(store.overloadEnergy).toBe(100);
 
     // 2. 모듈 toggle (discharge = ON, reflector = ON) -> 총 초당 20 소모 예상
+    // 기본 실드 모듈이 5 TW를 소모하므로 총 소모 25 TW/초, 생산 15 TW/초 => 순전력 -10 TW/초
     useGameStore.setState({
       counterattackModules: {
         reflector: true,
@@ -739,9 +740,9 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
     // 1초 틱 실행
     store.tick(1.0);
-    expect(useGameStore.getState().overloadEnergy).toBe(80); // 100 - 20 = 80
+    expect(useGameStore.getState().overloadEnergy).toBe(90); // 100 - 10 = 90
 
-    // 3. 모듈 모두 OFF -> 초당 15 충전 예상
+    // 3. 모듈 모두 OFF -> 기본 실드 소모 5 TW/초, 생산 15 TW/초 => 순전력 +10 TW/초
     useGameStore.setState({
       counterattackModules: {
         reflector: false,
@@ -752,6 +753,33 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
     // 1초 틱 실행
     store.tick(1.0);
-    expect(useGameStore.getState().overloadEnergy).toBe(95); // 80 + 15 = 95
+    expect(useGameStore.getState().overloadEnergy).toBe(100); // 90 + 10 = 100
+  });
+
+  test('가용 전력 방전(0 TW) 시 실드 및 위성 비활성화 검증', () => {
+    const store = useGameStore.getState();
+
+    // 1. 가용 전력을 0으로 설정 (방전 상태)
+    useGameStore.setState({
+      overloadEnergy: 0,
+      earthShield: 500,
+      shieldModule: 'phase'
+    });
+
+    // 틱을 실행했을 때 실드가 Off(0)가 되는지 검증
+    store.tick(1.0);
+    expect(useGameStore.getState().earthShield).toBe(0);
+
+    // 2. 방전 상태에서 데미지 피격 시 실드가 흡수하거나 phase 패시브가 작동하지 않고 온전히 직접 피해로 환산되는지 검증
+    useGameStore.setState({
+      earthHp: 100,
+      overloadEnergy: 0,
+      earthShield: 0
+    });
+
+    // 10 데미지 energy 공격 피격 (피어싱 데미지 배율 1.5배, 선체 피격 시 감쇄율 0.5배 적용)
+    store.damageEarth(10, 'energy');
+    // 100 - (10 * 1.5 / 1.5 * 0.5) = 95 HP가 되는지 확인
+    expect(useGameStore.getState().earthHp).toBe(95);
   });
 });
