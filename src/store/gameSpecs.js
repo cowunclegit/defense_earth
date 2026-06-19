@@ -414,10 +414,10 @@ export const isSystemOnline = (category, type, energy, isOffline) => {
 };
 
 export const INFRASTRUCTURE_SPECS = {
-  housing: { name: '주거 지원 지구', baseCost: 100, multiplier: 1.5 },
-  factory: { name: '종합 생산 공장', baseCost: 150, multiplier: 1.5 },
-  powerPlant: { name: '핵융합/태양광 발전소', baseCost: 250, multiplier: 1.6 },
-  bunker: { name: '지하 대피 방공호', baseCost: 400, multiplier: 1.7 }
+  housing:    { name: '주거 지원 지구',       baseCost: 100,  multiplier: 1.3 },
+  factory:    { name: '종합 생산 공장',       baseCost: 150,  multiplier: 1.3 },
+  powerPlant: { name: '핵융합/태양광 발전소', baseCost: 250,  multiplier: 1.25 },
+  bunker:     { name: '지하 대피 방공호',     baseCost: 400,  multiplier: 1.35 }
 };
 
 export const getInfrastructureCost = (type, currentLevel) => {
