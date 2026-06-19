@@ -252,7 +252,7 @@ export const simulateShieldAndHP = (
   const satelliteBonus = 1 + totalSatellites * 0.1;
 
   const activeModuleSpec = SHIELD_MODULE_SPECS[state.shieldModule || 'basic'];
-  const baseRegen = activeModuleSpec ? activeModuleSpec.regenBonus : 5;
+  const baseRegen = (activeModuleSpec ? activeModuleSpec.regenBonus : 5) + (state.earthShieldRegenLevel - 1) * 3;
   const shieldRegen = baseRegen * state.synergies.shieldRegenMultiplier * satelliteBonus * actualDelta;
   const isPowerShortage = state.usedEnergy > calculatedMaxEnergy;
   const actualRegen = isPowerShortage ? (shieldRegen * 0.5) : shieldRegen;
@@ -261,8 +261,14 @@ export const simulateShieldAndHP = (
     newShield = Math.min(maxShield, newShield + actualRegen);
   }
 
+  // HP 자동 회복
+  const hpRegenRate = (state.earthHpRegenLevel - 1) * 2;
+  if (hpRegenRate > 0 && newHp < state.earthMaxHp && newHp > 0) {
+    newHp = Math.min(state.earthMaxHp, newHp + hpRegenRate * actualDelta);
+  }
+
   // 나노 수리 실드 패시브 복구
-  if (state.shieldModule === 'repair' && newShield > 0 && newHp < state.earthMaxHp) {
+  if (state.shieldModule === 'repair' && newShield > 0 && newHp < state.earthMaxHp && newHp > 0) {
     newHp = Math.min(state.earthMaxHp, newHp + 5 * actualDelta);
   }
 

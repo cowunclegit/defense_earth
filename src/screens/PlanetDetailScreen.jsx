@@ -32,6 +32,11 @@ export default function PlanetDetailScreen({ route, navigation }) {
     earthMaxHp,
     earthShield,
     earthMaxShield,
+    earthHpRegenLevel,
+    earthShieldRegenLevel,
+    upgradeEarthHpRegen,
+    upgradeEarthShieldRegen,
+    synergies,
     upgradePlanetTerraform, 
     kineticDefenseTowers,
     buildKineticTower,
@@ -336,25 +341,49 @@ export default function PlanetDetailScreen({ route, navigation }) {
             </View>
 
             {/* 상세 팝업 */}
-            {activeDetail === 'hp' && (
-              <View style={styles.detailPopup} pointerEvents="none">
-                <Text style={styles.detailPopupTitle}>❤️ 지구 HP</Text>
-                <Text style={styles.detailPopupValue}>{Math.floor(earthHp)} / {earthMaxHp}</Text>
-                <View style={[styles.detailMiniBar, { width: '100%' }]}>
-                  <View style={[styles.detailMiniBarFill, { width: `${(earthHp / earthMaxHp) * 100}%`, backgroundColor: '#ff5c5c' }]} />
+            {activeDetail === 'hp' && (() => {
+              const baseHpRegen = (earthHpRegenLevel - 1) * 2;
+              const hasRepairShield = shieldModule === 'repair' && earthShield > 0;
+              const totalHpRegen = baseHpRegen + (hasRepairShield ? 5 : 0);
+              return (
+                <View style={styles.detailPopup} pointerEvents="none">
+                  <Text style={styles.detailPopupTitle}>❤️ 지구 HP</Text>
+                  <Text style={styles.detailPopupValue}>{Math.floor(earthHp)} / {earthMaxHp}</Text>
+                  <View style={[styles.detailMiniBar, { width: '100%' }]}>
+                    <View style={[styles.detailMiniBarFill, { width: `${(earthHp / earthMaxHp) * 100}%`, backgroundColor: '#ff5c5c' }]} />
+                  </View>
+                  <Text style={[styles.detailPopupSub, { color: '#ff5c5c', marginTop: 4 }]}>
+                    자동 선체 회복속도: +{totalHpRegen} HP/초
+                    {hasRepairShield && " (나노 수리 실드 포함)"}
+                  </Text>
                 </View>
-              </View>
-            )}
+              );
+            })()}
 
-            {activeDetail === 'shield' && (
-              <View style={styles.detailPopup} pointerEvents="none">
-                <Text style={styles.detailPopupTitle}>🛡️ 에너지 실드</Text>
-                <Text style={styles.detailPopupValue}>{Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
-                <View style={styles.detailMiniBar}>
-                  <View style={[styles.detailMiniBarFill, { width: `${(earthShield / earthMaxShield) * 100}%`, backgroundColor: '#00f0ff' }]} />
+            {activeDetail === 'shield' && (() => {
+              const activeModuleSpec = SHIELD_MODULE_SPECS[shieldModule || 'basic'];
+              const baseRegen = (activeModuleSpec ? activeModuleSpec.regenBonus : 5) + (earthShieldRegenLevel - 1) * 3;
+              let totalSatellites = 0;
+              Object.values(planets).forEach(p => {
+                if (p.unlocked) {
+                  totalSatellites += (p.orbitalSatellites || 0);
+                }
+              });
+              const satelliteBonus = 1 + totalSatellites * 0.1;
+              const finalShieldRegen = (baseRegen * (synergies?.shieldRegenMultiplier || 1.0) * satelliteBonus).toFixed(1);
+              return (
+                <View style={styles.detailPopup} pointerEvents="none">
+                  <Text style={styles.detailPopupTitle}>🛡️ 에너지 실드</Text>
+                  <Text style={styles.detailPopupValue}>{Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+                  <View style={styles.detailMiniBar}>
+                    <View style={[styles.detailMiniBarFill, { width: `${(earthShield / earthMaxShield) * 100}%`, backgroundColor: '#00f0ff' }]} />
+                  </View>
+                  <Text style={[styles.detailPopupSub, { color: '#00f0ff', marginTop: 4 }]}>
+                    실드 자동 충전속도: +{finalShieldRegen} 실드/초
+                  </Text>
                 </View>
-              </View>
-            )}
+              );
+            })()}
 
             {activeDetail === 'tower' && (
               <View style={styles.detailPopup} pointerEvents="none">
@@ -445,6 +474,65 @@ export default function PlanetDetailScreen({ route, navigation }) {
             {/* 1. 실드 및 반격 탭 */}
             {activeTab === 'defense_facility' && (
               <View>
+
+                <Text style={[styles.subTitleText, { marginTop: 10 }]}>지구 선체 및 실드 회복 장치 업그레이드</Text>
+                <View style={styles.gridContainer}>
+                  {/* HP 회복 업그레이드 */}
+                  <View style={[styles.gridCard, { borderColor: '#ff5c5c' }]}>
+                    <View style={styles.gridCardHeader}>
+                      <Text style={styles.gridCardName}>지구 HP 자동 회복기</Text>
+                      <Text style={[styles.gridCardCount, { color: '#ff5c5c' }]}>Lv.{earthHpRegenLevel}</Text>
+                    </View>
+                    <Text style={styles.gridCardDesc}>
+                      지구의 물리 선체 체력을 매 초당 자동으로 복구합니다.{"\n"}
+                      효과: +{(earthHpRegenLevel - 1) * 2} HP/초 → +{earthHpRegenLevel * 2} HP/초
+                    </Text>
+                    <TouchableOpacity 
+                      style={[styles.gridBuildBtn, { backgroundColor: '#ff5c5c' }]} 
+                      onPress={() => {
+                        const cost = Math.floor(300 * earthHpRegenLevel * 1.5);
+                        if (credits < cost) {
+                          Alert.alert('강화 실패', '크레딧이 부족합니다.');
+                          return;
+                        }
+                        const success = upgradeEarthHpRegen();
+                        if (success) setTimeout(() => saveGame(), 100);
+                      }}
+                    >
+                      <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
+                        강화 ({Math.floor(300 * earthHpRegenLevel * 1.5)} Cr)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 실드 회복 업그레이드 */}
+                  <View style={[styles.gridCard, { borderColor: '#00f0ff' }]}>
+                    <View style={styles.gridCardHeader}>
+                      <Text style={styles.gridCardName}>지구 실드 충전기</Text>
+                      <Text style={[styles.gridCardCount, { color: '#00f0ff' }]}>Lv.{earthShieldRegenLevel}</Text>
+                    </View>
+                    <Text style={styles.gridCardDesc}>
+                      에너지 실드의 초당 충전 재생량을 영구히 높입니다.{"\n"}
+                      효과: +{(earthShieldRegenLevel - 1) * 3} 실드/초 → +{earthShieldRegenLevel * 3} 실드/초 (기본 재생량에 추가 가산)
+                    </Text>
+                    <TouchableOpacity 
+                      style={[styles.gridBuildBtn, { backgroundColor: '#00f0ff' }]} 
+                      onPress={() => {
+                        const cost = Math.floor(300 * earthShieldRegenLevel * 1.5);
+                        if (credits < cost) {
+                          Alert.alert('강화 실패', '크레딧이 부족합니다.');
+                          return;
+                        }
+                        const success = upgradeEarthShieldRegen();
+                        if (success) setTimeout(() => saveGame(), 100);
+                      }}
+                    >
+                      <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
+                        강화 ({Math.floor(300 * earthShieldRegenLevel * 1.5)} Cr)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>액티브 행성 실드 모듈 선택 (1개 장착 가능)</Text>
                 <View style={styles.gridContainer}>

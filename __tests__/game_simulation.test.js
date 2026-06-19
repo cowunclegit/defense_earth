@@ -615,4 +615,55 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(laser2.localIndex).toBe(1);
     expect(decoySat.localIndex).toBe(0);
   });
+
+  test('지구 HP 및 실드 회복 장치 업그레이드, 틱 회복 및 회귀(Rebirth) 리셋 검증', () => {
+    const store = useGameStore.getState();
+
+    // 1. 초기 레벨 검증 (기본 1레벨)
+    expect(store.earthHpRegenLevel).toBe(1);
+    expect(store.earthShieldRegenLevel).toBe(1);
+
+    // 2. 업그레이드 비용 차감 및 레벨 상승 검증 (비용 300 * 1 * 1.5 = 450 Cr)
+    useGameStore.setState({ credits: 1000 });
+    const successHp = store.upgradeEarthHpRegen();
+    expect(successHp).toBe(true);
+    expect(useGameStore.getState().earthHpRegenLevel).toBe(2);
+    expect(useGameStore.getState().credits).toBe(550); // 1000 - 450
+
+    const successShield = store.upgradeEarthShieldRegen();
+    expect(successShield).toBe(true);
+    expect(useGameStore.getState().earthShieldRegenLevel).toBe(2);
+    expect(useGameStore.getState().credits).toBe(100); // 550 - 450
+
+    // 자원 부족 시 실패 검증
+    const successHpFail = store.upgradeEarthHpRegen(); // 필요 비용 300 * 2 * 1.5 = 900
+    expect(successHpFail).toBe(false);
+    expect(useGameStore.getState().earthHpRegenLevel).toBe(2);
+
+    // 3. 틱 회복 동작 검증
+    // 지구 체력을 50으로, 실드를 50으로 깎고 틱 진행
+    useGameStore.setState({
+      earthHp: 50,
+      earthShield: 50
+    });
+
+    // 1초(deltaTime = 1) 틱 진행
+    // HP 회복량: (2 - 1) * 2 = 2 HP/초
+    // 실드 회복량:
+    //   baseRegen = 10 (기본 포스필드 모듈) + (2 - 1) * 3 = 13 실드/초
+    //   shieldRegenMultiplier = 1.0 (시너지 곱)
+    //   satelliteBonus = 1.0 (위성 수 = 0)
+    //   => 13 * 1 * 1 * 1.0초 = 13 실드/초
+    store.tick(1.0);
+
+    const postTickState = useGameStore.getState();
+    expect(postTickState.earthHp).toBe(52); // 50 + 2 = 52
+    expect(postTickState.earthShield).toBe(63); // 50 + 13 = 63
+
+    // 4. 시간 회귀(triggerTimeLoop) 시 리셋 검증
+    store.triggerTimeLoop();
+    const rebirthState = useGameStore.getState();
+    expect(rebirthState.earthHpRegenLevel).toBe(1);
+    expect(rebirthState.earthShieldRegenLevel).toBe(1);
+  });
 });

@@ -172,6 +172,8 @@ export const useGameStore = create((set, get) => ({
   earthShield: 100,
   earthMaxShield: 100,
   earthShieldRechargeRate: 5,
+  earthHpRegenLevel: 1,
+  earthShieldRegenLevel: 1,
   kineticDefenseTowers: 0,
   satelliteRotation: 0,
   shieldModule: 'basic',
@@ -296,6 +298,34 @@ export const useGameStore = create((set, get) => ({
     get().addBattleLog('프리미엄 광고제거 패스를 구매했습니다. 4배속 및 자동 강화가 전면 해금됩니다.');
   },
 
+  upgradeEarthHpRegen: () => {
+    const state = get();
+    const cost = Math.floor(300 * state.earthHpRegenLevel * 1.5);
+    if (state.credits < cost) {
+      return false;
+    }
+    set((s) => ({
+      credits: s.credits - cost,
+      earthHpRegenLevel: s.earthHpRegenLevel + 1
+    }));
+    state.addBattleLog(`지구 HP 자동 회복 장치 강화 완료 (Lv.${state.earthHpRegenLevel + 1})`);
+    return true;
+  },
+
+  upgradeEarthShieldRegen: () => {
+    const state = get();
+    const cost = Math.floor(300 * state.earthShieldRegenLevel * 1.5);
+    if (state.credits < cost) {
+      return false;
+    }
+    set((s) => ({
+      credits: s.credits - cost,
+      earthShieldRegenLevel: s.earthShieldRegenLevel + 1
+    }));
+    state.addBattleLog(`지구 실드 충전기 강화 완료 (Lv.${state.earthShieldRegenLevel + 1})`);
+    return true;
+  },
+
   addBattleLog: (message) => set((state) => ({
     battleLogs: [
       { id: Math.random().toString(), timestamp: new Date().toLocaleTimeString(), message },
@@ -344,6 +374,8 @@ export const useGameStore = create((set, get) => ({
         currentWave: 1,
         enemiesRemainingToSpawn: 8,
         timeLoopCountdown: 0,
+        earthHpRegenLevel: 1,
+        earthShieldRegenLevel: 1,
         planets: resetPlanets,
         synergies: newSynergies,
         shieldModule: 'basic',
@@ -456,9 +488,9 @@ export const useGameStore = create((set, get) => ({
       nanocores: updatedNanocores,
       maxEnergy: calculatedMaxEnergy,
       usedEnergy: targetUsedEnergy,
-      earthShield: finalState.earthShield,
+      earthShield: finalState.earthHp > 0 ? Math.min(maxShield, finalState.earthShield + (newShield - state.earthShield)) : 0,
       earthMaxShield: maxShield,
-      earthHp: finalState.earthHp,
+      earthHp: finalState.earthHp > 0 ? Math.min(finalState.earthMaxHp, finalState.earthHp + (newHp - state.earthHp)) : 0,
       timeMachineGauge: newTimeMachineGauge,
       shipyardQueue: updatedShipyardQueue,
       fleet: updatedFleet,
