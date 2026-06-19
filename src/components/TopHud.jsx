@@ -122,9 +122,6 @@ export default function TopHud({ overlay }) {
             <View style={[styles.summaryItemSlot, { width: colW.credit }]}>
               <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">🪙 {Math.floor(credits).toLocaleString()}</Text>
             </View>
-            <View style={[styles.summaryItemSlot, { width: colW.energy }]}>
-              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">⚡ {usedEnergy}/{maxEnergy}W</Text>
-            </View>
             <View style={[styles.summaryItemSlot, { width: colW.nanocores }]}>
               <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">⚙️ {Math.floor(nanocores)}</Text>
             </View>
@@ -139,10 +136,6 @@ export default function TopHud({ overlay }) {
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: '#00ff8a' }]}>CREDIT</Text>
                 <Text style={[styles.detailValue, { color: '#00ff8a' }]}>{Math.floor(credits).toLocaleString()}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: '#00f0ff' }]}>ENERGY</Text>
-                <Text style={[styles.detailValue, { color: '#00f0ff' }]}>{usedEnergy} / {maxEnergy} W</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: '#ffd700' }]}>NANOCORE</Text>

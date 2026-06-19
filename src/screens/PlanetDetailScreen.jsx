@@ -302,6 +302,15 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 <Text style={[styles.statusChipVal, { color: '#00f0ff' }]}>{Math.floor(earthShield)}</Text>
               </TouchableOpacity>
 
+              {/* ⚡ EP 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#ffd700' }, activeDetail === 'ep' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'ep' ? null : 'ep')}
+              >
+                <Text style={styles.statusChipIcon}>⚡</Text>
+                <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.max(0, Math.floor(overloadEnergy))}EP</Text>
+              </TouchableOpacity>
+
               {/* 🛰️ 요격 위성 칩 */}
               <TouchableOpacity
                 style={[styles.statusChip, { borderColor: '#c296ff' }, activeDetail === 'tower' && styles.statusChipActive]}
@@ -386,6 +395,31 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 </View>
               );
             })()}
+
+            {activeDetail === 'ep' && (
+              <View style={styles.detailPopup} pointerEvents="none">
+                <Text style={styles.detailPopupTitle}>⚡ 과부하 에너지</Text>
+                <Text style={styles.detailPopupValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} EP</Text>
+                <View style={styles.detailMiniBar}>
+                  <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: '#ffd700' }]} />
+                </View>
+                <Text style={[styles.detailPopupSub, { color: '#ffd700', marginTop: 4 }]}>
+                  {(() => {
+                    let activeOverloadDrain = 0;
+                    if (counterattackModules?.reflector) activeOverloadDrain += 10;
+                    if (counterattackModules?.discharge) activeOverloadDrain += 10;
+                    if (counterattackModules?.electricField) activeOverloadDrain += 15;
+                    
+                    if (activeOverloadDrain > 0) {
+                      return `에너지 소모 중 (초당 -${activeOverloadDrain} EP 소모)`;
+                    } else {
+                      const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
+                      return `에너지 충전 중 (초당 +${rechargeSpeed} EP 회복)`;
+                    }
+                  })()}
+                </Text>
+              </View>
+            )}
 
             {activeDetail === 'tower' && (
               <View style={styles.detailPopup} pointerEvents="none">
