@@ -53,7 +53,10 @@ export const saveLoadActions = (
       earthHpRegenLevel: state.earthHpRegenLevel,
       earthShieldRegenLevel: state.earthShieldRegenLevel,
       overloadEnergy: state.overloadEnergy,
-      overloadMaxEnergy: state.overloadMaxEnergy
+      overloadMaxEnergy: state.overloadMaxEnergy,
+      isPowerOffline: state.isPowerOffline,
+      onlineSatelliteCount: state.onlineSatelliteCount,
+      satelliteBootTimer: state.satelliteBootTimer
     };
     try {
       await AsyncStorage.setItem('DEFENSE_EARTH_SAVE', JSON.stringify(saveObj));
@@ -101,6 +104,9 @@ export const saveLoadActions = (
           earthShieldRegenLevel: loaded.earthShieldRegenLevel || 1,
           overloadEnergy: loaded.overloadEnergy !== undefined ? loaded.overloadEnergy : 100,
           overloadMaxEnergy: loaded.overloadMaxEnergy !== undefined ? loaded.overloadMaxEnergy : 100,
+          isPowerOffline: loaded.isPowerOffline !== undefined ? loaded.isPowerOffline : false,
+          onlineSatelliteCount: loaded.onlineSatelliteCount !== undefined ? loaded.onlineSatelliteCount : 0,
+          satelliteBootTimer: loaded.satelliteBootTimer !== undefined ? loaded.satelliteBootTimer : 2.0,
           unlockedCounterattacks: loaded.unlockedCounterattacks !== undefined ? loaded.unlockedCounterattacks : {
             reflector: false,
             discharge: false,
@@ -145,6 +151,9 @@ export const saveLoadActions = (
       earthShieldRegenLevel: 1,
       overloadEnergy: 100,
       overloadMaxEnergy: 100,
+      isPowerOffline: false,
+      onlineSatelliteCount: 0,
+      satelliteBootTimer: 2.0,
       kineticDefenseTowers: 0,
       shieldModule: 'basic',
       counterattackModules: {

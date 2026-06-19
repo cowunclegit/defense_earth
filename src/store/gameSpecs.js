@@ -374,3 +374,41 @@ export const recalculateUsedEnergyState = (state) => {
 
   return shipyardPowerDraw + repairPowerDraw + defensePowerDraw + shieldPowerDraw;
 };
+
+export const SATELLITE_BOOT_ORDER = [
+  'decoy',
+  'laser',
+  'sensor',
+  'emp',
+  'repairDrone',
+  'plasmaLaser',
+  'forceShield',
+  'gravityBomb',
+  'clusterMissile',
+  'antimatter'
+];
+
+export const getOrderedBuiltSatellites = (planets) => {
+  const sorted = [];
+  if (!planets) return sorted;
+  SATELLITE_BOOT_ORDER.forEach(type => {
+    Object.keys(planets).forEach(planetId => {
+      const p = planets[planetId];
+      if (p && p.unlocked && p.orbitalSatellitesList) {
+        const count = p.orbitalSatellitesList[type] || 0;
+        for (let i = 0; i < count; i++) {
+          sorted.push({ planetId, type, energy: SATELLITE_SPECS[type]?.energy || 0 });
+        }
+      }
+    });
+  });
+  return sorted;
+};
+
+export const isSystemOnline = (category, type, energy, isOffline) => {
+  if (energy <= 0) return false;
+  if (!isOffline) return true;
+  if (category === 'shield') return energy >= 20;
+  if (category === 'counterattack') return energy >= 80;
+  return true;
+};

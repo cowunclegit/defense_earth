@@ -782,4 +782,96 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     // 100 - (10 * 1.5 / 1.5 * 0.5) = 95 HP가 되는지 확인
     expect(useGameStore.getState().earthHp).toBe(95);
   });
+
+  test('순차적 가동 제어 및 방전 시 소모량 0차감 검증', () => {
+    const store = useGameStore.getState();
+
+    // 1. 초기 셋업: 방전 상태(isPowerOffline = true, overloadEnergy = 0)로 진입
+    useGameStore.setState({
+      isPowerOffline: true,
+      overloadEnergy: 0,
+      onlineSatelliteCount: 0,
+      satelliteBootTimer: 2.0,
+      shieldModule: 'basic', // basic shield cost = 5 TW
+      counterattackModules: {
+        reflector: true, // reflector cost = 10 TW
+        discharge: false,
+        electricField: false
+      },
+      planets: {
+        earth: {
+          unlocked: true,
+          orbitalSatellitesList: {
+            laser: 1 // laser satellite cost = 5 TW
+          }
+        }
+      }
+    });
+
+    // 틱을 실행하기 전, 방전 상태이고 가용 전력 0이므로 실드(20 TW)도 비활성
+    // 모든 소비 전력은 0이어야 함.
+    // 생산 전력 = 15 TW. 순전력 = +15 TW.
+    // 1초 후 가용 전력은 15 TW가 되어야 함.
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(15);
+    expect(useGameStore.getState().onlineSatelliteCount).toBe(0);
+    expect(useGameStore.getState().isPowerOffline).toBe(true);
+
+    // 2. 가용 전력을 20 TW로 세팅하여 실드 기동
+    // 실드 모듈 활성화로 소비 전력 = 5 TW.
+    // 순전력 = 15 - 5 = +10 TW.
+    // 1.0초 경과 시: timer가 2.0에서 1.0으로 가고 onlineSatelliteCount는 여전히 0
+    useGameStore.setState({
+      overloadEnergy: 20,
+      satelliteBootTimer: 2.0
+    });
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(30); // 20 + 10 * 1.0
+    expect(useGameStore.getState().onlineSatelliteCount).toBe(0);
+    expect(useGameStore.getState().satelliteBootTimer).toBe(1.0);
+
+    // 1.0초 더 경과 시 (총 2초 경과): timer가 0 이하가 되어 onlineSatelliteCount가 1로 증가하고 timer가 2.0으로 리셋됨
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(40); // 30 + 10 * 1.0
+    expect(useGameStore.getState().onlineSatelliteCount).toBe(1);
+    expect(useGameStore.getState().satelliteBootTimer).toBe(2.0);
+
+    // 3. 복구 완료 검증: 모든 위성(1개)이 복원되고 가용 전력이 80 TW에 도달했을 때 정상화(isPowerOffline = false)
+    useGameStore.setState({
+      overloadEnergy: 80
+    });
+    // 틱 한 번 돌리면 복구 완료 체크
+    store.tick(0.1);
+    expect(useGameStore.getState().isPowerOffline).toBe(false);
+
+    // 4. 과부하 및 부하 차단 (Load Shedding) 검증
+    // 정상 운영 중이었으나 위성 전력 부하 초과로 overloadEnergy 방전 상태가 되었을 때
+    useGameStore.setState({
+      isPowerOffline: true,
+      overloadEnergy: 50,
+      onlineSatelliteCount: 3,
+      satelliteBootTimer: 2.0,
+      planets: {
+        earth: {
+          unlocked: true,
+          orbitalSatellitesList: {
+            laser: 3 // laser satellite 3개, 개당 5 TW = 15 TW 소모
+          }
+        }
+      }
+    });
+    // 실드(5 TW) + 위성(15 TW) = 총 20 TW 소모. 생산 15 TW. 순전력 = -5 TW < 0.
+    // 1.0초 경과 시: timer가 2.0에서 1.0으로 가고 onlineSatelliteCount는 여전히 3
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(45); // 50 - 5 * 1.0
+    expect(useGameStore.getState().onlineSatelliteCount).toBe(3);
+    expect(useGameStore.getState().satelliteBootTimer).toBe(1.0);
+
+    // 1.0초 더 경과 시 (총 2초 경과): timer가 0 이하가 되어 onlineSatelliteCount가 2로 감소
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(40); // 45 - 5 * 1.0
+    expect(useGameStore.getState().onlineSatelliteCount).toBe(2);
+    // 이제 위성 2개 = 10 TW 소모. 실드(5 TW) 합쳐서 총 15 TW 소모. 생산 15 TW. 순전력 = 0 TW.
+    // 순전력이 0이 되어 부하가 평형 상태에 도달함
+  });
 });

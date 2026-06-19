@@ -67,16 +67,22 @@ export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_
         else if (sat.type === 'decoy') satColor = '#8e8e93';
         else if (sat.type === 'repairDrone') satColor = '#5856d6';
 
+        const isOnline = sat.isOnline !== false;
+        const solarColor = isOnline ? 'rgba(0, 240, 255, 0.8)' : 'rgba(85, 85, 85, 0.3)';
+        const bodyColor = isOnline ? satColor : '#555555';
+        const bodyOpacity = isOnline ? 1.0 : 0.4;
+
         return (
           <Group 
             key={`sat-skia-${index}`} 
             transform={[{ translateX: satX }, { translateY: satY }, { rotate: angleRad }]}
+            opacity={bodyOpacity}
           >
             {/* Solar panels */}
-            <Rect x={-9} y={-1.5} width={6} height={3} color="rgba(0, 240, 255, 0.8)" />
-            <Rect x={3} y={-1.5} width={6} height={3} color="rgba(0, 240, 255, 0.8)" />
+            <Rect x={-9} y={-1.5} width={6} height={3} color={solarColor} />
+            <Rect x={3} y={-1.5} width={6} height={3} color={solarColor} />
             {/* Satellite Body */}
-            <Rect x={-3} y={-3} width={6} height={6} color={satColor} />
+            <Rect x={-3} y={-3} width={6} height={6} color={bodyColor} />
           </Group>
         );
       })}

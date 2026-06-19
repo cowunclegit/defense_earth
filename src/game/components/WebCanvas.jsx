@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { getOrderedBuiltSatellites } from '../../store/gameSpecs';
 import WebBackground from './web/WebBackground';
 import WebEarth from './web/WebEarth';
 import WebShield from './web/WebShield';
@@ -21,7 +22,9 @@ export default function WebCanvas({ zoom, panX, panY }) {
     earthHp,
     earthMaxHp,
     chronoMuteTimer,
-    planets
+    planets,
+    isPowerOffline,
+    onlineSatelliteCount
   } = useGameStore();
 
   const EARTH_CENTER_X = 270;
@@ -32,12 +35,41 @@ export default function WebCanvas({ zoom, panX, panY }) {
   const earthPlanet = planets ? planets.earth : null;
   const earthBases = [];
 
+  // Calculate active satellites map using getOrderedBuiltSatellites
+  const builtSats = getOrderedBuiltSatellites(planets);
+  const activeLimit = isPowerOffline ? (onlineSatelliteCount || 0) : builtSats.length;
+
+  const activeSatsMap = {};
+  Object.keys(planets || {}).forEach(pId => {
+    activeSatsMap[pId] = {};
+  });
+
+  for (let i = 0; i < Math.min(activeLimit, builtSats.length); i++) {
+    const sat = builtSats[i];
+    if (sat && activeSatsMap[sat.planetId]) {
+      if (!activeSatsMap[sat.planetId][sat.type]) {
+        activeSatsMap[sat.planetId][sat.type] = 0;
+      }
+      activeSatsMap[sat.planetId][sat.type]++;
+    }
+  }
+
   const earthSatellites = [];
+  const typeCounters = {};
   if (earthPlanet && earthPlanet.orbitalSatellitesList) {
     Object.keys(earthPlanet.orbitalSatellitesList).forEach((type) => {
       const count = earthPlanet.orbitalSatellitesList[type] || 0;
       for (let i = 0; i < count; i++) {
-        earthSatellites.push({ type, globalIndex: earthSatellites.length });
+        const activeCount = activeSatsMap.earth?.[type] || 0;
+        const currentInstanceIndex = typeCounters[type] || 0;
+        typeCounters[type] = currentInstanceIndex + 1;
+
+        const isOnline = currentInstanceIndex < activeCount;
+        earthSatellites.push({ 
+          type, 
+          globalIndex: earthSatellites.length,
+          isOnline
+        });
       }
     });
   }

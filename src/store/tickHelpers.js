@@ -18,7 +18,9 @@ import {
   getScaledCd,
   getScaledRange,
   calculateSynergies,
-  recalculateUsedEnergyState
+  recalculateUsedEnergyState,
+  isSystemOnline,
+  getOrderedBuiltSatellites
 } from './gameSpecs';
 
 // 1. 자원 수확 및 총 에너지 연산
@@ -59,7 +61,8 @@ export const simulatePlanetaryDefenses = (
   updatedParticles,
   actualDelta,
   nextRotation,
-  addBattleLog
+  addBattleLog,
+  activeSatsMap
 ) => {
   Object.keys(updatedPlanets).forEach((planetId) => {
     const p = updatedPlanets[planetId];
@@ -73,10 +76,8 @@ export const simulatePlanetaryDefenses = (
     if (!p.orbitalStationsList) p.orbitalStationsList = {};
     if (!p.stationTimers) p.stationTimers = {};
 
-    const isOverloadDischarged = (state.overloadEnergy || 0) <= 0;
-
     // CIWS (미사일 방어막) 요격 로직 (decoy 위성 개수를 참조)
-    const ciwsCount = isOverloadDischarged ? 0 : (p.orbitalSatellitesList.decoy || 0);
+    const ciwsCount = activeSatsMap[planetId]?.decoy || 0;
     if (ciwsCount > 0) {
       let ciwsTimer = p.groundBaseTimers.ciws_intercept || 0;
       if (ciwsTimer > 0) {
@@ -105,24 +106,23 @@ export const simulatePlanetaryDefenses = (
     // 궤도 위성 공격
     const attackSatellites = [];
     const defenseSatellites = [];
-    if (p.orbitalSatellitesList && !isOverloadDischarged) {
-      Object.keys(p.orbitalSatellitesList).forEach((t) => {
-        const c = p.orbitalSatellitesList[t] || 0;
-        const spec = SATELLITE_SPECS[t];
-        const isWeapon = spec ? spec.isWeapon : false;
-        for (let i = 0; i < c; i++) {
-          if (isWeapon) {
-            attackSatellites.push({ type: t, globalIndex: attackSatellites.length, isWeapon: true });
-          } else {
-            defenseSatellites.push({ type: t, globalIndex: defenseSatellites.length, isWeapon: false });
-          }
+    const planetActiveSats = activeSatsMap[planetId] || {};
+    Object.keys(planetActiveSats).forEach((t) => {
+      const c = planetActiveSats[t] || 0;
+      const spec = SATELLITE_SPECS[t];
+      const isWeapon = spec ? spec.isWeapon : false;
+      for (let i = 0; i < c; i++) {
+        if (isWeapon) {
+          attackSatellites.push({ type: t, globalIndex: attackSatellites.length, isWeapon: true });
+        } else {
+          defenseSatellites.push({ type: t, globalIndex: defenseSatellites.length, isWeapon: false });
         }
-      });
-    }
+      }
+    });
     const earthSatellites = [...attackSatellites, ...defenseSatellites];
 
-    Object.keys(p.orbitalSatellitesList).forEach((type) => {
-      const count = isOverloadDischarged ? 0 : (p.orbitalSatellitesList[type] || 0);
+    Object.keys(planetActiveSats).forEach((type) => {
+      const count = planetActiveSats[type] || 0;
       if (count <= 0) return;
 
       const spec = SATELLITE_SPECS[type];
@@ -246,13 +246,14 @@ export const simulateShieldAndHP = (
   newShield,
   newHp,
   checkAndLogEnemyKill,
-  addBattleLog
+  addBattleLog,
+  activeSatsMap
 ) => {
   let totalSatellites = 0;
-  Object.values(updatedPlanets).forEach(p => {
-    if (p.unlocked) {
-      totalSatellites += (p.orbitalSatellites || 0);
-    }
+  Object.keys(activeSatsMap).forEach(pId => {
+    Object.values(activeSatsMap[pId]).forEach(count => {
+      totalSatellites += count;
+    });
   });
   const satelliteBonus = 1 + totalSatellites * 0.1;
 
@@ -262,7 +263,8 @@ export const simulateShieldAndHP = (
   const isPowerShortage = state.usedEnergy > calculatedMaxEnergy;
   const actualRegen = isPowerShortage ? (shieldRegen * 0.5) : shieldRegen;
 
-  if ((state.overloadEnergy || 0) <= 0) {
+  const isShieldOnline = isSystemOnline('shield', null, state.overloadEnergy, state.isPowerOffline);
+  if (!isShieldOnline) {
     newShield = 0;
   } else if (newShield < maxShield) {
     newShield = Math.min(maxShield, newShield + actualRegen);
@@ -930,6 +932,23 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   let nextMuteTimer = Math.max(0, state.chronoMuteTimer - actualDelta);
   const isMuted = nextMuteTimer > 0;
 
+  // 1.1. 건설된 위성 정렬 목록 및 액티브 맵 계산
+  const builtSats = getOrderedBuiltSatellites(updatedPlanets);
+  const activeLimit = state.isPowerOffline ? (state.onlineSatelliteCount || 0) : builtSats.length;
+
+  const activeSatsMap = {};
+  Object.keys(updatedPlanets).forEach(planetId => {
+    activeSatsMap[planetId] = {};
+  });
+
+  for (let i = 0; i < Math.min(activeLimit, builtSats.length); i++) {
+    const sat = builtSats[i];
+    if (!activeSatsMap[sat.planetId][sat.type]) {
+      activeSatsMap[sat.planetId][sat.type] = 0;
+    }
+    activeSatsMap[sat.planetId][sat.type]++;
+  }
+
   // 1. 자원 수확 및 총 에너지 연산
   const { earnedCredits, calculatedMaxEnergy, earnedNanocores } = harvestResources(state, updatedPlanets, actualDelta);
   let updatedCredits = state.credits + earnedCredits;
@@ -978,7 +997,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     updatedParticles,
     actualDelta,
     nextRotation,
-    addBattleLog
+    addBattleLog,
+    activeSatsMap
   );
 
   // Clean up dead enemies immediately (from satellite fire)
@@ -1003,7 +1023,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     state.earthShield,
     state.earthHp,
     checkAndLogEnemyKill,
-    addBattleLog
+    addBattleLog,
+    activeSatsMap
   );
   let newShield = shieldHP.newShield;
   let newHp = shieldHP.newHp;
@@ -1082,9 +1103,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
 
   // 9. 아군 궤도 함선 기동 및 적 추격
   const totalRepairShips = updatedFleet.filter(s => s.type === SHIP_TYPES.REPAIR_SHIP).length;
-  const totalRepairDrones = (state.overloadEnergy || 0) <= 0
-    ? 0
-    : Object.values(finalPlanets).reduce((acc, p) => acc + (p.orbitalSatellitesList?.repairDrone || 0), 0);
+  const totalRepairDrones = Object.keys(activeSatsMap).reduce((acc, pId) => acc + (activeSatsMap[pId]?.repairDrone || 0), 0);
   updatedFleet = simulateFleetMovementAndCombat(
     state,
     updatedFleet,
@@ -1128,27 +1147,28 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   const productionPower = 15 * (state.synergies.energyProductionMultiplier || 1.0);
   
   // 13.1. 실드 전력 소모 (TW단위)
-  const shieldConsumption = SHIELD_MODULE_SPECS[state.shieldModule || 'basic']?.energyCost || 0;
+  const isShieldOnline = isSystemOnline('shield', null, state.overloadEnergy, state.isPowerOffline);
+  const shieldConsumption = isShieldOnline ? (SHIELD_MODULE_SPECS[state.shieldModule || 'basic']?.energyCost || 0) : 0;
   
   // 13.2. 반격 모듈 전력 소모
+  const isCounterattackOnline = isSystemOnline('counterattack', null, state.overloadEnergy, state.isPowerOffline);
   let counterattackConsumption = 0;
-  if (state.counterattackModules.reflector) counterattackConsumption += 10;
-  if (state.counterattackModules.discharge) counterattackConsumption += 10;
-  if (state.counterattackModules.electricField) counterattackConsumption += 15;
+  if (isCounterattackOnline) {
+    if (state.counterattackModules.reflector) counterattackConsumption += 10;
+    if (state.counterattackModules.discharge) counterattackConsumption += 10;
+    if (state.counterattackModules.electricField) counterattackConsumption += 15;
+  }
   
   // 13.3. 위성 유지 전력 소모 (TW단위)
   let satelliteConsumption = 0;
-  Object.keys(updatedPlanets).forEach((planetId) => {
-    const p = updatedPlanets[planetId];
-    if (p.unlocked && p.orbitalSatellitesList) {
-      Object.keys(p.orbitalSatellitesList).forEach((type) => {
-        const count = p.orbitalSatellitesList[type] || 0;
-        const spec = SATELLITE_SPECS[type];
-        if (spec && count > 0) {
-          satelliteConsumption += count * spec.energy;
-        }
-      });
-    }
+  Object.keys(activeSatsMap).forEach((planetId) => {
+    Object.keys(activeSatsMap[planetId]).forEach((type) => {
+      const count = activeSatsMap[planetId][type] || 0;
+      const spec = SATELLITE_SPECS[type];
+      if (spec && count > 0) {
+        satelliteConsumption += count * spec.energy;
+      }
+    });
   });
 
   const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
@@ -1159,9 +1179,55 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
 
   newOverloadEnergy = Math.max(0, Math.min(maxOverloadEnergy, newOverloadEnergy + netPower * actualDelta));
 
+  let newIsPowerOffline = state.isPowerOffline;
+  let newOnlineSatelliteCount = state.onlineSatelliteCount !== undefined ? state.onlineSatelliteCount : 0;
+  let newSatelliteBootTimer = state.satelliteBootTimer !== undefined ? state.satelliteBootTimer : 2.0;
+
+  if (newOverloadEnergy <= 0) {
+    newIsPowerOffline = true;
+    newOnlineSatelliteCount = 0;
+    newSatelliteBootTimer = 2.0;
+  } else if (newIsPowerOffline) {
+    if (isShieldOnline) {
+      if (netPower < 0) {
+        newSatelliteBootTimer -= actualDelta;
+        if (newSatelliteBootTimer <= 0) {
+          if (newOnlineSatelliteCount > 0) {
+            newOnlineSatelliteCount--;
+            addBattleLog(`[경고] 가용 전력 과부하! 위성 전원 차단: 위성 1개 OFF.`);
+          }
+          newSatelliteBootTimer = 2.0;
+        }
+      } else if (newOnlineSatelliteCount < builtSats.length) {
+        newSatelliteBootTimer -= actualDelta;
+        if (newSatelliteBootTimer <= 0) {
+          newOnlineSatelliteCount++;
+          addBattleLog(`[알림] 가용 전력 복구 중: 위성 전원 순차 투입: 위성 1개 ON.`);
+          newSatelliteBootTimer = 2.0;
+        }
+      } else {
+        newSatelliteBootTimer = 2.0;
+      }
+      
+      // 복구 완료 검증: 모든 위성이 복원되고 가용 전력이 80 TW에 도달했을 때
+      if (newOnlineSatelliteCount >= builtSats.length && (state.overloadEnergy >= 80 || newOverloadEnergy >= 80)) {
+        newIsPowerOffline = false;
+      }
+    } else {
+      newOnlineSatelliteCount = 0;
+      newSatelliteBootTimer = 2.0;
+    }
+  } else {
+    newOnlineSatelliteCount = builtSats.length;
+    newSatelliteBootTimer = 2.0;
+  }
+
   return {
     newOverloadEnergy,
     maxOverloadEnergy,
+    newIsPowerOffline,
+    newOnlineSatelliteCount,
+    newSatelliteBootTimer,
     updatedCredits,
     updatedNanocores,
     calculatedMaxEnergy,

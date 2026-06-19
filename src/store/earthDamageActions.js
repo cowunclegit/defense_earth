@@ -4,7 +4,8 @@ import {
   EARTH_CENTER_Y,
   SHIELD_RADIUS,
   SHIELD_MODULE_SPECS,
-  COUNTERATTACK_MODULE_SPECS
+  COUNTERATTACK_MODULE_SPECS,
+  isSystemOnline
 } from './gameSpecs';
 
 export const earthDamageActions = (set, get) => ({
@@ -12,8 +13,11 @@ export const earthDamageActions = (set, get) => ({
     const state = get();
     if (state.earthHp <= 0) return;
 
+    const isShieldOnline = isSystemOnline('shield', null, state.overloadEnergy, state.isPowerOffline);
+    const isCounterattackOnline = isSystemOnline('counterattack', null, state.overloadEnergy, state.isPowerOffline);
+
     // --- Phase Shield (30% damage reduction) ---
-    if (state.shieldModule === 'phase' && (state.overloadEnergy || 0) > 0) {
+    if (state.shieldModule === 'phase' && isShieldOnline) {
       damage *= 0.7;
     }
 
@@ -35,8 +39,8 @@ export const earthDamageActions = (set, get) => ({
 
     // --- Reflect Shield & Reflector Counterattack ---
     let reflectPercent = 0;
-    if (state.shieldModule === 'reflect' && type === 'energy' && (state.overloadEnergy || 0) > 0) reflectPercent += 0.3;
-    if (state.counterattackModules.reflector && (state.overloadEnergy || 0) > 0) reflectPercent += 0.3;
+    if (state.shieldModule === 'reflect' && type === 'energy' && isShieldOnline) reflectPercent += 0.3;
+    if (state.counterattackModules.reflector && isCounterattackOnline) reflectPercent += 0.3;
 
     if (reflectPercent > 0 && state.enemies.length > 0) {
       const reflectedDamage = damage * reflectPercent;
@@ -56,7 +60,7 @@ export const earthDamageActions = (set, get) => ({
 
     if (type === 'energy') {
       const energyDamage = damage * 1.5;
-      const currentShield = (state.overloadEnergy || 0) <= 0 ? 0 : state.earthShield;
+      const currentShield = isShieldOnline ? state.earthShield : 0;
       let creditRefunding = 0;
       if (state.researchUpgrades.beamConversion) {
         creditRefunding = energyDamage * 0.1;

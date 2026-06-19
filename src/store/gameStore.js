@@ -118,7 +118,9 @@ import {
   SHIELD_RADIUS,
   ENEMY_SPAWN_RADIUS,
   calculateSynergies,
-  recalculateUsedEnergyState
+  recalculateUsedEnergyState,
+  getOrderedBuiltSatellites,
+  isSystemOnline
 } from './gameSpecs';
 
 export {
@@ -142,7 +144,9 @@ export {
   SHIELD_RADIUS,
   ENEMY_SPAWN_RADIUS,
   calculateSynergies,
-  recalculateUsedEnergyState
+  recalculateUsedEnergyState,
+  getOrderedBuiltSatellites,
+  isSystemOnline
 };
 
 export const useGameStore = create((set, get) => ({
@@ -184,6 +188,9 @@ export const useGameStore = create((set, get) => ({
   earthShieldRegenLevel: 1,
   overloadEnergy: 100,
   overloadMaxEnergy: 100,
+  isPowerOffline: false,
+  onlineSatelliteCount: 0,
+  satelliteBootTimer: 2.0,
   kineticDefenseTowers: 0,
   satelliteRotation: 0,
   shieldModule: 'basic',
@@ -393,6 +400,9 @@ export const useGameStore = create((set, get) => ({
         earthShieldRegenLevel: 1,
         overloadEnergy: 100,
         overloadMaxEnergy: 100,
+        isPowerOffline: false,
+        onlineSatelliteCount: 0,
+        satelliteBootTimer: 2.0,
         planets: resetPlanets,
         synergies: newSynergies,
         shieldModule: 'basic',
@@ -501,7 +511,10 @@ export const useGameStore = create((set, get) => ({
       nextWave,
       enemiesRemaining,
       newOverloadEnergy,
-      maxOverloadEnergy
+      maxOverloadEnergy,
+      newIsPowerOffline,
+      newOnlineSatelliteCount,
+      newSatelliteBootTimer
     } = runTickSimulation(state, actualDelta, (msg) => state.addBattleLog(msg), (dmg, type) => state.damageEarth(dmg, type));
 
     // Get final values from store updated by damageEarth
@@ -529,7 +542,10 @@ export const useGameStore = create((set, get) => ({
       satelliteRotation: nextRotation,
       kineticDefenseTowers: finalPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0,
       overloadEnergy: newOverloadEnergy,
-      overloadMaxEnergy: maxOverloadEnergy
+      overloadMaxEnergy: maxOverloadEnergy,
+      isPowerOffline: newIsPowerOffline,
+      onlineSatelliteCount: newOnlineSatelliteCount,
+      satelliteBootTimer: newSatelliteBootTimer
     });
   }
 }));

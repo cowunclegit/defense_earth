@@ -14,7 +14,9 @@ import {
   getSatelliteUpgradeCost,
   getScaledDmg,
   getScaledCd,
-  getScaledRange
+  getScaledRange,
+  isSystemOnline,
+  getOrderedBuiltSatellites
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
 import TopHud from '../components/TopHud';
@@ -39,6 +41,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
     earthHpRegenLevel,
     overloadEnergy,
     overloadMaxEnergy,
+    isPowerOffline,
+    onlineSatelliteCount,
     earthShieldRegenLevel,
     upgradeEarthHpRegen,
     upgradeEarthShieldRegen,
@@ -79,6 +83,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
   const [blinkVisible, setBlinkVisible] = React.useState(true);
   const isPowerDischarged = (overloadEnergy || 0) <= 0;
+  const isShieldOnline = isSystemOnline('shield', null, overloadEnergy, isPowerOffline);
 
   React.useEffect(() => {
     loadGame();
@@ -97,6 +102,25 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
   const planetState = planets[planetId];
   const planetData = PLANETARY_DATA[planetId];
+
+  // UI Active Satellites calculation
+  const builtSats = getOrderedBuiltSatellites(planets);
+  const activeLimit = isPowerOffline ? (onlineSatelliteCount || 0) : builtSats.length;
+
+  const activeSatsMap = {};
+  Object.keys(planets || {}).forEach(pId => {
+    activeSatsMap[pId] = {};
+  });
+
+  for (let i = 0; i < Math.min(activeLimit, builtSats.length); i++) {
+    const sat = builtSats[i];
+    if (sat && activeSatsMap[sat.planetId]) {
+      if (!activeSatsMap[sat.planetId][sat.type]) {
+        activeSatsMap[sat.planetId][sat.type] = 0;
+      }
+      activeSatsMap[sat.planetId][sat.type]++;
+    }
+  }
 
   const renderPowerGraph = () => {
     const productionPower = 15 * (synergies?.energyProductionMultiplier || 1.0);
@@ -181,7 +205,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
       return;
     }
     if (availableEnergy < costEnergy) {
-      Alert.alert('전력 부족', '가용 전력 한도가 부족합니다.');
+      Alert.alert('전력 부족', '발전소 전력 공급 한도가 부족합니다.');
       return;
     }
 
@@ -382,13 +406,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
                   styles.statusChip,
                   { borderColor: '#00f0ff' },
                   activeDetail === 'shield' && styles.statusChipActive,
-                  isPowerDischarged && { borderColor: '#8fa0c4', opacity: 0.6 }
+                  !isShieldOnline && { borderColor: '#8fa0c4', opacity: 0.6 }
                 ]}
                 onPress={() => setActiveDetail(activeDetail === 'shield' ? null : 'shield')}
               >
                 <Text style={styles.statusChipIcon}>🛡️</Text>
-                <Text style={[styles.statusChipVal, { color: '#00f0ff' }, isPowerDischarged && { color: '#8fa0c4' }]}>
-                  {isPowerDischarged ? 'OFF' : Math.floor(earthShield)}
+                <Text style={[styles.statusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
+                  {!isShieldOnline ? 'OFF' : Math.floor(earthShield)}
                 </Text>
               </TouchableOpacity>
 
@@ -672,12 +696,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     if (type === 'repair') desc += ' (HP 초당 5 재생, 붕괴 시 HP 20 복구)';
                     
                     return (
-                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }, isPowerDischarged && isActive && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
+                      <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }, !isShieldOnline && isActive && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
                           {isActive && (
-                            <Text style={[styles.gridCardCount, { color: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
-                              {isPowerDischarged ? '장착됨 (동작 정지)' : '장착됨'}
+                            <Text style={[styles.gridCardCount, { color: !isShieldOnline ? '#8fa0c4' : '#ff3b30' }]}>
+                              {!isShieldOnline ? '장착됨 (동작 정지)' : '장착됨'}
                             </Text>
                           )}
                         </View>
@@ -696,9 +720,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             </Text>
                           </TouchableOpacity>
                         ) : (
-                          <View style={[styles.gridCompleteBadgeMini, { borderColor: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
-                            <Text style={[styles.gridCompleteTextMini, { color: isPowerDischarged ? '#8fa0c4' : '#ff3b30' }]}>
-                              {isPowerDischarged ? '정지' : '활성'}
+                          <View style={[styles.gridCompleteBadgeMini, { borderColor: !isShieldOnline ? '#8fa0c4' : '#ff3b30' }]}>
+                            <Text style={[styles.gridCompleteTextMini, { color: !isShieldOnline ? '#8fa0c4' : '#ff3b30' }]}>
+                              {!isShieldOnline ? '정지' : '활성'}
                             </Text>
                           </View>
                         )}
@@ -732,7 +756,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
                   {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
                     const spec = COUNTERATTACK_MODULE_SPECS[type];
                     const isActive = counterattackModules?.[type];
-                    const isDepleted = isActive && overloadEnergy <= 0;
+                    const isCounterattackOnline = isSystemOnline('counterattack', null, overloadEnergy, isPowerOffline);
+                    const isStandby = isActive && !isCounterattackOnline;
+                    const isDepleted = isActive && isCounterattackOnline && overloadEnergy <= 0;
                     let desc = '';
                     if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 TW 소모';
                     if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 TW 소모';
@@ -743,8 +769,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
                           {isActive && (
-                            <Text style={[styles.gridCardCount, { color: isDepleted ? '#8fa0c4' : '#ff3b30' }]}>
-                              {isDepleted ? '에너지 고갈' : 'ON'}
+                            <Text style={[styles.gridCardCount, { color: (isStandby || isDepleted) ? '#8fa0c4' : '#ff3b30' }]}>
+                              {isStandby ? '전력 대기' : (isDepleted ? '에너지 고갈' : 'ON')}
                             </Text>
                           )}
                         </View>
@@ -752,7 +778,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                         <TouchableOpacity 
                           style={[
                             styles.gridBuildBtn, 
-                            { backgroundColor: isActive ? (isDepleted ? '#6b7280' : '#ff3b30') : '#16223f', borderWidth: 0.5, borderColor: isActive ? (isDepleted ? '#6b7280' : '#ff3b30') : 'rgba(255, 255, 255, 0.2)' }
+                            { backgroundColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ff3b30') : '#16223f', borderWidth: 0.5, borderColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ff3b30') : 'rgba(255, 255, 255, 0.2)' }
                           ]} 
                           onPress={() => {
                             const success = toggleCounterattackModule(type);
@@ -806,11 +832,16 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const spdUpgradeCost = getSatelliteUpgradeCost(type, 'speed', spdLvl);
                       const rngUpgradeCost = getSatelliteUpgradeCost(type, 'range', rngLvl);
 
+                      const activeCount = activeSatsMap[planetId]?.[type] || 0;
+                      const standbyCount = count - activeCount;
+                      const isCardOffline = count > 0 && activeCount === 0;
                       return (
-                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 180 }]}>
+                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 180 }, isCardOffline && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
                           <View style={styles.gridCardHeader}>
                             <Text style={styles.gridCardName}>{spec.name}</Text>
-                            <Text style={[styles.gridCardCount, { color: '#ff8a00' }]}>{count}개</Text>
+                            <Text style={[styles.gridCardCount, { color: isCardOffline ? '#8fa0c4' : '#ff8a00' }]}>
+                              {count}개 {standbyCount > 0 && `(대기: ${standbyCount})`}
+                            </Text>
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
                           
@@ -836,7 +867,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                   } else if (credits < getSatelliteCost(type, count)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {
-                                    Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                    Alert.alert('건설 실패', '발전소 전력 공급 한도가 부족합니다.');
                                   } else {
                                     Alert.alert('건설 실패', '자원이 부족합니다.');
                                   }
@@ -935,7 +966,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             onPress={() => {
                               const success = buildOrbitalStationDetail(planetId, type);
                               if (success) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 가용 전력이 부족합니다.');
+                              else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 발전소 전력 공급 한도가 부족합니다.');
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
@@ -975,11 +1006,16 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       
                       const isMax = count >= MAX_SATELLITES_PER_TYPE;
 
+                      const activeCount = activeSatsMap[planetId]?.[type] || 0;
+                      const standbyCount = count - activeCount;
+                      const isCardOffline = count > 0 && activeCount === 0;
                       return (
-                        <View key={type} style={[styles.gridCard, { borderColor: '#ffd700' }]}>
+                        <View key={type} style={[styles.gridCard, { borderColor: '#ffd700' }, isCardOffline && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
                           <View style={styles.gridCardHeader}>
                             <Text style={styles.gridCardName}>{spec.name}</Text>
-                            <Text style={[styles.gridCardCount, { color: '#ffd700' }]}>{count}개</Text>
+                            <Text style={[styles.gridCardCount, { color: isCardOffline ? '#8fa0c4' : '#ffd700' }]}>
+                              {count}개 {standbyCount > 0 && `(대기: ${standbyCount})`}
+                            </Text>
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
                           {isMax ? (
@@ -1003,7 +1039,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                   } else if (credits < getSatelliteCost(type, count)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {
-                                    Alert.alert('건설 실패', '가용 전력이 부족합니다.');
+                                    Alert.alert('건설 실패', '발전소 전력 공급 한도가 부족합니다.');
                                   } else {
                                     Alert.alert('건설 실패', '자원이 부족합니다.');
                                   }
@@ -1053,7 +1089,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             onPress={() => {
                               const success = buildOrbitalStationDetail(planetId, type);
                               if (success) setTimeout(() => saveGame(), 100);
-                              else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 가용 전력이 부족합니다.');
+                              else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 발전소 전력 공급 한도가 부족합니다.');
                             }}
                           >
                             <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
