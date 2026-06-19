@@ -26,18 +26,59 @@ import {
 // 1. 자원 수확 및 총 에너지 연산
 export const harvestResources = (state, updatedPlanets, actualDelta) => {
   let totalPopulation = 0;
-  Object.values(updatedPlanets).forEach((p) => {
-    if (p.unlocked) totalPopulation += p.population;
+  let totalFactoryContribution = 0;
+  let totalTaxBonus = 0;
+
+  Object.keys(updatedPlanets).forEach((planetId) => {
+    const p = updatedPlanets[planetId];
+    if (p.unlocked) {
+      const data = PLANETARY_DATA[planetId];
+      if (data) {
+        // Fallback for infrastructure if undefined
+        const infra = p.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+        
+        // 1. Calculate population capacity
+        const baseCapacity = (p.terraformProgress / 100) * data.maxPopulation;
+        const capacityBonus = data.maxPopulation * 0.2;
+        const maxPop = baseCapacity + (infra.housing || 0) * capacityBonus;
+
+        // 2. Simulate population growth (logistic growth + immigration)
+        if (p.population < maxPop) {
+          const growthRate = 0.005 + (infra.housing || 0) * 0.001;
+          const growth = p.population * growthRate * (1 - p.population / Math.max(1, maxPop));
+          const immigration = 5 + (infra.housing || 0) * 2;
+          p.population = Math.min(maxPop, p.population + (growth + immigration) * actualDelta);
+        } else if (p.population > maxPop) {
+          // If capacity shrank, gradually decay population
+          p.population = Math.max(maxPop, p.population - (p.population * 0.01 + 10) * actualDelta);
+        }
+
+        totalPopulation += p.population;
+        
+        // 3. Accumulate factory contribution
+        const factoryLvl = infra.factory || 0;
+        totalFactoryContribution += factoryLvl * 15;
+        totalTaxBonus += factoryLvl * 0.03;
+      }
+    }
   });
 
-  const baseCreditRate = 10 + (totalPopulation * 0.00001);
+  // 4. Calculate credit generation rate based on population and factory levels
+  // Tax formula: 0.005 * (totalPopulation ^ 0.75)
+  const taxRevenue = 0.005 * Math.pow(Math.max(0, totalPopulation), 0.75);
+  const baseCreditRate = 10 + taxRevenue * (1 + totalTaxBonus) + totalFactoryContribution;
   const earnedCredits = baseCreditRate * state.synergies.creditMultiplier * actualDelta;
 
+  // 5. Calculate energy capacity (Power Plants)
   let baseEnergy = 100;
   Object.keys(updatedPlanets).forEach((planetId) => {
     const p = updatedPlanets[planetId];
-    if (p.unlocked && planetId !== PLANETS.EARTH) {
-      baseEnergy += (p.terraformProgress / 100) * 50;
+    if (p.unlocked) {
+      if (planetId !== PLANETS.EARTH) {
+        baseEnergy += (p.terraformProgress / 100) * 50;
+      }
+      const infra = p.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+      baseEnergy += (infra.powerPlant || 0) * 20;
     }
   });
   const calculatedMaxEnergy = Math.floor(baseEnergy * state.synergies.energyProductionMultiplier);
@@ -431,12 +472,10 @@ export const simulateQolAutomation = (
 
         if (updatedCredits >= costCredit && availableEnergy >= costEnergy) {
           const updatedProgress = Math.min(100, planet.terraformProgress + 10);
-          const updatedPopulation = Math.floor((updatedProgress / 100) * data.maxPopulation);
           
           updatedPlanets[planetId] = {
             ...planet,
-            terraformProgress: updatedProgress,
-            population: updatedPopulation
+            terraformProgress: updatedProgress
           };
           updatedCredits -= costCredit;
           

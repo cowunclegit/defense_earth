@@ -68,6 +68,12 @@ const createDefaultPlanetState = (unlocked = false, terraformProgress = 0, popul
   },
   stationTimers: {
     gigaPlasma: 0
+  },
+  infrastructure: {
+    housing: 0,
+    factory: 0,
+    powerPlant: 0,
+    bunker: 0
   }
 });
 
@@ -120,7 +126,9 @@ import {
   calculateSynergies,
   recalculateUsedEnergyState,
   getOrderedBuiltSatellites,
-  isSystemOnline
+  isSystemOnline,
+  getInfrastructureCost,
+  INFRASTRUCTURE_SPECS
 } from './gameSpecs';
 
 export {
@@ -146,7 +154,9 @@ export {
   calculateSynergies,
   recalculateUsedEnergyState,
   getOrderedBuiltSatellites,
-  isSystemOnline
+  isSystemOnline,
+  getInfrastructureCost,
+  INFRASTRUCTURE_SPECS
 };
 
 export const useGameStore = create((set, get) => ({

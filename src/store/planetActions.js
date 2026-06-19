@@ -9,7 +9,8 @@ import {
   STATION_SPECS,
   SHIELD_MODULE_SPECS,
   COUNTERATTACK_MODULE_SPECS,
-  calculateSynergies
+  calculateSynergies,
+  getInfrastructureCost
 } from './gameSpecs';
 
 export const planetActions = (set, get) => ({
@@ -19,7 +20,7 @@ export const planetActions = (set, get) => ({
 
     const updatedPlanets = {
       ...state.planets,
-      [planetId]: { ...state.planets[planetId], unlocked: true }
+      [planetId]: { ...state.planets[planetId], unlocked: true, population: 100 }
     };
     return {
       planets: updatedPlanets,
@@ -40,14 +41,12 @@ export const planetActions = (set, get) => ({
     if (state.credits < costCredit || availableEnergy < costEnergy) return false;
 
     const updatedProgress = Math.min(100, planet.terraformProgress + 10);
-    const updatedPopulation = Math.floor((updatedProgress / 100) * data.maxPopulation);
 
     const updatedPlanets = {
       ...state.planets,
       [planetId]: {
         ...planet,
-        terraformProgress: updatedProgress,
-        population: updatedPopulation
+        terraformProgress: updatedProgress
       }
     };
 
@@ -57,6 +56,50 @@ export const planetActions = (set, get) => ({
       planets: updatedPlanets,
       synergies: calculateSynergies(updatedPlanets, state.chronosUpgrades)
     });
+    return true;
+  },
+
+  buildInfrastructure: (planetId, infraType) => {
+    const state = get();
+    const planet = state.planets[planetId];
+    if (!planet || !planet.unlocked) return false;
+
+    const infra = planet.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+    const currentLevel = infra[infraType] || 0;
+
+    const cost = getInfrastructureCost(infraType, currentLevel);
+    if (state.credits < cost) return false;
+
+    const updatedPlanets = {
+      ...state.planets,
+      [planetId]: {
+        ...planet,
+        infrastructure: {
+          ...infra,
+          [infraType]: currentLevel + 1
+        }
+      }
+    };
+
+    let extraMaxHp = 0;
+    if (infraType === 'bunker') {
+      extraMaxHp = 20;
+    }
+
+    set({
+      credits: state.credits - cost,
+      planets: updatedPlanets,
+      earthMaxHp: state.earthMaxHp + extraMaxHp,
+      earthHp: state.earthHp + extraMaxHp
+    });
+
+    const infraNames = {
+      housing: '주거 지원 지구(Housing)',
+      factory: '종합 생산 공장(Factory)',
+      powerPlant: '발전 시설(Power Plant)',
+      bunker: '지하 대피 방공호(Bunker)'
+    };
+    state.addBattleLog(`${PLANETARY_DATA[planetId].name}에 ${infraNames[infraType]} Lv.${currentLevel + 1}을 건설했습니다.`);
     return true;
   },
 

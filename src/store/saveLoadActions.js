@@ -98,6 +98,30 @@ export const saveLoadActions = (
         }
         loaded.satelliteLevels = defaultLevels;
 
+        if (loaded.planets) {
+          Object.keys(loaded.planets).forEach(pId => {
+            const planet = loaded.planets[pId];
+            if (!planet.infrastructure) {
+              planet.infrastructure = {
+                housing: 0,
+                factory: 0,
+                powerPlant: 0,
+                bunker: 0
+              };
+            }
+          });
+        }
+
+        let totalBunkers = 0;
+        if (loaded.planets) {
+          Object.keys(loaded.planets).forEach(pId => {
+            const planet = loaded.planets[pId];
+            if (planet.unlocked && planet.infrastructure) {
+              totalBunkers += planet.infrastructure.bunker || 0;
+            }
+          });
+        }
+
         const nextState = {
           ...loaded,
           earthHpRegenLevel: loaded.earthHpRegenLevel || 1,
@@ -112,6 +136,8 @@ export const saveLoadActions = (
             discharge: false,
             electricField: false
           },
+          earthMaxHp: 100 + totalBunkers * 20,
+          earthHp: Math.min(100 + totalBunkers * 20, loaded.earthHp !== undefined ? loaded.earthHp : 100),
           synergies: calculateSynergies(loaded.planets, loaded.chronosUpgrades)
         };
         nextState.usedEnergy = recalculateUsedEnergyState(nextState);

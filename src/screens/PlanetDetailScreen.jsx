@@ -16,7 +16,9 @@ import {
   getScaledCd,
   getScaledRange,
   isSystemOnline,
-  getOrderedBuiltSatellites
+  getOrderedBuiltSatellites,
+  getInfrastructureCost,
+  INFRASTRUCTURE_SPECS
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
 import TopHud from '../components/TopHud';
@@ -73,6 +75,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
     buildGroundBaseDetail,
     buildOrbitalSatelliteDetail,
     buildOrbitalStationDetail,
+    buildInfrastructure,
     changeShieldModule,
     toggleCounterattackModule,
     shieldModule,
@@ -609,6 +612,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
               {activeTab === 'attack_satellite' && '🚀 궤도 공격 체계'}
               {activeTab === 'defense_satellite' && '🛰️ 궤도 방어 및 센서 체계'}
               {activeTab === 'shipyard' && '🛸 기동 함대 쉽야드'}
+              {activeTab === 'infrastructure' && '🏢 행성 인프라 개발 체계'}
             </Text>
             <TouchableOpacity 
               style={styles.multiplierBtn} 
@@ -1160,6 +1164,125 @@ export default function PlanetDetailScreen({ route, navigation }) {
               </View>
             )}
 
+            {/* 6. 행성 인프라 탭 */}
+            {activeTab === 'infrastructure' && (
+              <View>
+                {/* 인구수 및 한도 요약 카드 */}
+                {(() => {
+                  const data = PLANETARY_DATA[planetId];
+                  if (!data) return null;
+                  const infra = planetState.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+                  const baseCapacity = (planetState.terraformProgress / 100) * data.maxPopulation;
+                  const capacityBonus = data.maxPopulation * 0.2;
+                  const maxPop = baseCapacity + (infra.housing || 0) * capacityBonus;
+                  const popRatio = maxPop > 0 ? (planetState.population || 0) / maxPop : 0;
+                  const displayPopRatio = Math.min(100, Math.floor(popRatio * 100));
+
+                  return (
+                    <View style={[styles.gridCard, { borderColor: '#af52de', backgroundColor: 'rgba(175, 82, 222, 0.05)', marginBottom: 15, width: '100%', minHeight: 100 }]}>
+                      <Text style={[styles.subTitleText, { marginTop: 0, color: '#af52de' }]}>👥 행성 거주 인구 현황</Text>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+                        <Text style={styles.itemDesc}>현재 인구수:</Text>
+                        <Text style={[styles.detailPopupValue, { color: '#ffffff' }]}>
+                          {Math.floor(planetState.population || 0).toLocaleString()}명
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
+                        <Text style={styles.itemDesc}>최대 수용 한도 (주거지 반영):</Text>
+                        <Text style={[styles.detailPopupValue, { color: '#af52de' }]}>
+                          {Math.floor(maxPop).toLocaleString()}명
+                        </Text>
+                      </View>
+                      {/* 프로그레스 바 */}
+                      <View style={[styles.detailMiniBar, { marginTop: 8, height: 8 }]}>
+                        <View style={[styles.detailMiniBarFill, { width: `${displayPopRatio}%`, backgroundColor: '#af52de' }]} />
+                      </View>
+                      <Text style={[styles.itemDesc, { textAlign: 'right', marginTop: 4, fontSize: 10, color: '#af52de' }]}>
+                        수용율: {displayPopRatio}% (인구 증가 속도: +{(0.5 + (infra.housing || 0) * 0.1).toFixed(1)}%/초)
+                      </Text>
+                    </View>
+                  );
+                })()}
+
+                <Text style={styles.subTitleText}>행성 인프라 시설 목록</Text>
+                <View style={styles.gridContainer}>
+                  {(() => {
+                    const data = PLANETARY_DATA[planetId];
+                    if (!data) return null;
+                    const infra = planetState.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+                    
+                    const infraSpecs = [
+                      {
+                        key: 'housing',
+                        name: '주거 지원 지구 (Habitation Block)',
+                        desc: `행성의 인구 수용량 및 성장 속도를 증가시킵니다.\n효과: 한도 +20% (${Math.floor(data.maxPopulation * 0.2).toLocaleString()}명), 증가율 +0.1%/s`,
+                        cost: Math.floor(100 * Math.pow(1.5, infra.housing || 0)),
+                        level: infra.housing || 0,
+                        borderColor: '#af52de',
+                        buttonColor: '#af52de'
+                      },
+                      {
+                        key: 'factory',
+                        name: '종합 생산 공장 (Industrial Factory)',
+                        desc: `크레딧의 직접 생산량과 세금 효율을 향상시킵니다.\n효과: 초당 +15 크레딧, 전체 세금 효율 +3%`,
+                        cost: Math.floor(150 * Math.pow(1.5, infra.factory || 0)),
+                        level: infra.factory || 0,
+                        borderColor: '#ff2d55',
+                        buttonColor: '#ff2d55'
+                      },
+                      {
+                        key: 'powerPlant',
+                        name: '핵융합/태양광 발전소 (Power Plant)',
+                        desc: `행성의 최대 발전 전력 한도를 늘립니다. (궤도 위성 추가 가동 가능)\n효과: 최대 공급 전력 +20 W (기본 100W)`,
+                        cost: Math.floor(250 * Math.pow(1.6, infra.powerPlant || 0)),
+                        level: infra.powerPlant || 0,
+                        borderColor: '#ffd700',
+                        buttonColor: '#ffd700'
+                      },
+                      {
+                        key: 'bunker',
+                        name: '지하 대피 방공호 (Deep Bunker)',
+                        desc: `지하 네트워크를 연결하여 지구의 총 선체 체력을 강화합니다.\n효과: 지구 최대 체력(Max HP) +20`,
+                        cost: Math.floor(400 * Math.pow(1.7, infra.bunker || 0)),
+                        level: infra.bunker || 0,
+                        borderColor: '#007aff',
+                        buttonColor: '#007aff'
+                      }
+                    ];
+
+                    return infraSpecs.map((spec) => {
+                      const canAfford = credits >= spec.cost;
+                      return (
+                        <View key={spec.key} style={[styles.gridCard, { borderColor: spec.borderColor, minHeight: 185 }]}>
+                          <View style={styles.gridCardHeader}>
+                            <Text style={styles.gridCardName}>{spec.name}</Text>
+                            <Text style={[styles.gridCardCount, { color: spec.borderColor }]}>Lv.{spec.level}</Text>
+                          </View>
+                          <Text style={styles.gridCardDesc}>{spec.desc}</Text>
+                          <TouchableOpacity 
+                            style={[styles.gridBuildBtn, { backgroundColor: canAfford ? spec.buttonColor : '#555555' }]} 
+                            disabled={!canAfford}
+                            onPress={() => {
+                              const success = buildInfrastructure(planetId, spec.key);
+                              if (success) {
+                                setTimeout(() => saveGame(), 100);
+                              } else {
+                                Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                              }
+                            }}
+                          >
+                            <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
+                              건설 ({spec.cost} Cr)
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    });
+                  })()}
+                </View>
+              </View>
+            )}
+
             {/* 개발자 테스트 패널 (스크롤 뷰 최하단에 배치하여 레이아웃 침범 방지) */}
             <View style={styles.devCheatRow}>
               {/* E2E 테스트 호환용 피격 모의 단추 */}
@@ -1201,9 +1324,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
           <View style={styles.neonTabBar}>
             {[
               { id: 'defense_facility', label: '실드&반격', icon: '🛡️', color: '#00f0ff' },
-              { id: 'attack_satellite', label: '공격 궤도위성', icon: '🚀', color: '#ff8a00' },
-              { id: 'defense_satellite', label: '방어 궤도위성', icon: '🛰️', color: '#ffd700' },
-              { id: 'shipyard', label: '함대 쉽야드', icon: '🛸', color: '#00ff8a' },
+              { id: 'attack_satellite', label: '공격 위성', icon: '🚀', color: '#ff8a00' },
+              { id: 'defense_satellite', label: '방어 위성', icon: '🛰️', color: '#ffd700' },
+              { id: 'shipyard', label: '쉽야드', icon: '🛸', color: '#00ff8a' },
+              { id: 'infrastructure', label: '인프라', icon: '🏢', color: '#af52de' },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (
