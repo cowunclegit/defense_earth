@@ -137,7 +137,7 @@ export const GROUND_BASE_SPECS = {
   armor: { name: '강화 장갑 플레이팅', cost: 100, energy: 0, isWeapon: false, maxCount: 8 }
 };
 
-export const MAX_SATELLITES_PER_CATEGORY = 20;
+export const MAX_SATELLITES_PER_TYPE = 20;
 
 export const getSatelliteCost = (type, currentCount) => {
   const spec = SATELLITE_SPECS[type];

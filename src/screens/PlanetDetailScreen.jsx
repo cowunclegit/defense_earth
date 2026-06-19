@@ -9,7 +9,7 @@ import {
   STATION_SPECS, 
   SHIELD_MODULE_SPECS, 
   COUNTERATTACK_MODULE_SPECS,
-  MAX_SATELLITES_PER_CATEGORY,
+  MAX_SATELLITES_PER_TYPE,
   getSatelliteCost
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
@@ -688,7 +688,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
               const attackSatCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'attack');
               return (
                 <View>
-                  <Text style={styles.subTitleText}>공격형 궤도 위성 수량: {attackSatCount} / {MAX_SATELLITES_PER_CATEGORY}</Text>
+                  <Text style={styles.subTitleText}>공격형 궤도 위성 수량: {attackSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {
                       const spec = SATELLITE_SPECS[type];
@@ -707,7 +707,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       if (type === 'emp') desc = `적 전자계 마비 (3초 스턴, ${scaledCd}초 쿨다운), 사거리: ${scaledRange}`;
                       if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 적 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
                       
-                      const isMax = attackSatCount >= MAX_SATELLITES_PER_CATEGORY;
+                      const isMax = count >= MAX_SATELLITES_PER_TYPE;
                       
                       const dmgUpgradeCost = Math.floor(spec.cost * dmgLvl * 1.5);
                       const spdUpgradeCost = Math.floor(spec.cost * spdLvl * 1.5);
@@ -738,9 +738,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 }
                                 if (successCount > 0) setTimeout(() => saveGame(), 100);
                                 else {
-                                  const currentCategoryCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'attack');
-                                  if (currentCategoryCount >= MAX_SATELLITES_PER_CATEGORY) {
-                                    Alert.alert('건설 실패', `최대 공격형 위성 한도(${MAX_SATELLITES_PER_CATEGORY}개)에 도달했습니다.`);
+                                  if (count >= MAX_SATELLITES_PER_TYPE) {
+                                    Alert.alert('건설 실패', `해당 위성의 건설 한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
                                   } else if (credits < getSatelliteCost(type, planetState.orbitalSatellites || 0)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {
@@ -864,7 +863,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
               const defenseSatCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'defense');
               return (
                 <View>
-                  <Text style={styles.subTitleText}>방어형 궤도 위성 수량: {defenseSatCount} / {MAX_SATELLITES_PER_CATEGORY}</Text>
+                  <Text style={styles.subTitleText}>방어형 궤도 위성 수량: {defenseSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {
                       const spec = SATELLITE_SPECS[type];
@@ -876,7 +875,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       if (type === 'decoy') desc = '적 투사체/레이저 요격 흡수 버프';
                       if (type === 'repairDrone') desc = '아군 궤도 함선 초당 20 HP 지속 회복';
                       
-                      const isMax = defenseSatCount >= MAX_SATELLITES_PER_CATEGORY;
+                      const isMax = count >= MAX_SATELLITES_PER_TYPE;
 
                       return (
                         <View key={type} style={[styles.gridCard, { borderColor: '#ffd700' }]}>
@@ -901,9 +900,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
                                 }
                                 if (successCount > 0) setTimeout(() => saveGame(), 100);
                                 else {
-                                  const currentCategoryCount = getCategorySatelliteCount(planetState.orbitalSatellitesList, 'defense');
-                                  if (currentCategoryCount >= MAX_SATELLITES_PER_CATEGORY) {
-                                    Alert.alert('건설 실패', `최대 방어형 위성 한도(${MAX_SATELLITES_PER_CATEGORY}개)에 도달했습니다.`);
+                                  if (count >= MAX_SATELLITES_PER_TYPE) {
+                                    Alert.alert('건설 실패', `해당 위성의 건설 한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
                                   } else if (credits < getSatelliteCost(type, planetState.orbitalSatellites || 0)) {
                                     Alert.alert('건설 실패', '크레딧이 부족합니다.');
                                   } else if ((maxEnergy - usedEnergy) < spec.energy) {

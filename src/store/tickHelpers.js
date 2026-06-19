@@ -12,7 +12,7 @@ import {
   EARTH_CENTER_Y,
   SHIELD_RADIUS,
   ENEMY_SPAWN_RADIUS,
-  MAX_SATELLITES_PER_CATEGORY,
+  MAX_SATELLITES_PER_TYPE,
   getSatelliteCost,
   calculateSynergies,
   recalculateUsedEnergyState
@@ -440,16 +440,9 @@ export const simulateQolAutomation = (
   }
 
   // 자동 위성 건설 옵션
-  const earthAttackSats = Object.keys(updatedPlanets[PLANETS.EARTH]?.orbitalSatellitesList || {}).reduce((sum, t) => {
-    const s = SATELLITE_SPECS[t];
-    if (s && s.isWeapon) {
-      return sum + (updatedPlanets[PLANETS.EARTH].orbitalSatellitesList[t] || 0);
-    }
-    return sum;
-  }, 0);
-  if (state.autoBuildTowers && earthAttackSats < MAX_SATELLITES_PER_CATEGORY) {
+  const currentCount = updatedPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0;
+  if (state.autoBuildTowers && currentCount < MAX_SATELLITES_PER_TYPE) {
     const spec = SATELLITE_SPECS.laser;
-    const currentCount = updatedPlanets[PLANETS.EARTH].orbitalSatellitesList?.laser || 0;
     const earthSats = updatedPlanets[PLANETS.EARTH]?.orbitalSatellites || 0;
     const cost = getSatelliteCost('laser', earthSats);
     const availableEnergy = (calculatedMaxEnergy + state.cheatEnergyBonus) - targetUsedEnergy;

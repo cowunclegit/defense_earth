@@ -2,7 +2,7 @@ import { PLANETS, PLANETARY_DATA } from '../constants/planetaryData';
 import {
   SHIP_TYPES,
   SHIP_SPECS,
-  MAX_SATELLITES_PER_CATEGORY,
+  MAX_SATELLITES_PER_TYPE,
   getSatelliteCost,
   SATELLITE_SPECS,
   STATION_SPECS,
@@ -75,19 +75,10 @@ export const planetActions = (set, get) => ({
     const spec = SATELLITE_SPECS[type];
     if (!spec) return false;
 
-    // 공격위성과 방어위성 각각 고유의 한도(MAX_SATELLITES_PER_CATEGORY개)를 가짐
-    const category = spec.isWeapon ? 'attack' : 'defense';
-    const currentCategoryCount = Object.keys(planet.orbitalSatellitesList || {}).reduce((sum, t) => {
-      const s = SATELLITE_SPECS[t];
-      if (s && ((category === 'attack' && s.isWeapon) || (category === 'defense' && !s.isWeapon))) {
-        return sum + (planet.orbitalSatellitesList[t] || 0);
-      }
-      return sum;
-    }, 0);
-
-    if (currentCategoryCount >= MAX_SATELLITES_PER_CATEGORY) return false;
-
+    // 각 위성 종류별 한도(MAX_SATELLITES_PER_TYPE개)를 가짐
     const currentCount = planet.orbitalSatellitesList[type] || 0;
+    if (currentCount >= MAX_SATELLITES_PER_TYPE) return false;
+
     const cost = getSatelliteCost(type, planet.orbitalSatellites || 0);
     const energyCost = spec.energy;
 

@@ -494,6 +494,11 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const successLaser21 = store.buildOrbitalSatelliteDetail('earth', 'laser');
     expect(successLaser21).toBe(false);
 
+    // 그러나 다른 종류의 공격 위성(plasmaLaser)은 정상적으로 건설 가능해야 함 (종류별 한도 20개 적용)
+    const successPlasmaLaser = store.buildOrbitalSatelliteDetail('earth', 'plasmaLaser');
+    expect(successPlasmaLaser).toBe(true);
+    expect(useGameStore.getState().planets.earth.orbitalSatellitesList.plasmaLaser).toBe(1);
+
     for (let i = 0; i < 19; i++) {
       const success = store.buildOrbitalSatelliteDetail('earth', 'decoy');
       expect(success).toBe(true);
@@ -502,9 +507,9 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const successDecoy21 = store.buildOrbitalSatelliteDetail('earth', 'decoy');
     expect(successDecoy21).toBe(false);
 
-    // 총 위성 개수가 40개(공격 20개 + 방어 20개)인지 검증
+    // 총 위성 개수가 41개(laser 20개 + decoy 20개 + plasmaLaser 1개)인지 검증
     const state = useGameStore.getState();
-    expect(state.planets.earth.orbitalSatellites).toBe(40);
+    expect(state.planets.earth.orbitalSatellites).toBe(41);
   });
 
   test('위성 무기 카테고리별 업그레이드(데미지, 속도, 범위) 레벨 상승, 크레딧 차감, 스펙 비율 상승 및 회귀(Rebirth) 시 리셋 검증', () => {
