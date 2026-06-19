@@ -279,7 +279,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(successCounter).toBe(true);
     expect(useGameStore.getState().counterattackModules.discharge).toBe(true);
     expect(useGameStore.getState().credits).toBe(7003);
-    expect(useGameStore.getState().usedEnergy).toBe(40);
+    expect(useGameStore.getState().usedEnergy).toBe(30);
   });
 
   test('개발자 데이터베이스 초기화(resetDatabase) 검증', async () => {
@@ -665,5 +665,38 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const rebirthState = useGameStore.getState();
     expect(rebirthState.earthHpRegenLevel).toBe(1);
     expect(rebirthState.earthShieldRegenLevel).toBe(1);
+  });
+
+  test('과부하 부가 모듈 활성화 시 동적 에너지 소모 및 비활성화 시 충전 검증', () => {
+    const store = useGameStore.getState();
+
+    // 1. 초기 overloadEnergy = 100 검증
+    expect(store.overloadEnergy).toBe(100);
+
+    // 2. 모듈 toggle (discharge = ON, reflector = ON) -> 총 초당 20 소모 예상
+    useGameStore.setState({
+      counterattackModules: {
+        reflector: true,
+        discharge: true,
+        electricField: false
+      }
+    });
+
+    // 1초 틱 실행
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(80); // 100 - 20 = 80
+
+    // 3. 모듈 모두 OFF -> 초당 15 충전 예상
+    useGameStore.setState({
+      counterattackModules: {
+        reflector: false,
+        discharge: false,
+        electricField: false
+      }
+    });
+
+    // 1초 틱 실행
+    store.tick(1.0);
+    expect(useGameStore.getState().overloadEnergy).toBe(95); // 80 + 15 = 95
   });
 });

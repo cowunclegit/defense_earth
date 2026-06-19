@@ -275,7 +275,7 @@ export const simulateShieldAndHP = (
   // 실드 붕괴 시의 동작들 (과부하 방전 및 즉시 체력 복구)
   const isShieldCollapsed = state.earthShield > 0 && newShield <= 0;
   if (isShieldCollapsed) {
-    if (state.counterattackModules.discharge && updatedEnemies.length > 0) {
+    if (state.counterattackModules.discharge && (state.overloadEnergy || 0) > 0 && updatedEnemies.length > 0) {
       addBattleLog(`실드 과부하 방전 발동! 모든 적에게 200 광역 피해!`);
       updatedEnemies.forEach(e => {
         e.hp -= 200;
@@ -305,7 +305,7 @@ export const simulateShieldAndHP = (
   }
 
   // 전기장 역류 지속 데미지
-  if (state.counterattackModules.electricField && newShield > 0 && updatedEnemies.length > 0) {
+  if (state.counterattackModules.electricField && (state.overloadEnergy || 0) > 0 && newShield > 0 && updatedEnemies.length > 0) {
     updatedEnemies.forEach(e => {
       e.hp -= 80 * actualDelta;
     });
@@ -1123,7 +1123,25 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     updatedSpawnTimer = 0;
   }
 
+  // 13. 과부하 에너지(overloadEnergy) 및 최대치 연산
+  let activeOverloadDrain = 0;
+  if (state.counterattackModules.reflector) activeOverloadDrain += 10;
+  if (state.counterattackModules.discharge) activeOverloadDrain += 10;
+  if (state.counterattackModules.electricField) activeOverloadDrain += 15;
+
+  let newOverloadEnergy = state.overloadEnergy !== undefined ? state.overloadEnergy : 100;
+  const maxOverloadEnergy = 100 * (state.synergies.energyProductionMultiplier || 1.0);
+  const rechargeSpeed = 15 * (state.synergies.energyProductionMultiplier || 1.0);
+
+  if (activeOverloadDrain > 0) {
+    newOverloadEnergy = Math.max(0, newOverloadEnergy - activeOverloadDrain * actualDelta);
+  } else {
+    newOverloadEnergy = Math.min(maxOverloadEnergy, newOverloadEnergy + rechargeSpeed * actualDelta);
+  }
+
   return {
+    newOverloadEnergy,
+    maxOverloadEnergy,
     updatedCredits,
     updatedNanocores,
     calculatedMaxEnergy,

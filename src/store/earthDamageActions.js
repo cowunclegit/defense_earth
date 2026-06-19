@@ -36,7 +36,7 @@ export const earthDamageActions = (set, get) => ({
     // --- Reflect Shield & Reflector Counterattack ---
     let reflectPercent = 0;
     if (state.shieldModule === 'reflect' && type === 'energy') reflectPercent += 0.3;
-    if (state.counterattackModules.reflector) reflectPercent += 0.3;
+    if (state.counterattackModules.reflector && (state.overloadEnergy || 0) > 0) reflectPercent += 0.3;
 
     if (reflectPercent > 0 && state.enemies.length > 0) {
       const reflectedDamage = damage * reflectPercent;

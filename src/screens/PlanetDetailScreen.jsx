@@ -33,6 +33,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
     earthShield,
     earthMaxShield,
     earthHpRegenLevel,
+    overloadEnergy,
+    overloadMaxEnergy,
     earthShieldRegenLevel,
     upgradeEarthHpRegen,
     upgradeEarthShieldRegen,
@@ -575,26 +577,60 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 </View>
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>실드 반격/과부하 부가 모듈</Text>
+                
+                {/* 과부하 충전 에너지 바 */}
+                <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 15, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>⚡ 과부하 충전 에너지</Text>
+                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>
+                      {Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} EP
+                    </Text>
+                  </View>
+                  <View style={[styles.detailMiniBar, { height: 8, backgroundColor: '#101726' }]}>
+                    <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: overloadEnergy > 0 ? '#ffd700' : '#8fa0c4' }]} />
+                  </View>
+                  <Text style={{ fontSize: 8.5, color: '#8fa0c4', marginTop: 6 }}>
+                    {(() => {
+                      let activeOverloadDrain = 0;
+                      if (counterattackModules?.reflector) activeOverloadDrain += 10;
+                      if (counterattackModules?.discharge) activeOverloadDrain += 10;
+                      if (counterattackModules?.electricField) activeOverloadDrain += 15;
+                      
+                      if (activeOverloadDrain > 0) {
+                        return `⚡ 에너지 소모 중 (초당 -${activeOverloadDrain} EP 소모 | 잔여 시간: ${(overloadEnergy / activeOverloadDrain).toFixed(1)}초)`;
+                      } else {
+                        const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
+                        return `🔋 에너지 충전 중 (초당 +${rechargeSpeed} EP 회복)`;
+                      }
+                    })()}
+                  </Text>
+                </View>
+
                 <View style={styles.gridContainer}>
                   {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
                     const spec = COUNTERATTACK_MODULE_SPECS[type];
                     const isActive = counterattackModules?.[type];
+                    const isDepleted = isActive && overloadEnergy <= 0;
                     let desc = '';
-                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 전력: 10W';
-                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 전력: 10W';
-                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 전력: 15W';
+                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 EP 소모';
+                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 EP 소모';
+                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 에너지: 초당 15 EP 소모';
                     
                     return (
                       <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
                         <View style={styles.gridCardHeader}>
                           <Text style={styles.gridCardName}>{spec.name}</Text>
-                          {isActive && <Text style={[styles.gridCardCount, { color: '#ff3b30' }]}>ON</Text>}
+                          {isActive && (
+                            <Text style={[styles.gridCardCount, { color: isDepleted ? '#8fa0c4' : '#ff3b30' }]}>
+                              {isDepleted ? '에너지 고갈' : 'ON'}
+                            </Text>
+                          )}
                         </View>
                         <Text style={styles.gridCardDesc}>{desc}</Text>
                         <TouchableOpacity 
                           style={[
                             styles.gridBuildBtn, 
-                            { backgroundColor: isActive ? '#ff3b30' : '#16223f', borderWidth: 0.5, borderColor: isActive ? '#ff3b30' : 'rgba(255, 255, 255, 0.2)' }
+                            { backgroundColor: isActive ? (isDepleted ? '#6b7280' : '#ff3b30') : '#16223f', borderWidth: 0.5, borderColor: isActive ? (isDepleted ? '#6b7280' : '#ff3b30') : 'rgba(255, 255, 255, 0.2)' }
                           ]} 
                           onPress={() => {
                             const success = toggleCounterattackModule(type);

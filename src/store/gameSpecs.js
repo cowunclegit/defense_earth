@@ -324,12 +324,6 @@ export const recalculateUsedEnergyState = (state) => {
   let shieldPowerDraw = 0;
   const activeModuleSpec = SHIELD_MODULE_SPECS[state.shieldModule || 'basic'];
   if (activeModuleSpec) shieldPowerDraw += activeModuleSpec.energyCost;
-  Object.keys(state.counterattackModules || {}).forEach(key => {
-    if (state.counterattackModules[key]) {
-      const cs = COUNTERATTACK_MODULE_SPECS[key];
-      if (cs) shieldPowerDraw += cs.energyCost;
-    }
-  });
 
   const shipyardPowerDraw = state.shipyardQueue ? 10 : 0;
   

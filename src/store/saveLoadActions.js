@@ -50,7 +50,9 @@ export const saveLoadActions = (
       counterattackModules: state.counterattackModules,
       satelliteLevels: state.satelliteLevels,
       earthHpRegenLevel: state.earthHpRegenLevel,
-      earthShieldRegenLevel: state.earthShieldRegenLevel
+      earthShieldRegenLevel: state.earthShieldRegenLevel,
+      overloadEnergy: state.overloadEnergy,
+      overloadMaxEnergy: state.overloadMaxEnergy
     };
     try {
       await AsyncStorage.setItem('DEFENSE_EARTH_SAVE', JSON.stringify(saveObj));
@@ -96,6 +98,8 @@ export const saveLoadActions = (
           ...loaded,
           earthHpRegenLevel: loaded.earthHpRegenLevel || 1,
           earthShieldRegenLevel: loaded.earthShieldRegenLevel || 1,
+          overloadEnergy: loaded.overloadEnergy !== undefined ? loaded.overloadEnergy : 100,
+          overloadMaxEnergy: loaded.overloadMaxEnergy !== undefined ? loaded.overloadMaxEnergy : 100,
           synergies: calculateSynergies(loaded.planets, loaded.chronosUpgrades)
         };
         nextState.usedEnergy = recalculateUsedEnergyState(nextState);
@@ -133,6 +137,8 @@ export const saveLoadActions = (
       earthShieldRechargeRate: 5,
       earthHpRegenLevel: 1,
       earthShieldRegenLevel: 1,
+      overloadEnergy: 100,
+      overloadMaxEnergy: 100,
       kineticDefenseTowers: 0,
       shieldModule: 'basic',
       counterattackModules: {

@@ -174,6 +174,8 @@ export const useGameStore = create((set, get) => ({
   earthShieldRechargeRate: 5,
   earthHpRegenLevel: 1,
   earthShieldRegenLevel: 1,
+  overloadEnergy: 100,
+  overloadMaxEnergy: 100,
   kineticDefenseTowers: 0,
   satelliteRotation: 0,
   shieldModule: 'basic',
@@ -376,6 +378,8 @@ export const useGameStore = create((set, get) => ({
         timeLoopCountdown: 0,
         earthHpRegenLevel: 1,
         earthShieldRegenLevel: 1,
+        overloadEnergy: 100,
+        overloadMaxEnergy: 100,
         planets: resetPlanets,
         synergies: newSynergies,
         shieldModule: 'basic',
@@ -477,7 +481,9 @@ export const useGameStore = create((set, get) => ({
       nextMuteTimer,
       updatedPlanets: finalPlanets,
       nextWave,
-      enemiesRemaining
+      enemiesRemaining,
+      newOverloadEnergy,
+      maxOverloadEnergy
     } = runTickSimulation(state, actualDelta, (msg) => state.addBattleLog(msg), (dmg, type) => state.damageEarth(dmg, type));
 
     // Get final values from store updated by damageEarth
@@ -503,7 +509,9 @@ export const useGameStore = create((set, get) => ({
       currentWave: nextWave,
       enemiesRemainingToSpawn: enemiesRemaining,
       satelliteRotation: nextRotation,
-      kineticDefenseTowers: finalPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0
+      kineticDefenseTowers: finalPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0,
+      overloadEnergy: newOverloadEnergy,
+      overloadMaxEnergy: maxOverloadEnergy
     });
   }
 }));

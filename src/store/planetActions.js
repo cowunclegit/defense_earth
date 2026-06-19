@@ -260,29 +260,25 @@ export const planetActions = (set, get) => ({
     if (!spec) return false;
 
     const currentlyActive = state.counterattackModules[moduleType];
-    const energyCost = spec.energyCost;
 
     if (currentlyActive) {
       set((s) => ({
         counterattackModules: {
           ...s.counterattackModules,
           [moduleType]: false
-        },
-        usedEnergy: s.usedEnergy - energyCost
+        }
       }));
       state.addBattleLog(`반격 모듈 [${spec.name}]을 비활성화했습니다.`);
     } else {
       const cost = spec.cost;
       if (state.credits < cost) return false;
-      if (state.getAvailableEnergy() < energyCost) return false;
 
       set((s) => ({
         credits: s.credits - cost,
         counterattackModules: {
           ...s.counterattackModules,
           [moduleType]: true
-        },
-        usedEnergy: s.usedEnergy + energyCost
+        }
       }));
       state.addBattleLog(`반격 모듈 [${spec.name}]을 활성화했습니다.`);
     }
