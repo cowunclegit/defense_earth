@@ -278,8 +278,29 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const successCounter = store.toggleCounterattackModule('discharge');
     expect(successCounter).toBe(true);
     expect(useGameStore.getState().counterattackModules.discharge).toBe(true);
+    expect(useGameStore.getState().unlockedCounterattacks.discharge).toBe(true);
     expect(useGameStore.getState().credits).toBe(7003);
     expect(useGameStore.getState().usedEnergy).toBe(30);
+
+    // Toggle OFF: should not change credits, should mark active as false, and keep unlocked status
+    const successOff = store.toggleCounterattackModule('discharge');
+    expect(successOff).toBe(true);
+    expect(useGameStore.getState().counterattackModules.discharge).toBe(false);
+    expect(useGameStore.getState().unlockedCounterattacks.discharge).toBe(true);
+    expect(useGameStore.getState().credits).toBe(7003);
+
+    // Set credits to 0: since it is unlocked, toggling it ON should still succeed
+    useGameStore.setState({ credits: 0 });
+    const successOnAgain = store.toggleCounterattackModule('discharge');
+    expect(successOnAgain).toBe(true);
+    expect(useGameStore.getState().counterattackModules.discharge).toBe(true);
+    expect(useGameStore.getState().credits).toBe(0);
+
+    // Try to toggle a locked module (reflector, cost 2000) when credits are 0: should fail
+    const successReflectorFail = store.toggleCounterattackModule('reflector');
+    expect(successReflectorFail).toBe(false);
+    expect(useGameStore.getState().counterattackModules.reflector).toBe(false);
+    expect(useGameStore.getState().unlockedCounterattacks.reflector).toBe(false);
   });
 
   test('개발자 데이터베이스 초기화(resetDatabase) 검증', async () => {

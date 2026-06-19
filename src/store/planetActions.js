@@ -260,6 +260,7 @@ export const planetActions = (set, get) => ({
     if (!spec) return false;
 
     const currentlyActive = state.counterattackModules[moduleType];
+    const isUnlocked = state.unlockedCounterattacks && state.unlockedCounterattacks[moduleType];
 
     if (currentlyActive) {
       set((s) => ({
@@ -270,17 +271,31 @@ export const planetActions = (set, get) => ({
       }));
       state.addBattleLog(`반격 모듈 [${spec.name}]을 비활성화했습니다.`);
     } else {
-      const cost = spec.cost;
-      if (state.credits < cost) return false;
+      if (isUnlocked) {
+        set((s) => ({
+          counterattackModules: {
+            ...s.counterattackModules,
+            [moduleType]: true
+          }
+        }));
+        state.addBattleLog(`반격 모듈 [${spec.name}]을 활성화했습니다.`);
+      } else {
+        const cost = spec.cost;
+        if (state.credits < cost) return false;
 
-      set((s) => ({
-        credits: s.credits - cost,
-        counterattackModules: {
-          ...s.counterattackModules,
-          [moduleType]: true
-        }
-      }));
-      state.addBattleLog(`반격 모듈 [${spec.name}]을 활성화했습니다.`);
+        set((s) => ({
+          credits: s.credits - cost,
+          unlockedCounterattacks: {
+            ...(s.unlockedCounterattacks || {}),
+            [moduleType]: true
+          },
+          counterattackModules: {
+            ...s.counterattackModules,
+            [moduleType]: true
+          }
+        }));
+        state.addBattleLog(`반격 모듈 [${spec.name}]을 해금하고 활성화했습니다.`);
+      }
     }
     return true;
   },

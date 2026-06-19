@@ -184,6 +184,11 @@ export const useGameStore = create((set, get) => ({
     discharge: false,
     electricField: false
   },
+  unlockedCounterattacks: {
+    reflector: false,
+    discharge: false,
+    electricField: false
+  },
   
   currentWave: 1,
   enemiesRemainingToSpawn: 8,
@@ -384,6 +389,11 @@ export const useGameStore = create((set, get) => ({
         synergies: newSynergies,
         shieldModule: 'basic',
         counterattackModules: {
+          reflector: false,
+          discharge: false,
+          electricField: false
+        },
+        unlockedCounterattacks: {
           reflector: false,
           discharge: false,
           electricField: false

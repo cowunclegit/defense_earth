@@ -302,13 +302,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 <Text style={[styles.statusChipVal, { color: '#00f0ff' }]}>{Math.floor(earthShield)}</Text>
               </TouchableOpacity>
 
-              {/* ⚡ EP 칩 */}
+              {/* ⚡ TW 칩 */}
               <TouchableOpacity
                 style={[styles.statusChip, { borderColor: '#ffd700' }, activeDetail === 'ep' && styles.statusChipActive]}
                 onPress={() => setActiveDetail(activeDetail === 'ep' ? null : 'ep')}
               >
                 <Text style={styles.statusChipIcon}>⚡</Text>
-                <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.max(0, Math.floor(overloadEnergy))}EP</Text>
+                <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.max(0, Math.floor(overloadEnergy))}TW</Text>
               </TouchableOpacity>
 
               {/* 🛰️ 요격 위성 칩 */}
@@ -398,8 +398,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
             {activeDetail === 'ep' && (
               <View style={styles.detailPopup} pointerEvents="none">
-                <Text style={styles.detailPopupTitle}>⚡ 과부하 에너지</Text>
-                <Text style={styles.detailPopupValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} EP</Text>
+                <Text style={styles.detailPopupTitle}>⚡ 과부하 전력</Text>
+                <Text style={styles.detailPopupValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW</Text>
                 <View style={styles.detailMiniBar}>
                   <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: '#ffd700' }]} />
                 </View>
@@ -411,10 +411,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     if (counterattackModules?.electricField) activeOverloadDrain += 15;
                     
                     if (activeOverloadDrain > 0) {
-                      return `에너지 소모 중 (초당 -${activeOverloadDrain} EP 소모)`;
+                      return `전력 소모 중 (초당 -${activeOverloadDrain} TW 소모)`;
                     } else {
                       const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
-                      return `에너지 충전 중 (초당 +${rechargeSpeed} EP 회복)`;
+                      return `전력 충전 중 (초당 +${rechargeSpeed} TW 회복)`;
                     }
                   })()}
                 </Text>
@@ -612,12 +612,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
                 <Text style={[styles.subTitleText, { marginTop: 15 }]}>실드 반격/과부하 부가 모듈</Text>
                 
-                {/* 과부하 충전 에너지 바 */}
+                {/* 과부하 충전 전력 바 */}
                 <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 15, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>⚡ 과부하 충전 에너지</Text>
+                    <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>⚡ 과부하 충전 전력</Text>
                     <Text style={{ fontSize: 10, color: '#ffd700', fontWeight: 'bold' }}>
-                      {Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} EP
+                      {Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW
                     </Text>
                   </View>
                   <View style={[styles.detailMiniBar, { height: 8, backgroundColor: '#101726' }]}>
@@ -631,10 +631,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       if (counterattackModules?.electricField) activeOverloadDrain += 15;
                       
                       if (activeOverloadDrain > 0) {
-                        return `⚡ 에너지 소모 중 (초당 -${activeOverloadDrain} EP 소모 | 잔여 시간: ${(overloadEnergy / activeOverloadDrain).toFixed(1)}초)`;
+                        return `⚡ 전력 소모 중 (초당 -${activeOverloadDrain} TW 소모 | 잔여 시간: ${(overloadEnergy / activeOverloadDrain).toFixed(1)}초)`;
                       } else {
                         const rechargeSpeed = (15 * (synergies?.energyProductionMultiplier || 1.0)).toFixed(1);
-                        return `🔋 에너지 충전 중 (초당 +${rechargeSpeed} EP 회복)`;
+                        return `🔋 전력 충전 중 (초당 +${rechargeSpeed} TW 회복)`;
                       }
                     })()}
                   </Text>
@@ -646,9 +646,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     const isActive = counterattackModules?.[type];
                     const isDepleted = isActive && overloadEnergy <= 0;
                     let desc = '';
-                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 EP 소모';
-                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 EP 소모';
-                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 에너지: 초당 15 EP 소모';
+                    if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 TW 소모';
+                    if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 TW 소모';
+                    if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 에너지: 초당 15 TW 소모';
                     
                     return (
                       <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>

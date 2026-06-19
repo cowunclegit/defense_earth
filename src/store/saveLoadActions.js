@@ -48,6 +48,7 @@ export const saveLoadActions = (
       autoBuildTowers: state.autoBuildTowers,
       shieldModule: state.shieldModule,
       counterattackModules: state.counterattackModules,
+      unlockedCounterattacks: state.unlockedCounterattacks,
       satelliteLevels: state.satelliteLevels,
       earthHpRegenLevel: state.earthHpRegenLevel,
       earthShieldRegenLevel: state.earthShieldRegenLevel,
@@ -100,6 +101,11 @@ export const saveLoadActions = (
           earthShieldRegenLevel: loaded.earthShieldRegenLevel || 1,
           overloadEnergy: loaded.overloadEnergy !== undefined ? loaded.overloadEnergy : 100,
           overloadMaxEnergy: loaded.overloadMaxEnergy !== undefined ? loaded.overloadMaxEnergy : 100,
+          unlockedCounterattacks: loaded.unlockedCounterattacks !== undefined ? loaded.unlockedCounterattacks : {
+            reflector: false,
+            discharge: false,
+            electricField: false
+          },
           synergies: calculateSynergies(loaded.planets, loaded.chronosUpgrades)
         };
         nextState.usedEnergy = recalculateUsedEnergyState(nextState);
@@ -142,6 +148,11 @@ export const saveLoadActions = (
       kineticDefenseTowers: 0,
       shieldModule: 'basic',
       counterattackModules: {
+        reflector: false,
+        discharge: false,
+        electricField: false
+      },
+      unlockedCounterattacks: {
         reflector: false,
         discharge: false,
         electricField: false
