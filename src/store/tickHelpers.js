@@ -14,6 +14,9 @@ import {
   ENEMY_SPAWN_RADIUS,
   MAX_SATELLITES_PER_TYPE,
   getSatelliteCost,
+  getScaledDmg,
+  getScaledCd,
+  getScaledRange,
   calculateSynergies,
   recalculateUsedEnergyState
 } from './gameSpecs';
@@ -128,9 +131,9 @@ export const simulatePlanetaryDefenses = (
       const spdLvl = weaponLevels.speed || 1;
       const rngLvl = weaponLevels.range || 1;
 
-      const scaledRange = (spec.range || 9999) * (1 + (rngLvl - 1) * 0.05);
-      const scaledDmg = Math.floor(spec.dmg * (1 + (dmgLvl - 1) * 0.15));
-      const scaledCd = spec.cd * Math.pow(0.95, spdLvl - 1);
+      const scaledRange = getScaledRange(type, rngLvl);
+      const scaledDmg = getScaledDmg(type, dmgLvl);
+      const scaledCd = getScaledCd(type, spdLvl);
 
       let timer = p.satelliteTimers[type] || 0;
       if (timer > 0) {

@@ -530,15 +530,16 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(s2.satelliteLevels.laser.damage).toBe(2);
     expect(s2.credits).toBe(700); // 1000 - 300
 
-    // 2. 데미지 레벨 2 -> 3 업그레이드 (비용 200 * 2 * 1.5 = 600 Cr)
+    // 2. 데미지 레벨 2 -> 3 업그레이드 (지수식 비용: 200 * 1.5 * 1.15^1 = 345 Cr)
     const successUpg2 = store.upgradeSatellite('laser', 'damage');
     expect(successUpg2).toBe(true);
 
     const s3 = useGameStore.getState();
     expect(s3.satelliteLevels.laser.damage).toBe(3);
-    expect(s3.credits).toBe(100); // 700 - 600
+    expect(s3.credits).toBe(355); // 700 - 345 = 355
 
-    // 3. 공격속도 레벨 1 -> 2 업그레이드 (비용 300 Cr - 크레딧 부족)
+    // 3. 공격속도 레벨 1 -> 2 업그레이드 (비용 300 Cr - 크레딧 부족 상황 만들기 위해 200 Cr로 강제 세팅)
+    useGameStore.setState({ credits: 200 });
     const successUpgFail = store.upgradeSatellite('laser', 'speed');
     expect(successUpgFail).toBe(false);
     expect(useGameStore.getState().satelliteLevels.laser.speed).toBe(1);
@@ -574,6 +575,34 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     const shotState = useGameStore.getState();
     expect(shotState.projectiles.length).toBe(1);
     expect(shotState.projectiles[0].damage).toBe(156); // 120 * 1.3 = 156
+
+    // 4-2. 마일스톤 레벨(Level 10) 도달 시 Tap Titans 2 스타일 공격력 점프 검증
+    // 데미지 레벨 10으로 강제 세팅 (기본 120 * (1 + 9 * 0.15) * 1.5배 마일스톤 보너스 = 120 * 2.35 * 1.5 = 282 * 1.5 = 423)
+    useGameStore.setState({
+      satelliteLevels: {
+        ...useGameStore.getState().satelliteLevels,
+        laser: { damage: 10, speed: 1, range: 1 }
+      },
+      enemies: [{
+        id: 'milestone-test-enemy',
+        type: 'scout',
+        x: 100,
+        y: 100,
+        hp: 500,
+        maxHp: 500,
+        speed: 10,
+        level: 1,
+        spec: { name: '정찰선', speed: 40, hp: 40, creditReward: 15, coreChance: 0.05 }
+      }],
+      projectiles: []
+    });
+    
+    useGameStore.getState().planets.earth.satelliteTimers = { laser: 0 };
+    store.tick(0.001);
+    
+    const milestoneShotState = useGameStore.getState();
+    expect(milestoneShotState.projectiles.length).toBe(1);
+    expect(milestoneShotState.projectiles[0].damage).toBe(423);
 
     // 5. 시간 회귀(triggerTimeLoop) 시 레벨 리셋 검증
     store.triggerTimeLoop();

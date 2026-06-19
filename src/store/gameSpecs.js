@@ -147,15 +147,54 @@ export const getSatelliteCost = (type, currentCount) => {
 
 export const SATELLITE_SPECS = {
   laser: { name: '타겟팅 레이저 위성', cost: 200, energy: 5, isWeapon: true, dmg: 120, cd: 3.0, range: 400 },
-  plasmaLaser: { name: '플라즈마 레이저 위성', cost: 180, energy: 8, isWeapon: true, dmg: 180, cd: 5.0, range: 350 },
-  emp: { name: 'EMP 위성', cost: 150, energy: 7, isWeapon: true, dmg: 0, cd: 6.0, range: 300 },
-  clusterMissile: { name: '클러스터 미사일 위성', cost: 250, energy: 10, isWeapon: true, dmg: 90, cd: 8.0, range: 450 },
-  gravityBomb: { name: '중력 포탄 위성', cost: 160, energy: 9, isWeapon: true, dmg: 160, cd: 6.0, range: 280 },
-  antimatter: { name: '반물질 포 위성', cost: 400, energy: 15, isWeapon: true, dmg: 400, cd: 15.0, range: 500 },
-  sensor: { name: '조기 경보 센서 위성', cost: 150, energy: 8, isWeapon: false },
-  forceShield: { name: '포스 실드 위성', cost: 250, energy: 12, isWeapon: false },
+  plasmaLaser: { name: '플라즈마 레이저 위성', cost: 5000, energy: 8, isWeapon: true, dmg: 3500, cd: 5.0, range: 350 },
+  emp: { name: 'EMP 위성', cost: 1000, energy: 7, isWeapon: true, dmg: 0, cd: 6.0, range: 300 },
+  clusterMissile: { name: '클러스터 미사일 위성', cost: 120000, energy: 10, isWeapon: true, dmg: 35000, cd: 8.0, range: 450 },
+  gravityBomb: { name: '중력 포탄 위성', cost: 25000, energy: 9, isWeapon: true, dmg: 20000, cd: 6.0, range: 280 },
+  antimatter: { name: '반물질 포 위성', cost: 600000, energy: 15, isWeapon: true, dmg: 600000, cd: 15.0, range: 500 },
+  sensor: { name: '조기 경보 센서 위성', cost: 500, energy: 8, isWeapon: false },
+  forceShield: { name: '포스 실드 위성', cost: 12500, energy: 12, isWeapon: false },
   decoy: { name: '디코이 위성', cost: 100, energy: 5, isWeapon: false },
-  repairDrone: { name: '수리 드론 위성', cost: 200, energy: 10, isWeapon: false }
+  repairDrone: { name: '수리 드론 위성', cost: 2500, energy: 10, isWeapon: false }
+};
+
+export const getMilestoneMultiplier = (level) => {
+  let multiplier = 1.0;
+  // 10레벨마다 1.5배 보너스
+  const tens = Math.floor(level / 10);
+  multiplier *= Math.pow(1.5, tens);
+  // 50레벨마다 추가 2배 보너스
+  const fifties = Math.floor(level / 50);
+  multiplier *= Math.pow(2.0, fifties);
+  // 100레벨마다 추가 3배 보너스
+  const hundreds = Math.floor(level / 100);
+  multiplier *= Math.pow(3.0, hundreds);
+  return multiplier;
+};
+
+export const getSatelliteUpgradeCost = (type, category, currentLevel) => {
+  const spec = SATELLITE_SPECS[type];
+  if (!spec) return 0;
+  // 지수식 강화 비용: spec.cost * 1.5 * 1.15^(level - 1)
+  return Math.floor(spec.cost * 1.5 * Math.pow(1.15, currentLevel - 1));
+};
+
+export const getScaledDmg = (type, dmgLvl) => {
+  const spec = SATELLITE_SPECS[type];
+  if (!spec) return 0;
+  return Math.round(spec.dmg * (1 + (dmgLvl - 1) * 0.15) * getMilestoneMultiplier(dmgLvl));
+};
+
+export const getScaledCd = (type, spdLvl) => {
+  const spec = SATELLITE_SPECS[type];
+  if (!spec) return 0;
+  return Math.max(0.1, spec.cd * Math.pow(0.95, spdLvl - 1));
+};
+
+export const getScaledRange = (type, rngLvl) => {
+  const spec = SATELLITE_SPECS[type];
+  if (!spec) return 0;
+  return Math.floor((spec.range || 9999) * (1 + (rngLvl - 1) * 0.05));
 };
 
 export const STATION_SPECS = {

@@ -10,7 +10,11 @@ import {
   SHIELD_MODULE_SPECS, 
   COUNTERATTACK_MODULE_SPECS,
   MAX_SATELLITES_PER_TYPE,
-  getSatelliteCost
+  getSatelliteCost,
+  getSatelliteUpgradeCost,
+  getScaledDmg,
+  getScaledCd,
+  getScaledRange
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
 import TopHud from '../components/TopHud';
@@ -699,9 +703,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const spdLvl = weaponLevels.speed || 1;
                       const rngLvl = weaponLevels.range || 1;
 
-                      const scaledDmg = Math.floor(spec.dmg * (1 + (dmgLvl - 1) * 0.15));
-                      const scaledCd = (spec.cd * Math.pow(0.95, spdLvl - 1)).toFixed(1);
-                      const scaledRange = Math.floor((spec.range || 9999) * (1 + (rngLvl - 1) * 0.05));
+                      const scaledDmg = getScaledDmg(type, dmgLvl);
+                      const scaledCd = getScaledCd(type, spdLvl).toFixed(1);
+                      const scaledRange = getScaledRange(type, rngLvl);
 
                       let desc = spec.isWeapon ? `공격: ${scaledDmg} HP, 쿨다운: ${scaledCd}초, 사거리: ${scaledRange}` : '지원/보조 위성';
                       if (type === 'emp') desc = `적 전자계 마비 (3초 스턴, ${scaledCd}초 쿨다운), 사거리: ${scaledRange}`;
@@ -709,9 +713,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       
                       const isMax = count >= MAX_SATELLITES_PER_TYPE;
                       
-                      const dmgUpgradeCost = Math.floor(spec.cost * dmgLvl * 1.5);
-                      const spdUpgradeCost = Math.floor(spec.cost * spdLvl * 1.5);
-                      const rngUpgradeCost = Math.floor(spec.cost * rngLvl * 1.5);
+                      const dmgUpgradeCost = getSatelliteUpgradeCost(type, 'damage', dmgLvl);
+                      const spdUpgradeCost = getSatelliteUpgradeCost(type, 'speed', spdLvl);
+                      const rngUpgradeCost = getSatelliteUpgradeCost(type, 'range', rngLvl);
 
                       return (
                         <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 180 }]}>

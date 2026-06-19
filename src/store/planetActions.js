@@ -4,6 +4,7 @@ import {
   SHIP_SPECS,
   MAX_SATELLITES_PER_TYPE,
   getSatelliteCost,
+  getSatelliteUpgradeCost,
   SATELLITE_SPECS,
   STATION_SPECS,
   SHIELD_MODULE_SPECS,
@@ -123,7 +124,7 @@ export const planetActions = (set, get) => ({
     const spec = SATELLITE_SPECS[type];
     if (!spec) return false;
 
-    const cost = Math.floor(spec.cost * currentLevel * 1.5);
+    const cost = getSatelliteUpgradeCost(type, category, currentLevel);
     if (state.credits < cost) return false;
 
     const categoryNames = { damage: '데미지', speed: '공격속도', range: '사거리' };
