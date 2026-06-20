@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform, useWindowDimensions } from 'react-native';
 import { useGameStore } from '../store/gameStore';
+import { PLANETARY_DATA } from '../constants/planetaryData';
 
 export default function TopHud({ overlay }) {
   const { width: screenWidth } = useWindowDimensions();
   // 화면 비율 기반 자원칸 너비 (고정 픽셀 대신 화면 크기 비례)
   const colW = {
-    credit:    Math.floor(screenWidth * 0.15),
+    credit:    Math.floor(screenWidth * 0.28),
     energy:    Math.floor(screenWidth * 0.19),
     nanocores: Math.floor(screenWidth * 0.12),
     chronos:   Math.floor(screenWidth * 0.10),
@@ -25,8 +26,37 @@ export default function TopHud({ overlay }) {
     isPremium,
     buyPremium,
     timeMachineGauge,
-    timeParticles
+    timeParticles,
+    planets,
+    synergies
   } = useGameStore();
+
+  const getCreditRate = () => {
+    let totalPopulation = 0;
+    let totalFactoryContribution = 0;
+    let totalTaxBonus = 0;
+
+    Object.keys(planets || {}).forEach((planetId) => {
+      const p = planets[planetId];
+      if (p && p.unlocked) {
+        const data = PLANETARY_DATA[planetId];
+        if (data) {
+          const infra = p.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
+          totalPopulation += p.population || 0;
+          
+          const factoryLvl = infra.factory || 0;
+          totalFactoryContribution += factoryLvl * 15;
+          totalTaxBonus += factoryLvl * 0.03;
+        }
+      }
+    });
+
+    const taxRevenue = 0.005 * Math.pow(Math.max(0, totalPopulation), 0.75);
+    const baseCreditRate = 10 + taxRevenue * (1 + totalTaxBonus) + totalFactoryContribution;
+    const rate = baseCreditRate * (synergies?.creditMultiplier || 1.0);
+    return rate;
+  };
+  const creditRate = getCreditRate();
 
   const cycleSpeed = () => {
     if (gameSpeed === 1) {
@@ -120,7 +150,7 @@ export default function TopHud({ overlay }) {
             onPress={() => setShowDetails(!showDetails)}
           >
             <View style={[styles.summaryItemSlot, { width: colW.credit }]}>
-              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">🪙 {Math.floor(credits).toLocaleString()}</Text>
+              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">🪙 {Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s)</Text>
             </View>
             <View style={[styles.summaryItemSlot, { width: colW.nanocores }]}>
               <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">⚙️ {Math.floor(nanocores)}</Text>
@@ -135,7 +165,7 @@ export default function TopHud({ overlay }) {
             <View style={styles.detailsDropdown} pointerEvents="none">
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: '#00ff8a' }]}>CREDIT</Text>
-                <Text style={[styles.detailValue, { color: '#00ff8a' }]}>{Math.floor(credits).toLocaleString()}</Text>
+                <Text style={[styles.detailValue, { color: '#00ff8a' }]}>{Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s)</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: '#ffd700' }]}>NANOCORE</Text>
@@ -282,7 +312,7 @@ const styles = StyleSheet.create({
     borderColor: '#00f0ff',
     borderRadius: 8,
     padding: 6,
-    width: 170,
+    width: 195,
     gap: 5,
     zIndex: 999,
   },
