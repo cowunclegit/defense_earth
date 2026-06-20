@@ -1230,40 +1230,36 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   let newSatelliteBootTimer = state.satelliteBootTimer !== undefined ? state.satelliteBootTimer : 2.0;
 
   if (newOverloadEnergy <= 0) {
+    // 방전: 모든 위성 즉시 OFF
     newIsPowerOffline = true;
     newOnlineSatelliteCount = 0;
     newSatelliteBootTimer = 2.0;
   } else if (newIsPowerOffline) {
-    if (isShieldOnline) {
-      if (netPower < 0) {
-        newSatelliteBootTimer -= actualDelta;
-        if (newSatelliteBootTimer <= 0) {
-          if (newOnlineSatelliteCount > 0) {
-            newOnlineSatelliteCount--;
-            addBattleLog(`[경고] 가용 전력 과부하! 위성 전원 차단: 위성 1개 OFF.`);
-          }
-          newSatelliteBootTimer = 2.0;
-        }
-      } else if (newOnlineSatelliteCount < builtSats.length) {
-        newSatelliteBootTimer -= actualDelta;
-        if (newSatelliteBootTimer <= 0) {
-          newOnlineSatelliteCount++;
-          addBattleLog(`[알림] 가용 전력 복구 중: 위성 전원 순차 투입: 위성 1개 ON.`);
-          newSatelliteBootTimer = 2.0;
-        }
-      } else {
+    // 복구 중: 가용 전력이 0보다 크면 순차적으로 위성 ON
+    if (netPower < 0 && newOnlineSatelliteCount > 0) {
+      // 순전력이 음수인데 위성이 켜져있으면 2초마다 하나씩 OFF
+      newSatelliteBootTimer -= actualDelta;
+      if (newSatelliteBootTimer <= 0) {
+        newOnlineSatelliteCount--;
+        addBattleLog(`[경고] 전력 부족! 위성 전원 차단: 위성 1개 OFF.`);
         newSatelliteBootTimer = 2.0;
       }
-      
-      // 복구 완료 검증: 모든 위성이 복원되고 가용 전력이 80 TW에 도달했을 때
-      if (newOnlineSatelliteCount >= builtSats.length && (state.overloadEnergy >= 80 || newOverloadEnergy >= 80)) {
-        newIsPowerOffline = false;
+    } else if (newOnlineSatelliteCount < builtSats.length) {
+      // 순전력이 0 이상이면 2초마다 하나씩 ON
+      newSatelliteBootTimer -= actualDelta;
+      if (newSatelliteBootTimer <= 0) {
+        newOnlineSatelliteCount++;
+        addBattleLog(`[알림] 전력 복구 중: 위성 순차 투입 (${newOnlineSatelliteCount}/${builtSats.length}).`);
+        newSatelliteBootTimer = 2.0;
       }
-    } else {
-      newOnlineSatelliteCount = 0;
-      newSatelliteBootTimer = 2.0;
+    }
+
+    // 복구 완료: 모든 위성이 켜졌고 순전력이 0 이상일 때 정상 상태로 전환
+    if (newOnlineSatelliteCount >= builtSats.length && netPower >= 0) {
+      newIsPowerOffline = false;
     }
   } else {
+    // 정상 상태: 모든 위성 ON
     newOnlineSatelliteCount = builtSats.length;
     newSatelliteBootTimer = 2.0;
   }
