@@ -895,7 +895,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const scaledRange = getScaledRange(type, rngLvl);
 
                       let desc = spec.isWeapon ? `공격: ${scaledDmg} HP, 쿨다운: ${scaledCd}초, 사거리: ${scaledRange}` : '지원/보조 위성';
-                      if (type === 'emp') desc = `고출력 EMP 펄스를 방사하여 단일 대상에 강력한 피해를 입힙니다. 사거리: ${scaledRange}`;
+                      if (type === 'emp') desc = `고출력 EMP 펄스를 방사하여 피해와 함께 대상을 마비시킵니다. 공격: ${scaledDmg} HP (2초 스턴), 사거리: ${scaledRange}`;
                       if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 적 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
                       
                       const dph = (parseFloat(scaledCd) > 0) ? Math.round((scaledDmg / parseFloat(scaledCd)) * 3600) : 0;
