@@ -160,7 +160,7 @@ export const getSatelliteCost = (type, currentCount) => {
 export const SATELLITE_SPECS = {
   laser: { name: '타겟팅 레이저 위성', cost: 200, energy: 5, isWeapon: true, dmg: 40, cd: 1.0, range: 400 },
   plasmaLaser: { name: '플라즈마 레이저 위성', cost: 5000, energy: 8, isWeapon: true, dmg: 3500, cd: 5.0, range: 350 },
-  emp: { name: 'EMP 위성', cost: 1000, energy: 7, isWeapon: true, dmg: 0, cd: 6.0, range: 300 },
+  emp: { name: 'EMP 위성', cost: 1000, energy: 7, isWeapon: true, dmg: 480, cd: 3.0, range: 320 },
   clusterMissile: { name: '클러스터 미사일 위성', cost: 120000, energy: 10, isWeapon: true, dmg: 35000, cd: 8.0, range: 450 },
   gravityBomb: { name: '중력 포탄 위성', cost: 25000, energy: 9, isWeapon: true, dmg: 20000, cd: 6.0, range: 280 },
   antimatter: { name: '반물질 포 위성', cost: 600000, energy: 15, isWeapon: true, dmg: 600000, cd: 15.0, range: 500 },

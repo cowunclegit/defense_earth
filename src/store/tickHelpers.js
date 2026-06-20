@@ -947,7 +947,7 @@ export const simulateProjectilesAndCollisions = (
         hitEnemy.hp -= proj.damage;
 
         if (proj.emp) {
-          hitEnemy.stunTimer = 3.0;
+          // 스턴 제거 (공격형 위성으로 변경)
         }
         if (proj.gravityBomb) {
           hitEnemy.slowTimer = 3.0;

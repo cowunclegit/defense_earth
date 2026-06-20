@@ -895,7 +895,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const scaledRange = getScaledRange(type, rngLvl);
 
                       let desc = spec.isWeapon ? `공격: ${scaledDmg} HP, 쿨다운: ${scaledCd}초, 사거리: ${scaledRange}` : '지원/보조 위성';
-                      if (type === 'emp') desc = `적 전자계 마비 (3초 스턴, ${scaledCd}초 쿨다운), 사거리: ${scaledRange}`;
+                      if (type === 'emp') desc = `고출력 EMP 펄스를 방사하여 단일 대상에 강력한 피해를 입힙니다. 사거리: ${scaledRange}`;
                       if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 적 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
                       
                       const dph = (parseFloat(scaledCd) > 0) ? Math.round((scaledDmg / parseFloat(scaledCd)) * 3600) : 0;
@@ -919,7 +919,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
                           <Text style={{ fontSize: 8.5, color: '#00ff8a', marginTop: 1, fontWeight: 'bold' }}>
-                            ⚔️ 시간당 공격량: {type === 'emp' ? '0 (마비 전용)' : `${dph.toLocaleString()} HP/시간`}
+                            ⚔️ 시간당 공격량: ${dph.toLocaleString()} HP/시간
                           </Text>
                           
                           {/* 건설 버튼 */}
