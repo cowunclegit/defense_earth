@@ -317,7 +317,7 @@ export const simulateShieldAndHP = (
   }
 
   // HP 자동 회복
-  const hpRegenRate = (state.earthHpRegenLevel - 1) * 2;
+  const hpRegenRate = state.earthHpRegenLevel * 2;
   if (hpRegenRate > 0 && newHp < state.earthMaxHp && newHp > 0) {
     newHp = Math.min(state.earthMaxHp, newHp + hpRegenRate * actualDelta);
   }

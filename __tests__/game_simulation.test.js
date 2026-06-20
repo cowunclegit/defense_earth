@@ -711,7 +711,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     });
 
     // 1초(deltaTime = 1) 틱 진행
-    // HP 회복량: (2 - 1) * 2 = 2 HP/초
+    // HP 회복량: 2 * 2 = 4 HP/초
     // 실드 회복량:
     //   baseRegen = 10 (기본 포스필드 모듈) + (2 - 1) * 3 = 13 실드/초
     //   shieldRegenMultiplier = 1.0 (시너지 곱)
@@ -720,7 +720,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     store.tick(1.0);
 
     const postTickState = useGameStore.getState();
-    expect(postTickState.earthHp).toBe(52); // 50 + 2 = 52
+    expect(postTickState.earthHp).toBe(54); // 50 + 4 = 54
     expect(postTickState.earthShield).toBe(63); // 50 + 13 = 63
 
     // 4. 시간 회귀(triggerTimeLoop) 시 리셋 검증

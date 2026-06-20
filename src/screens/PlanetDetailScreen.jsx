@@ -486,7 +486,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
             {/* 상세 팝업 */}
             {activeDetail === 'hp' && (() => {
-              const baseHpRegen = (earthHpRegenLevel - 1) * 2;
+              const baseHpRegen = earthHpRegenLevel * 2;
               const hasRepairShield = shieldModule === 'repair' && earthShield > 0;
               const totalHpRegen = baseHpRegen + (hasRepairShield ? 5 : 0);
               return (
@@ -646,7 +646,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                     </View>
                     <Text style={styles.gridCardDesc}>
                       지구의 물리 선체 체력을 매 초당 자동으로 복구합니다.{"\n"}
-                      효과: +{(earthHpRegenLevel - 1) * 2} HP/초 → +{earthHpRegenLevel * 2} HP/초
+                      효과: +{earthHpRegenLevel * 2} HP/초 → +{(earthHpRegenLevel + 1) * 2} HP/초
                     </Text>
                     <TouchableOpacity 
                       style={[styles.gridBuildBtn, { backgroundColor: '#ff5c5c' }]} 
