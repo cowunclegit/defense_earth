@@ -340,20 +340,19 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
   test('자연적인 웨이브 스폰 및 클리어 시 웨이브 상승 검증', () => {
     const store = useGameStore.getState();
 
-    // 초기 상태: currentWave: 1, enemiesRemainingToSpawn: 8
+    // 초기 상태: currentWave: 1, enemiesRemainingToSpawn: 16
     expect(store.currentWave).toBe(1);
-    expect(store.enemiesRemainingToSpawn).toBe(8);
+    expect(store.enemiesRemainingToSpawn).toBe(16);
 
-    // 틱을 여러 번 줘서 8마리 스폰하게 만든다.
-    // spawnInterval은 5.0 - 1 * 0.1 = 4.9초
-    // 5초씩 틱을 줘서 8마리를 모두 스폰시킨다.
-    for (let i = 0; i < 8; i++) {
+    // 틱을 여러 번 줘서 16마리 스폰하게 만든다.
+    // 5초씩 틱을 줘서 16마리를 모두 스폰시킨다.
+    for (let i = 0; i < 16; i++) {
       store.tick(5.0);
     }
 
     const midStore = useGameStore.getState();
     expect(midStore.enemiesRemainingToSpawn).toBe(0);
-    expect(midStore.enemies.length).toBe(8);
+    expect(midStore.enemies.length).toBe(16);
     expect(midStore.currentWave).toBe(1); // 아직 적들이 격침 안 되었으므로 여전히 웨이브 1
 
     // 적들을 모두 지운다 (격침 처리)
@@ -364,7 +363,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
     const finishStore = useGameStore.getState();
     expect(finishStore.currentWave).toBe(2); // 웨이브 2 진입 성공!
-    expect(finishStore.enemiesRemainingToSpawn).toBe(10); // 웨이브 2는 (3 + 2) * 2 = 10마리
+    expect(finishStore.enemiesRemainingToSpawn).toBe(20); // 웨이브 2는 (3 + 2) * 4 = 20마리
   });
 
   test('지구 체력 0 도달 시 즉시 파괴 방지, 지연 폭발 및 시간 루프 지연 실행 검증', () => {

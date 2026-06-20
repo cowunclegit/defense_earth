@@ -193,7 +193,7 @@ export const saveLoadActions = (
         electricField: false
       },
       currentWave: 1,
-      enemiesRemainingToSpawn: 8,
+      enemiesRemainingToSpawn: 16,
       gameSpeed: 1,
       isPaused: false,
       timeMachineGauge: 0,

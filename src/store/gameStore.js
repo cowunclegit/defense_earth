@@ -218,7 +218,7 @@ export const useGameStore = create((set, get) => ({
   },
   
   currentWave: 1,
-  enemiesRemainingToSpawn: 8,
+  enemiesRemainingToSpawn: 16,
   gameSpeed: 1,
   isPaused: false,
   timeMachineGauge: 0,
@@ -406,7 +406,7 @@ export const useGameStore = create((set, get) => ({
         kineticDefenseTowers: 0,
         timeMachineGauge: 0,
         currentWave: 1,
-        enemiesRemainingToSpawn: 8,
+        enemiesRemainingToSpawn: 16,
         timeLoopCountdown: 0,
         earthHpRegenLevel: 1,
         earthShieldRegenLevel: 1,

@@ -8,7 +8,7 @@ export const cheatActions = (set, get) => ({
     const isBoss = nextWave % 10 === 0;
     return {
       currentWave: nextWave,
-      enemiesRemainingToSpawn: isBoss ? 1 : (3 + nextWave) * 2
+      enemiesRemainingToSpawn: isBoss ? 1 : (3 + nextWave) * 4
     };
   }),
   cheatMaxEnergy: (amount) => set((state) => {

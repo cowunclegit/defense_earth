@@ -542,7 +542,7 @@ export const spawnEnemiesAndBosses = (
   let updatedSpawnTimer = state.enemySpawnTimer + actualDelta;
   const isBossWave = state.currentWave % 10 === 0;
   const baseInterval = Math.max(2.0, 5.0 - state.currentWave * 0.1);
-  const spawnInterval = isBossWave ? baseInterval : baseInterval / 2.0;
+  const spawnInterval = isBossWave ? baseInterval : baseInterval / 4.0;
 
   const hasActiveBoss = updatedEnemies.some(e => e.type === ALIEN_TYPES.BOSS_APOCALYPSE || e.type === ALIEN_TYPES.BOSS_CHRONO);
 
@@ -1142,7 +1142,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   const finalUsedEnergy = qol.targetUsedEnergy;
 
   // 7. 적 및 보스 스폰 엔진
-  let enemiesRemaining = state.enemiesRemainingToSpawn !== undefined ? state.enemiesRemainingToSpawn : (state.currentWave % 10 === 0 ? 1 : (3 + state.currentWave) * 2);
+  let enemiesRemaining = state.enemiesRemainingToSpawn !== undefined ? state.enemiesRemainingToSpawn : (state.currentWave % 10 === 0 ? 1 : (3 + state.currentWave) * 4);
   const spawn = spawnEnemiesAndBosses(
     state,
     updatedEnemies,
@@ -1211,7 +1211,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     nextWave = state.currentWave + 1;
     addBattleLog(`웨이브 ${nextWave} 진입!`);
     const nextBoss = nextWave % 10 === 0;
-    enemiesRemaining = nextBoss ? 1 : (3 + nextWave) * 2;
+    enemiesRemaining = nextBoss ? 1 : (3 + nextWave) * 4;
     updatedSpawnTimer = 0;
   }
 
