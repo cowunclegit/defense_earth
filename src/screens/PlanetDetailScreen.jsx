@@ -126,13 +126,13 @@ export default function PlanetDetailScreen({ route, navigation }) {
   }
 
   const renderPowerGraph = () => {
-    // productionPower = 기본 15 + 발전소 레벨당 +5 TW/s (tickHelpers와 동일 공식)
+    // productionPower = 기본 15 + 발전소 레벨당 +20 TW/s (tickHelpers와 동일 공식)
     let baseProdRate = 15;
     Object.keys(planets || {}).forEach((pId) => {
       const p = planets[pId];
       if (p && p.unlocked) {
         const infra = p.infrastructure || {};
-        baseProdRate += (infra.powerPlant || 0) * 5;
+        baseProdRate += (infra.powerPlant || 0) * 20;
       }
     });
     const productionPower = Math.floor(baseProdRate * (synergies?.energyProductionMultiplier || 1.0));

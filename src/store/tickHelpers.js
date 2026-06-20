@@ -81,7 +81,7 @@ export const harvestResources = (state, updatedPlanets, actualDelta) => {
       const infra = p.infrastructure || { housing: 0, factory: 0, powerPlant: 0, bunker: 0 };
       const powerPlantLvl = infra.powerPlant || 0;
       baseEnergy += powerPlantLvl * 20;       // 발전소 1개당 쿄쿵시티 +20 TW
-      baseProdRate += powerPlantLvl * 5;      // 발전소 1개당 충전속도 +5 TW/s
+      baseProdRate += powerPlantLvl * 20;      // 발전소 1개당 충전속도 +20 TW/s
     }
   });
   const calculatedMaxEnergy = Math.floor(baseEnergy * state.synergies.energyProductionMultiplier);
