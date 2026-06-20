@@ -144,17 +144,14 @@ export default function PlanetDetailScreen({ route, navigation }) {
     if (counterattackModules?.electricField) counterattackConsumption += 15;
     
     let satelliteConsumption = 0;
-    Object.keys(planets || {}).forEach((pId) => {
-      const p = planets[pId];
-      if (p && p.unlocked && p.orbitalSatellitesList) {
-        Object.keys(p.orbitalSatellitesList).forEach((satType) => {
-          const count = p.orbitalSatellitesList[satType] || 0;
-          const satSpec = SATELLITE_SPECS[satType];
-          if (satSpec && count > 0) {
-            satelliteConsumption += count * satSpec.energy;
-          }
-        });
-      }
+    Object.keys(activeSatsMap || {}).forEach((pId) => {
+      Object.keys(activeSatsMap[pId] || {}).forEach((satType) => {
+        const count = activeSatsMap[pId][satType] || 0;
+        const satSpec = SATELLITE_SPECS[satType];
+        if (satSpec && count > 0) {
+          satelliteConsumption += count * satSpec.energy;
+        }
+      });
     });
     
     const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
