@@ -950,4 +950,76 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(useGameStore.getState().planets.earth.infrastructure.factory).toBe(1);
     expect(useGameStore.getState().credits).toBeCloseTo(creditsBeforeFactory - 150, 0);
   });
+
+  test('쉽야드 레벨 업그레이드 및 함선 테크 트리 락 검증', () => {
+    const store = useGameStore.getState();
+    useGameStore.setState({ credits: 100000, nanocores: 100, maxEnergy: 1000, usedEnergy: 0 });
+
+    // 1. 지구의 쉽야드 초기 레벨 검증 (기본 1레벨)
+    expect(useGameStore.getState().planets.earth.shipyard).toBe(1);
+
+    // 2. Lv.2 업그레이드 검증 (비용 15,000 Cr, 15 Nano, 10W)
+    // 크레딧 부족 시 업그레이드 실패
+    useGameStore.setState({ credits: 5000 });
+    const failUpg = store.upgradeShipyard('earth');
+    expect(failUpg).toBe(false);
+    expect(useGameStore.getState().planets.earth.shipyard).toBe(1);
+
+    // 정상 업그레이드
+    useGameStore.setState({ credits: 20000, nanocores: 50 });
+    const successUpg = store.upgradeShipyard('earth');
+    expect(successUpg).toBe(true);
+    expect(useGameStore.getState().planets.earth.shipyard).toBe(2);
+    expect(useGameStore.getState().credits).toBe(5000); // 20000 - 15000
+    expect(useGameStore.getState().nanocores).toBe(35); // 50 - 15
+
+    // 3. Lv.3 업그레이드 검증 (비용 50,000 Cr, 35 Nano, 10W)
+    useGameStore.setState({ credits: 60000, nanocores: 50 });
+    const successUpg2 = store.upgradeShipyard('earth');
+    expect(successUpg2).toBe(true);
+    expect(useGameStore.getState().planets.earth.shipyard).toBe(3);
+
+    // 4. 함선 건조 시 레벨 요구사항 제한 검증
+    // 루나(달)는 쉽야드가 없는 상태 (shipyard: 0)
+    expect(useGameStore.getState().planets.luna.shipyard).toBe(0);
+    
+    // 달에 쉽야드 Lv.1 건설 검증 (먼저 루나 해금)
+    const planetsCopyInit = JSON.parse(JSON.stringify(useGameStore.getState().planets));
+    planetsCopyInit.luna.unlocked = true;
+    useGameStore.setState({ planets: planetsCopyInit });
+
+    useGameStore.setState({ credits: 10000, nanocores: 10 });
+    const successBuildLuna = store.buildShipyard('luna');
+    expect(successBuildLuna).toBe(true);
+    expect(useGameStore.getState().planets.luna.shipyard).toBe(1);
+
+    // 함선 예약 제한 검증 (이온 전함은 Lv.3 필요)
+    // 만약 플레이어가 지구에 Lv.3 쉽야드를 가지고 있다면 전역적으로 이온 전함을 빌드할 수 있음
+    // 그러나 지구 쉽야드를 다시 Lv.1로 초기화하고 달에만 Lv.1 쉽야드가 있다면 이온 전함 건조 불가 검증
+    const planetsCopy = JSON.parse(JSON.stringify(useGameStore.getState().planets));
+    planetsCopy.earth.shipyard = 1; // 지구 쉽야드를 1로 내림
+    planetsCopy.luna.shipyard = 1;  // 루나 쉽야드도 1
+    useGameStore.setState({ planets: planetsCopy, fleet: [], shipyardQueue: null, credits: 20000, nanocores: 100 });
+
+    // 이온 전함 예약 (이온 전함은 Lv.3 필요)
+    store.setFleetReservation(SHIP_TYPES.ION_BATTLESHIP, 1);
+    store.tick(1.0);
+    // 틱을 진행했어도 쉽야드 레벨이 낮아 queue에 등록되지 않아야 함
+    expect(useGameStore.getState().shipyardQueue).toBeNull();
+
+    // 호위함 예약 (호위함은 Lv.2 필요)
+    store.setFleetReservation(SHIP_TYPES.ESCORT, 1);
+    store.tick(1.0);
+    expect(useGameStore.getState().shipyardQueue).toBeNull(); // 여전히 불가
+
+    // 지구 쉽야드를 Lv.2로 업그레이드
+    const planetsCopy2 = JSON.parse(JSON.stringify(useGameStore.getState().planets));
+    planetsCopy2.earth.shipyard = 2;
+    useGameStore.setState({ planets: planetsCopy2 });
+    
+    store.tick(1.0);
+    // 이제 호위함은 대기열에 들어가야 함 (Lv.2 만족)
+    expect(useGameStore.getState().shipyardQueue).not.toBeNull();
+    expect(useGameStore.getState().shipyardQueue.type).toBe(SHIP_TYPES.ESCORT);
+  });
 });

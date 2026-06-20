@@ -128,7 +128,8 @@ import {
   getOrderedBuiltSatellites,
   isSystemOnline,
   getInfrastructureCost,
-  INFRASTRUCTURE_SPECS
+  INFRASTRUCTURE_SPECS,
+  SHIP_LEVEL_REQUIREMENTS
 } from './gameSpecs';
 
 export {
@@ -156,7 +157,8 @@ export {
   getOrderedBuiltSatellites,
   isSystemOnline,
   getInfrastructureCost,
-  INFRASTRUCTURE_SPECS
+  INFRASTRUCTURE_SPECS,
+  SHIP_LEVEL_REQUIREMENTS
 };
 
 export const useGameStore = create((set, get) => ({

@@ -272,6 +272,43 @@ export const planetActions = (set, get) => ({
     return true;
   },
 
+  upgradeShipyard: (planetId) => {
+    const state = get();
+    const planet = state.planets[planetId];
+    if (!planet || !planet.unlocked || (planet.shipyard || 0) < 1 || (planet.shipyard || 0) >= 3) return false;
+
+    const currentLvl = planet.shipyard || 1;
+    let cost = 15000;
+    let nanocoreCost = 15;
+    let energyCost = 10;
+
+    if (currentLvl === 2) {
+      cost = 50000;
+      nanocoreCost = 35;
+      energyCost = 10;
+    }
+
+    if (state.credits < cost || state.nanocores < nanocoreCost || state.getAvailableEnergy() < energyCost) return false;
+
+    const updatedPlanets = {
+      ...state.planets,
+      [planetId]: {
+        ...planet,
+        shipyard: currentLvl + 1
+      }
+    };
+
+    set({
+      credits: state.credits - cost,
+      nanocores: state.nanocores - nanocoreCost,
+      usedEnergy: state.usedEnergy + energyCost,
+      planets: updatedPlanets
+    });
+
+    state.addBattleLog(`${PLANETARY_DATA[planetId].name} 궤도 쉽야드를 Lv.${currentLvl + 1}로 업그레이드했습니다.`);
+    return true;
+  },
+
   changeShieldModule: (moduleType) => {
     const state = get();
     const spec = SHIELD_MODULE_SPECS[moduleType];

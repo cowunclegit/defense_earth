@@ -18,7 +18,8 @@ import {
   isSystemOnline,
   getOrderedBuiltSatellites,
   getInfrastructureCost,
-  INFRASTRUCTURE_SPECS
+  INFRASTRUCTURE_SPECS,
+  SHIP_LEVEL_REQUIREMENTS
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
 import TopHud from '../components/TopHud';
@@ -81,7 +82,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
     shieldModule,
     counterattackModules,
     satelliteLevels,
-    upgradeSatellite
+    upgradeSatellite,
+    upgradeShipyard
   } = useGameStore();
 
   const [blinkVisible, setBlinkVisible] = React.useState(true);
@@ -1137,33 +1139,67 @@ export default function PlanetDetailScreen({ route, navigation }) {
                   </View>
                 ) : (
                   <View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 6, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                      <Text style={{ color: '#00ff8a', fontSize: 10, fontWeight: 'bold' }}>🛸 쉽야드 상태: Level {planetState.shipyard}</Text>
+                      {planetState.shipyard < 3 && (
+                        <TouchableOpacity
+                          style={{ backgroundColor: '#00ff8a', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 }}
+                          onPress={() => {
+                            const nextLvl = (planetState.shipyard || 1) + 1;
+                            const cost = nextLvl === 2 ? 15000 : 50000;
+                            const nano = nextLvl === 2 ? 15 : 35;
+                            const watt = 10;
+                            const success = upgradeShipyard(planetId);
+                            if (success) {
+                              setTimeout(() => saveGame(), 100);
+                            } else {
+                              Alert.alert('업그레이드 실패', `자원이 부족합니다. (요구: ${cost.toLocaleString()} Cr, ${nano} Nano, ${watt}W)`);
+                            }
+                          }}
+                        >
+                          <Text style={{ color: '#050814', fontSize: 8.5, fontWeight: 'bold' }}>
+                            Lv.{planetState.shipyard + 1} 업그레이드 ({planetState.shipyard === 1 ? '15,000 Cr, 15 Nano' : '50,000 Cr, 35 Nano'}, 10W)
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
                     <Text style={styles.subTitleText}>기동 함대 슬롯 예약 (자동 보충 및 배치)</Text>
                     <View style={styles.gridContainer}>
                       {Object.keys(SHIP_SPECS).map((type) => {
                         const reserved = fleetSlots[type] || 0;
                         const spec = SHIP_SPECS[type];
+                        const reqLvl = SHIP_LEVEL_REQUIREMENTS[type] || 1;
+                        const isLocked = (planetState.shipyard || 0) < reqLvl;
+
                         let role = spec.damage > 0 ? `공격: ${spec.damage} HP, 사거리: ${spec.range}` : '보조/방어 지원';
                         if (type === 'shieldCarrier') role = '아군 함대 실드 +30% 및 기동 보호막';
                         if (type === 'repairShip') role = '아군 함선 초당 50 HP 지속 수리';
                         if (type === 'barrierShip') role = '광역 배리어 전개, 함대 받는 피해 10% 감소';
                         return (
-                          <View key={type} style={[styles.gridCard, { borderColor: '#00ff8a' }]}>
+                          <View key={type} style={[styles.gridCard, { borderColor: isLocked ? '#8fa0c4' : '#00ff8a', minHeight: 125 }, isLocked && { opacity: 0.5 }]}>
                             <View style={styles.gridCardHeader}>
                               <Text style={styles.gridCardName}>{spec.name}</Text>
-                              <Text style={[styles.gridCardCount, { color: '#00ff8a' }]}>{reserved}대</Text>
+                              <Text style={[styles.gridCardCount, { color: isLocked ? '#8fa0c4' : '#00ff8a' }]}>{reserved}대</Text>
                             </View>
                             <Text style={styles.gridCardDesc}>
                               {role} | 비용: {spec.baseCost} Cr, {spec.baseNanocore} Nano | 빌드: {spec.baseBuildTime}s
                             </Text>
-                            <View style={styles.gridCounterRow}>
-                              <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleRemoveShip(type)}>
-                                <Text style={styles.gridCounterBtnText}>-</Text>
-                              </TouchableOpacity>
-                              <Text style={styles.gridCounterVal}>{reserved}</Text>
-                              <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleAddShip(type)}>
-                                <Text style={styles.gridCounterBtnText}>+</Text>
-                              </TouchableOpacity>
-                            </View>
+                            {isLocked ? (
+                              <View style={{ marginTop: 6, backgroundColor: 'rgba(255,59,48,0.1)', paddingVertical: 4, paddingHorizontal: 6, borderRadius: 4, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                                <Text style={{ fontSize: 8.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>🔒 쉽야드 Lv.{reqLvl} 필요</Text>
+                              </View>
+                            ) : (
+                              <View style={styles.gridCounterRow}>
+                                <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleRemoveShip(type)}>
+                                  <Text style={styles.gridCounterBtnText}>-</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.gridCounterVal}>{reserved}</Text>
+                                <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleAddShip(type)}>
+                                  <Text style={styles.gridCounterBtnText}>+</Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
                           </View>
                         );
                       })}

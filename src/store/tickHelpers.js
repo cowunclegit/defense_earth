@@ -20,7 +20,8 @@ import {
   calculateSynergies,
   recalculateUsedEnergyState,
   isSystemOnline,
-  getOrderedBuiltSatellites
+  getOrderedBuiltSatellites,
+  SHIP_LEVEL_REQUIREMENTS
 } from './gameSpecs';
 
 // 1. 자원 수확 및 총 에너지 연산
@@ -388,7 +389,8 @@ export const simulateFleetReplenishment = (
   updatedCredits,
   updatedNanocores,
   actualDelta,
-  addBattleLog
+  addBattleLog,
+  updatedPlanets
 ) => {
   if (updatedShipyardQueue) {
     const buildSpeed = state.synergies.shipBuildSpeedMultiplier;
@@ -423,8 +425,13 @@ export const simulateFleetReplenishment = (
     let targetShipToBuild = null;
     for (const type of Object.values(SHIP_TYPES)) {
       if ((shipCounts[type] || 0) < (state.fleetSlots[type] || 0)) {
-        targetShipToBuild = type;
-        break;
+        // 쉽야드가 건설되어 있고 레벨 요구사항을 만족하는지 검증
+        const reqLvl = SHIP_LEVEL_REQUIREMENTS[type] || 1;
+        const maxShipyardLvl = Object.values(updatedPlanets || {}).reduce((max, p) => p.unlocked && p.shipyard ? Math.max(max, p.shipyard) : max, 0);
+        if (maxShipyardLvl >= reqLvl) {
+          targetShipToBuild = type;
+          break;
+        }
       }
     }
 
@@ -1085,7 +1092,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     updatedCredits,
     updatedNanocores,
     actualDelta,
-    addBattleLog
+    addBattleLog,
+    updatedPlanets
   );
   updatedFleet = fleetRep.updatedFleet;
   let updatedShipyardQueue = fleetRep.updatedShipyardQueue;

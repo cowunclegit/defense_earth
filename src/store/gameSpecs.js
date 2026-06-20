@@ -123,6 +123,18 @@ export const SHIP_SPECS = {
   }
 };
 
+export const SHIP_LEVEL_REQUIREMENTS = {
+  [SHIP_TYPES.INTERCEPTOR]: 1,
+  [SHIP_TYPES.REPAIR_SHIP]: 1,
+  [SHIP_TYPES.ESCORT]: 2,
+  [SHIP_TYPES.BARRIER_SHIP]: 2,
+  [SHIP_TYPES.STEALTH]: 2,
+  [SHIP_TYPES.DESTROYER]: 3,
+  [SHIP_TYPES.CRUISER]: 3,
+  [SHIP_TYPES.SHIELD_CARRIER]: 3,
+  [SHIP_TYPES.ION_BATTLESHIP]: 3
+};
+
 export const GROUND_BASE_SPECS = {
   railgun: { name: '대함 레일건 요새', cost: 100, energy: 10, isWeapon: true, dmg: 200, cd: 5.0, maxCount: 8 },
   energyCannon: { name: '지대공 에너지 캐논', cost: 80, energy: 5, isWeapon: true, dmg: 80, cd: 2.0, maxCount: 8 },
