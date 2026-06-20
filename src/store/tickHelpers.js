@@ -410,7 +410,11 @@ export const simulateFleetReplenishment = (
         hp: spec.maxHp,
         maxHp: spec.maxHp,
         cooldownTimer: 0,
-        targetEnemyId: null
+        targetEnemyId: null,
+        orbitSpeedOffset: (Math.random() - 0.5) * 0.15,
+        orbitRadiusOffset: (Math.random() - 0.5) * 20,
+        flockOffsetX: (Math.random() - 0.5) * 30,
+        flockOffsetY: (Math.random() - 0.5) * 30
       });
       addBattleLog(`${spec.name} 자동 건조 배치 완료.`);
       updatedShipyardQueue = null;
@@ -781,13 +785,20 @@ export const simulateFleetMovementAndCombat = (
       });
     }
 
+    const flockOffsetX = ship.flockOffsetX !== undefined ? ship.flockOffsetX : ((Math.random() - 0.5) * 30);
+    const flockOffsetY = ship.flockOffsetY !== undefined ? ship.flockOffsetY : ((Math.random() - 0.5) * 30);
+    const orbitSpeedOffset = ship.orbitSpeedOffset !== undefined ? ship.orbitSpeedOffset : ((Math.random() - 0.5) * 0.15);
+    const orbitRadiusOffset = ship.orbitRadiusOffset !== undefined ? ship.orbitRadiusOffset : ((Math.random() - 0.5) * 20);
+
     let nextX = ship.x;
     let nextY = ship.y;
     let nextAngle = ship.angle;
 
     if (targetEnemy && spec.damage > 0) {
-      const tDx = targetEnemy.x - ship.x;
-      const tDy = targetEnemy.y - ship.y;
+      const targetX = targetEnemy.x + flockOffsetX;
+      const targetY = targetEnemy.y + flockOffsetY;
+      const tDx = targetX - ship.x;
+      const tDy = targetY - ship.y;
       const tDist = Math.sqrt(tDx * tDx + tDy * tDy);
 
       if (tDist > spec.range) {
@@ -824,11 +835,16 @@ export const simulateFleetMovementAndCombat = (
         angle: nextAngle,
         hp: nextHp,
         targetEnemyId: targetEnemy.id,
-        cooldownTimer: nextCooldown
+        cooldownTimer: nextCooldown,
+        flockOffsetX,
+        flockOffsetY,
+        orbitSpeedOffset,
+        orbitRadiusOffset
       };
     } else {
-      nextAngle += 0.4 * actualDelta;
-      const orbitalRadius = ship.type === SHIP_TYPES.INTERCEPTOR ? 120 : ship.type === SHIP_TYPES.ESCORT ? 135 : 150;
+      nextAngle += (0.4 + orbitSpeedOffset) * actualDelta;
+      const baseRadius = ship.type === SHIP_TYPES.INTERCEPTOR ? 120 : ship.type === SHIP_TYPES.ESCORT ? 135 : 150;
+      const orbitalRadius = baseRadius + orbitRadiusOffset;
       nextX = EARTH_CENTER_X + Math.cos(nextAngle) * orbitalRadius;
       nextY = EARTH_CENTER_Y + Math.sin(nextAngle) * orbitalRadius;
 
@@ -839,7 +855,11 @@ export const simulateFleetMovementAndCombat = (
         angle: nextAngle,
         hp: nextHp,
         targetEnemyId: null,
-        cooldownTimer: 0
+        cooldownTimer: 0,
+        flockOffsetX,
+        flockOffsetY,
+        orbitSpeedOffset,
+        orbitRadiusOffset
       };
     }
   });

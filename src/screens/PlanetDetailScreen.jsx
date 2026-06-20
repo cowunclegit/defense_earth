@@ -83,7 +83,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
     counterattackModules,
     satelliteLevels,
     upgradeSatellite,
-    upgradeShipyard
+    upgradeShipyard,
+    fleet,
+    shipyardQueue
   } = useGameStore();
 
   const [blinkVisible, setBlinkVisible] = React.useState(true);
@@ -484,6 +486,15 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 </Text>
               </TouchableOpacity>
 
+              {/* 🛸 함대 칩 */}
+              <TouchableOpacity
+                style={[styles.statusChip, { borderColor: '#00ff8a' }, activeDetail === 'fleet' && styles.statusChipActive]}
+                onPress={() => setActiveDetail(activeDetail === 'fleet' ? null : 'fleet')}
+              >
+                <Text style={styles.statusChipIcon}>🛸</Text>
+                <Text style={[styles.statusChipVal, { color: '#00ff8a' }]}>{fleet?.length || 0}</Text>
+              </TouchableOpacity>
+
             </View>
 
             {/* 상세 팝업 */}
@@ -606,6 +617,56 @@ export default function PlanetDetailScreen({ route, navigation }) {
                 </View>
               </View>
             )}
+
+            {activeDetail === 'fleet' && (() => {
+              const fleetSummary = {};
+              (fleet || []).forEach(ship => {
+                if (!fleetSummary[ship.type]) {
+                  fleetSummary[ship.type] = { count: 0, hpSum: 0, maxHp: 0 };
+                }
+                fleetSummary[ship.type].count++;
+                fleetSummary[ship.type].hpSum += ship.hp;
+                fleetSummary[ship.type].maxHp = ship.maxHp;
+              });
+
+              return (
+                <View style={styles.detailPopup}>
+                  <Text style={styles.detailPopupTitle}>🛸 기동 함대 상태</Text>
+                  <Text style={styles.detailPopupValue}>총 운용 중: {fleet?.length || 0}대</Text>
+                  
+                  {shipyardQueue && (
+                    <View style={{ marginBottom: 6, padding: 5, backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 4, borderWidth: 0.5, borderColor: '#ffd700', width: '100%' }}>
+                      <Text style={{ fontSize: 8.5, color: '#ffd700', fontWeight: 'bold' }}>
+                        🏗️ 생산 중: {SHIP_SPECS[shipyardQueue.type]?.name?.split(' (')[0]} ({Math.min(100, Math.floor((shipyardQueue.progress / shipyardQueue.totalTime) * 100))}% 완료)
+                      </Text>
+                      <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
+                        <View style={{ width: `${Math.min(100, (shipyardQueue.progress / shipyardQueue.totalTime) * 100)}%`, height: '100%', backgroundColor: '#ffd700' }} />
+                      </View>
+                    </View>
+                  )}
+
+                  {(!fleet || fleet.length === 0) ? (
+                    <Text style={styles.detailPopupSub}>운용 중인 함선이 없습니다. 쉽야드 탭에서 생산 예약을 하세요.</Text>
+                  ) : (
+                    <View style={{ gap: 4, width: '100%' }}>
+                      {Object.keys(fleetSummary).map(type => {
+                        const summary = fleetSummary[type];
+                        const spec = SHIP_SPECS[type];
+                        const avgHpPercent = Math.round((summary.hpSum / (summary.count * summary.maxHp)) * 100);
+                        return (
+                          <View key={type} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(10, 20, 45, 0.6)', paddingVertical: 3, paddingHorizontal: 6, borderRadius: 4, borderWidth: 0.5, borderColor: 'rgba(0, 255, 138, 0.2)' }}>
+                            <Text style={{ fontSize: 8.5, color: '#ffffff', fontWeight: 'bold' }}>{spec?.name?.split(' (')[0]}</Text>
+                            <Text style={{ fontSize: 8.5, color: '#00ff8a' }}>
+                              {summary.count}대 | HP {avgHpPercent}%
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
 
           </View>
         </View>
@@ -1161,6 +1222,53 @@ export default function PlanetDetailScreen({ route, navigation }) {
                             Lv.{planetState.shipyard + 1} 업그레이드 ({planetState.shipyard === 1 ? '15,000 Cr, 15 Nano' : '50,000 Cr, 35 Nano'}, 10W)
                           </Text>
                         </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* 현재 기동 함대 및 대기열 상태 */}
+                    <View style={{ marginBottom: 15, padding: 10, backgroundColor: 'rgba(0, 255, 138, 0.05)', borderRadius: 8, borderWidth: 0.8, borderColor: 'rgba(0, 255, 138, 0.15)' }}>
+                      <Text style={{ fontSize: 10, color: '#00ff8a', fontWeight: 'bold', marginBottom: 6 }}>🛸 현재 운용 중인 기동 함대 ({fleet?.length || 0}대)</Text>
+                      {shipyardQueue && (
+                        <View style={{ marginBottom: 8, padding: 6, backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 4, borderWidth: 0.5, borderColor: '#ffd700' }}>
+                          <Text style={{ fontSize: 8.5, color: '#ffd700', fontWeight: 'bold' }}>
+                            🏗️ 생산 중: {SHIP_SPECS[shipyardQueue.type]?.name} ({Math.min(100, Math.floor((shipyardQueue.progress / shipyardQueue.totalTime) * 100))}% 완료)
+                          </Text>
+                          <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
+                            <View style={{ width: `${Math.min(100, (shipyardQueue.progress / shipyardQueue.totalTime) * 100)}%`, height: '100%', backgroundColor: '#ffd700' }} />
+                          </View>
+                        </View>
+                      )}
+                      {(!fleet || fleet.length === 0) ? (
+                        <Text style={{ fontSize: 8.5, color: '#8fa0c4', fontStyle: 'italic' }}>운용 중인 함선이 없습니다. 아래 슬롯을 예약하여 생산을 시작하세요.</Text>
+                      ) : (
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                          {(() => {
+                            // 함선 타입별로 수량 및 평균 HP 집계
+                            const fleetSummary = {};
+                            fleet.forEach(ship => {
+                              if (!fleetSummary[ship.type]) {
+                                fleetSummary[ship.type] = { count: 0, hpSum: 0, maxHp: 0 };
+                              }
+                              fleetSummary[ship.type].count++;
+                              fleetSummary[ship.type].hpSum += ship.hp;
+                              fleetSummary[ship.type].maxHp = ship.maxHp;
+                            });
+
+                            return Object.keys(fleetSummary).map(type => {
+                              const summary = fleetSummary[type];
+                              const spec = SHIP_SPECS[type];
+                              const avgHpPercent = Math.round((summary.hpSum / (summary.count * summary.maxHp)) * 100);
+                              return (
+                                <View key={type} style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'rgba(10, 20, 45, 0.8)', borderRadius: 4, borderWidth: 0.5, borderColor: 'rgba(0, 255, 138, 0.25)', minWidth: 100 }}>
+                                  <Text style={{ fontSize: 8.5, color: '#ffffff', fontWeight: 'bold' }}>{spec?.name?.split(' (')[0]}</Text>
+                                  <Text style={{ fontSize: 8, color: '#00ff8a', marginTop: 2 }}>
+                                    수량: {summary.count}대 | 내구도: {avgHpPercent}%
+                                  </Text>
+                                </View>
+                              );
+                            });
+                          })()}
+                        </View>
                       )}
                     </View>
 
@@ -2013,6 +2121,7 @@ const styles = StyleSheet.create({
   /* ── 아이콘 칩 행 ── */
   statusChipRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 4,
     alignItems: 'center',
   },

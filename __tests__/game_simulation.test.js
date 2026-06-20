@@ -1022,4 +1022,51 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(useGameStore.getState().shipyardQueue).not.toBeNull();
     expect(useGameStore.getState().shipyardQueue.type).toBe(SHIP_TYPES.ESCORT);
   });
+
+  test('기동 함선 오프셋 자동 생성 및 자가 복구 검증', () => {
+    const store = useGameStore.getState();
+    const planetsCopy = JSON.parse(JSON.stringify(useGameStore.getState().planets));
+    planetsCopy.earth.shipyard = 1;
+    useGameStore.setState({ planets: planetsCopy, fleet: [], shipyardQueue: null, credits: 10000 });
+
+    // 1. 함선 예약하여 생산 및 배치
+    store.setFleetReservation(SHIP_TYPES.INTERCEPTOR, 1);
+    store.tick(1.0); // 빌드 시작
+    store.tick(5.0); // 무인 요격기 건조 시간(5초) 완료
+
+    const stateAfterBuild = useGameStore.getState();
+    expect(stateAfterBuild.fleet.length).toBe(1);
+    const ship = stateAfterBuild.fleet[0];
+    expect(ship.orbitSpeedOffset).toBeDefined();
+    expect(ship.orbitRadiusOffset).toBeDefined();
+    expect(ship.flockOffsetX).toBeDefined();
+    expect(ship.flockOffsetY).toBeDefined();
+    expect(typeof ship.orbitSpeedOffset).toBe('number');
+
+    // 2. 자가 복구 검증 (오프셋이 누락된 구 버전 세이브 파일 가정)
+    const legacyShip = {
+      id: 'legacy-id-123',
+      type: SHIP_TYPES.ESCORT,
+      x: 300,
+      y: 300,
+      angle: 0,
+      hp: 1000,
+      maxHp: 2500,
+      targetEnemyId: null,
+      cooldownTimer: 0
+    };
+    useGameStore.setState({ fleet: [legacyShip] });
+    
+    // 틱을 진행하여 자가 복구 로직 발동 유도
+    store.tick(0.1);
+
+    const stateAfterHealing = useGameStore.getState();
+    expect(stateAfterHealing.fleet.length).toBe(1);
+    const healedShip = stateAfterHealing.fleet[0];
+    expect(healedShip.orbitSpeedOffset).toBeDefined();
+    expect(healedShip.orbitRadiusOffset).toBeDefined();
+    expect(healedShip.flockOffsetX).toBeDefined();
+    expect(healedShip.flockOffsetY).toBeDefined();
+    expect(typeof healedShip.orbitRadiusOffset).toBe('number');
+  });
 });
