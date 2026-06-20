@@ -415,11 +415,11 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
       type: 'scout',
       x: 450,
       y: 450,
-      hp: 100,
-      maxHp: 100,
+      hp: 30,
+      maxHp: 30,
       speed: 0,
       attackTimer: 0,
-      spec: { name: '정찰선', maxHp: 100, damage: 10, creditReward: 10, coreChance: 0, speed: 0, cooldown: 5, attackType: 'kinetic' }
+      spec: { name: '정찰선', maxHp: 30, damage: 10, creditReward: 10, coreChance: 0, speed: 0, cooldown: 5, attackType: 'kinetic' }
     };
     useGameStore.setState({ enemies: [testEnemy], projectiles: [], enemySpawnTimer: 0, enemiesRemainingToSpawn: 0 });
 
@@ -442,7 +442,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     
     let midFlightState = useGameStore.getState();
     expect(midFlightState.projectiles.length).toBe(1); // 아직 충돌할 거리가 아니므로 투사체가 살아있어야 함
-    expect(midFlightState.enemies[0].hp).toBe(100);    // 적 체력은 100 유지
+    expect(midFlightState.enemies[0].hp).toBe(30);    // 적 체력은 30 유지
 
     // 5. 소량의 틱(0.05초)을 반복하여 투사체가 날아가 충돌할 때까지 진행
     let collided = false;
@@ -582,10 +582,10 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
     const shotState = useGameStore.getState();
     expect(shotState.projectiles.length).toBe(1);
-    expect(shotState.projectiles[0].damage).toBe(156); // 120 * 1.3 = 156
+    expect(shotState.projectiles[0].damage).toBe(52); // 40 * 1.3 = 52
 
     // 4-2. 마일스톤 레벨(Level 10) 도달 시 Tap Titans 2 스타일 공격력 점프 검증
-    // 데미지 레벨 10으로 강제 세팅 (기본 120 * (1 + 9 * 0.15) * 1.5배 마일스톤 보너스 = 120 * 2.35 * 1.5 = 282 * 1.5 = 423)
+    // 데미지 레벨 10으로 강제 세팅 (기본 40 * (1 + 9 * 0.15) * 1.5배 마일스톤 보너스 = 40 * 2.35 * 1.5 = 94 * 1.5 = 141)
     useGameStore.setState({
       satelliteLevels: {
         ...useGameStore.getState().satelliteLevels,
@@ -610,7 +610,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     
     const milestoneShotState = useGameStore.getState();
     expect(milestoneShotState.projectiles.length).toBe(1);
-    expect(milestoneShotState.projectiles[0].damage).toBe(423);
+    expect(milestoneShotState.projectiles[0].damage).toBe(141);
 
     // 5. 시간 회귀(triggerTimeLoop) 시 레벨 리셋 검증
     store.triggerTimeLoop();

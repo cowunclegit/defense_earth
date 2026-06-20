@@ -817,7 +817,6 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       <Text style={{ fontSize: 9.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 공격 위성이 정지되었습니다! (가용 전력 충전 필요) ⚠️</Text>
                     </View>
                   )}
-                  <Text style={styles.subTitleText}>공격형 궤도 위성 수량: {attackSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {
                       const spec = SATELLITE_SPECS[type];
@@ -836,6 +835,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       if (type === 'emp') desc = `적 전자계 마비 (3초 스턴, ${scaledCd}초 쿨다운), 사거리: ${scaledRange}`;
                       if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 적 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
                       
+                      const dph = (parseFloat(scaledCd) > 0) ? Math.round((scaledDmg / parseFloat(scaledCd)) * 3600) : 0;
+                      
                       const isMax = count >= MAX_SATELLITES_PER_TYPE;
                       
                       const dmgUpgradeCost = getSatelliteUpgradeCost(type, 'damage', dmgLvl);
@@ -846,14 +847,17 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       const standbyCount = count - activeCount;
                       const isCardOffline = count > 0 && activeCount === 0;
                       return (
-                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 180 }, isCardOffline && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
+                        <View key={type} style={[styles.gridCard, { borderColor: '#ff8a00', minHeight: 200 }, isCardOffline && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
                           <View style={styles.gridCardHeader}>
                             <Text style={styles.gridCardName}>{spec.name}</Text>
                             <Text style={[styles.gridCardCount, { color: isCardOffline ? '#8fa0c4' : '#ff8a00' }]}>
-                              {count}개 {standbyCount > 0 && `(대기: ${standbyCount})`}
+                              {count}/{MAX_SATELLITES_PER_TYPE} {standbyCount > 0 && `(대기: ${standbyCount})`}
                             </Text>
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
+                          <Text style={{ fontSize: 8.5, color: '#00ff8a', marginTop: 1, fontWeight: 'bold' }}>
+                            ⚔️ 시간당 공격량: {type === 'emp' ? '0 (마비 전용)' : `${dph.toLocaleString()} HP/시간`}
+                          </Text>
                           
                           {/* 건설 버튼 */}
                           {isMax ? (
@@ -1002,7 +1006,6 @@ export default function PlanetDetailScreen({ route, navigation }) {
                       <Text style={{ fontSize: 9.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 방어/센서 위성이 정지되었습니다! (가용 전력 충전 필요) ⚠️</Text>
                     </View>
                   )}
-                  <Text style={styles.subTitleText}>방어형 궤도 위성 수량: {defenseSatCount}개 (종류별 최대 {MAX_SATELLITES_PER_TYPE}개)</Text>
                   <View style={styles.gridContainer}>
                     {Object.keys(SATELLITE_SPECS).map((type) => {
                       const spec = SATELLITE_SPECS[type];
@@ -1024,7 +1027,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
                           <View style={styles.gridCardHeader}>
                             <Text style={styles.gridCardName}>{spec.name}</Text>
                             <Text style={[styles.gridCardCount, { color: isCardOffline ? '#8fa0c4' : '#ffd700' }]}>
-                              {count}개 {standbyCount > 0 && `(대기: ${standbyCount})`}
+                              {count}/{MAX_SATELLITES_PER_TYPE} {standbyCount > 0 && `(대기: ${standbyCount})`}
                             </Text>
                           </View>
                           <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
