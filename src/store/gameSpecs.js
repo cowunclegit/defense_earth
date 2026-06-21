@@ -241,7 +241,7 @@ export const ALIEN_TYPES = {
 export const ALIEN_SPECS = {
   [ALIEN_TYPES.SCOUT]: {
     name: '외계 정찰기',
-    maxHp: 40,
+    maxHp: 39,
     speed: 60,
     attackType: 'energy',
     damage: 4,
@@ -251,7 +251,7 @@ export const ALIEN_SPECS = {
   },
   [ALIEN_TYPES.RAIDER]: {
     name: '외계 약탈함',
-    maxHp: 110,
+    maxHp: 31,
     speed: 40,
     attackType: 'kinetic',
     damage: 9,
@@ -261,7 +261,7 @@ export const ALIEN_SPECS = {
   },
   [ALIEN_TYPES.DESTROYER]: {
     name: '외계 아머 멜터',
-    maxHp: 325,
+    maxHp: 11,
     speed: 25,
     attackType: 'energy',
     damage: 20,
@@ -437,3 +437,6 @@ export const getInfrastructureCost = (type, currentLevel) => {
   if (!spec) return 0;
   return Math.floor(spec.baseCost * Math.pow(spec.multiplier, currentLevel || 0));
 };
+
+export const DEFAULT_ALIEN_SPECS = JSON.parse(JSON.stringify(ALIEN_SPECS));
+export const DEFAULT_SATELLITE_SPECS = JSON.parse(JSON.stringify(SATELLITE_SPECS));

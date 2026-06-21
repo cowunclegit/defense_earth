@@ -56,7 +56,9 @@ export const saveLoadActions = (
       overloadMaxEnergy: state.overloadMaxEnergy,
       isPowerOffline: state.isPowerOffline,
       onlineSatelliteCount: state.onlineSatelliteCount,
-      satelliteBootTimer: state.satelliteBootTimer
+      satelliteBootTimer: state.satelliteBootTimer,
+      alienSpecOverrides: state.alienSpecOverrides || {},
+      satelliteSpecOverrides: state.satelliteSpecOverrides || {}
     };
     try {
       await AsyncStorage.setItem('DEFENSE_EARTH_SAVE', JSON.stringify(saveObj));
@@ -140,6 +142,22 @@ export const saveLoadActions = (
           earthHp: Math.min(100 + totalBunkers * 20, loaded.earthHp !== undefined ? loaded.earthHp : 100),
           synergies: calculateSynergies(loaded.planets, loaded.chronosUpgrades)
         };
+        const { ALIEN_SPECS, SATELLITE_SPECS } = require('./gameSpecs');
+        if (loaded.alienSpecOverrides) {
+          Object.keys(loaded.alienSpecOverrides).forEach(type => {
+            if (ALIEN_SPECS[type]) {
+              Object.assign(ALIEN_SPECS[type], loaded.alienSpecOverrides[type]);
+            }
+          });
+        }
+        if (loaded.satelliteSpecOverrides) {
+          Object.keys(loaded.satelliteSpecOverrides).forEach(type => {
+            if (SATELLITE_SPECS[type]) {
+              Object.assign(SATELLITE_SPECS[type], loaded.satelliteSpecOverrides[type]);
+            }
+          });
+        }
+
         nextState.usedEnergy = recalculateUsedEnergyState(nextState);
         set(nextState);
         get().addBattleLog('로컬 저장 데이터를 복구했습니다.');
@@ -157,6 +175,18 @@ export const saveLoadActions = (
         // 무시
       }
     }
+    const { ALIEN_SPECS, SATELLITE_SPECS, DEFAULT_ALIEN_SPECS, DEFAULT_SATELLITE_SPECS } = require('./gameSpecs');
+    if (DEFAULT_ALIEN_SPECS) {
+      Object.keys(DEFAULT_ALIEN_SPECS).forEach(type => {
+        Object.assign(ALIEN_SPECS[type], DEFAULT_ALIEN_SPECS[type]);
+      });
+    }
+    if (DEFAULT_SATELLITE_SPECS) {
+      Object.keys(DEFAULT_SATELLITE_SPECS).forEach(type => {
+        Object.assign(SATELLITE_SPECS[type], DEFAULT_SATELLITE_SPECS[type]);
+      });
+    }
+
     const cleanPlanets = JSON.parse(JSON.stringify(initialPlanetsState));
     const cleanChronos = { ...initialChronosUpgrades };
     const cleanSynergies = calculateSynergies(cleanPlanets, cleanChronos);
@@ -215,6 +245,8 @@ export const saveLoadActions = (
       particles: [],
       enemySpawnTimer: 0,
       chronoMuteTimer: 0,
+      alienSpecOverrides: {},
+      satelliteSpecOverrides: {},
       fleetSlots: {
         [SHIP_TYPES.INTERCEPTOR]: 0,
         [SHIP_TYPES.ESCORT]: 0,

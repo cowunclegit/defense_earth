@@ -17,5 +17,29 @@ export const cheatActions = (set, get) => ({
       cheatEnergyBonus: state.cheatEnergyBonus + amount,
       maxEnergy: state.maxEnergy + amount
     };
-  })
+  }),
+  updateSpecOverride: (category, type, specKey, value) => {
+    set((state) => {
+      const overridesKey = category === 'alien' ? 'alienSpecOverrides' : 'satelliteSpecOverrides';
+      const currentOverrides = state[overridesKey] || {};
+      const newOverrides = {
+        ...currentOverrides,
+        [type]: {
+          ...(currentOverrides[type] || {}),
+          [specKey]: value
+        }
+      };
+
+      const { ALIEN_SPECS, SATELLITE_SPECS } = require('./gameSpecs');
+      if (category === 'alien' && ALIEN_SPECS[type]) {
+        ALIEN_SPECS[type][specKey] = value;
+      } else if (category === 'satellite' && SATELLITE_SPECS[type]) {
+        SATELLITE_SPECS[type][specKey] = value;
+      }
+
+      return {
+        [overridesKey]: newOverrides
+      };
+    });
+  }
 });

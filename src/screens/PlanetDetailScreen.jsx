@@ -6,6 +6,7 @@ import {
   SHIP_SPECS, 
   GROUND_BASE_SPECS, 
   SATELLITE_SPECS, 
+  ALIEN_SPECS,
   STATION_SPECS, 
   SHIELD_MODULE_SPECS, 
   COUNTERATTACK_MODULE_SPECS,
@@ -28,6 +29,8 @@ import GameCanvas from '../game/GameCanvas';
 export default function PlanetDetailScreen({ route, navigation }) {
   const planetId = route?.params?.planetId || PLANETS.EARTH;
   const [activeTab, setActiveTab] = React.useState('attack_satellite');
+  const [editorCategory, setEditorCategory] = React.useState('alien');
+  const [editorSelectedType, setEditorSelectedType] = React.useState('scout');
   const [purchaseMultiplier, setPurchaseMultiplier] = React.useState(1);
   const { width: screenWidth } = useWindowDimensions();
   const [activeDetail, setActiveDetail] = React.useState(null); // 'hp'|'shield'|'tower'|'terraform'|'pop'|'auto'|null
@@ -85,7 +88,8 @@ export default function PlanetDetailScreen({ route, navigation }) {
     upgradeSatellite,
     upgradeShipyard,
     fleet,
-    shipyardQueue
+    shipyardQueue,
+    updateSpecOverride
   } = useGameStore();
 
   const [blinkVisible, setBlinkVisible] = React.useState(true);
@@ -1436,6 +1440,182 @@ export default function PlanetDetailScreen({ route, navigation }) {
               </View>
             )}
 
+            {activeTab === 'dev_balance' && (
+              <View style={{ padding: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={[styles.subTitleText, { marginVertical: 0 }]}>🔧 실시간 밸런스 조절기</Text>
+                  <TouchableOpacity 
+                    style={{ backgroundColor: '#ff8a00', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 }}
+                    onPress={() => setActiveTab('attack_satellite')}
+                  >
+                    <Text style={{ color: '#050814', fontSize: 10, fontWeight: 'bold' }}>돌아가기</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 카테고리 선택 */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: editorCategory === 'alien' ? '#ff8a00' : 'rgba(255,255,255,0.05)',
+                      paddingVertical: 8,
+                      borderRadius: 6,
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: '#ff8a00'
+                    }}
+                    onPress={() => {
+                      setEditorCategory('alien');
+                      setEditorSelectedType('scout');
+                    }}
+                  >
+                    <Text style={{ color: editorCategory === 'alien' ? '#050814' : '#ffffff', fontSize: 12, fontWeight: 'bold' }}>👾 적선 밸런스</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: editorCategory === 'satellite' ? '#00f0ff' : 'rgba(255,255,255,0.05)',
+                      paddingVertical: 8,
+                      borderRadius: 6,
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: '#00f0ff'
+                    }}
+                    onPress={() => {
+                      setEditorCategory('satellite');
+                      setEditorSelectedType('laser');
+                    }}
+                  >
+                    <Text style={{ color: editorCategory === 'satellite' ? '#050814' : '#ffffff', fontSize: 12, fontWeight: 'bold' }}>🛰️ 위성 밸런스</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 개체 선택 가로 스크롤 */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12, paddingBottom: 5 }} contentContainerStyle={{ flexDirection: 'row', gap: 6 }}>
+                  {editorCategory === 'alien' ? (
+                    [
+                      { id: 'scout', label: '정찰기' },
+                      { id: 'raider', label: '약탈함' },
+                      { id: 'destroyer', label: '구축함' },
+                      { id: 'boss_apocalypse', label: '보스 A' },
+                      { id: 'boss_chrono', label: '보스 C' }
+                    ].map(item => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={{
+                          backgroundColor: editorSelectedType === item.id ? 'rgba(255,138,0,0.2)' : 'rgba(255,255,255,0.02)',
+                          borderColor: editorSelectedType === item.id ? '#ff8a00' : 'rgba(255,255,255,0.1)',
+                          borderWidth: 1,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 4
+                        }}
+                        onPress={() => setEditorSelectedType(item.id)}
+                      >
+                        <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: 'bold' }}>{item.label}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    [
+                      { id: 'laser', label: '레이저' },
+                      { id: 'emp', label: 'EMP' },
+                      { id: 'plasmaLaser', label: '플라즈마' },
+                      { id: 'gravityBomb', label: '중력포' },
+                      { id: 'clusterMissile', label: '미사일' },
+                      { id: 'antimatter', label: '반물질' }
+                    ].map(item => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={{
+                          backgroundColor: editorSelectedType === item.id ? 'rgba(0,240,255,0.2)' : 'rgba(255,255,255,0.02)',
+                          borderColor: editorSelectedType === item.id ? '#00f0ff' : 'rgba(255,255,255,0.1)',
+                          borderWidth: 1,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 4
+                        }}
+                        onPress={() => setEditorSelectedType(item.id)}
+                      >
+                        <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: 'bold' }}>{item.label}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+
+                {/* 스탯 변경 폼 */}
+                {(() => {
+                  const currentSpec = editorCategory === 'alien' ? ALIEN_SPECS[editorSelectedType] : SATELLITE_SPECS[editorSelectedType];
+                  if (!currentSpec) return null;
+
+                  const keys = editorCategory === 'alien'
+                    ? [
+                        { key: 'maxHp', label: '❤️ 체력 (Max HP)', step: 10, min: 10, max: 1000000 },
+                        { key: 'damage', label: '⚔️ 공격력 (Damage)', step: 1, min: 1, max: 50000 },
+                        { key: 'speed', label: '🏃 이동 속도 (Speed)', step: 5, min: 5, max: 500 }
+                      ]
+                    : [
+                        { key: 'dmg', label: '💥 피해량 (Damage)', step: 10, min: 0, max: 10000000 },
+                        { key: 'cd', label: '⏱️ 공격 주기 (Cooldown)', step: 0.1, min: 0.05, max: 30 },
+                        { key: 'range', label: '📏 사거리 (Range)', step: 10, min: 50, max: 2000 },
+                        { key: 'cost', label: '🪙 구매 비용 (Cost)', step: 100, min: 10, max: 10000000 },
+                        { key: 'energy', label: '⚡ 소모 전력 (Energy)', step: 1, min: 0, max: 1000 }
+                      ];
+
+                  return (
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 6, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.1)' }}>
+                      <Text style={{ fontSize: 12, color: '#ffffff', fontWeight: 'bold', marginBottom: 10 }}>
+                        {currentSpec.name} ({editorSelectedType}) 스펙 설정
+                      </Text>
+
+                      {keys.map(item => {
+                        const val = currentSpec[item.key];
+                        return (
+                          <View key={item.key} style={{ marginBottom: 12 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <Text style={{ fontSize: 10, color: '#8fa0c4' }}>{item.label}</Text>
+                              <Text style={{ fontSize: 11, color: editorCategory === 'alien' ? '#ff8a00' : '#00f0ff', fontWeight: 'bold', fontFamily: 'Courier New' }}>
+                                {typeof val === 'number' ? val.toFixed(item.step % 1 === 0 ? 0 : 2) : val}
+                              </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                              <TouchableOpacity
+                                style={{ backgroundColor: 'rgba(255,255,255,0.08)', width: 40, height: 28, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
+                                onPress={() => {
+                                  const newVal = Math.max(item.min, val - item.step);
+                                  updateSpecOverride(editorCategory, editorSelectedType, item.key, newVal);
+                                  setTimeout(() => saveGame(), 100);
+                                }}
+                              >
+                                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 'bold' }}>-</Text>
+                              </TouchableOpacity>
+
+                              <View style={{ flex: 1, height: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 1 }} />
+
+                              <TouchableOpacity
+                                style={{ backgroundColor: 'rgba(255,255,255,0.08)', width: 40, height: 28, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
+                                onPress={() => {
+                                  const newVal = Math.min(item.max, val + item.step);
+                                  updateSpecOverride(editorCategory, editorSelectedType, item.key, newVal);
+                                  setTimeout(() => saveGame(), 100);
+                                }}
+                              >
+                                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 'bold' }}>+</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        );
+                      })}
+                      
+                      <Text style={{ fontSize: 8.5, color: '#8fa0c4', textAlign: 'center', fontStyle: 'italic', marginTop: 4 }}>
+                        ※ 조절한 밸런스는 게임 루프 및 텍스트 설명에 즉시 반영되며 자동 저장됩니다.
+                      </Text>
+                    </View>
+                  );
+                })()}
+              </View>
+            )}
+
             {/* 개발자 테스트 패널 (스크롤 뷰 최하단에 배치하여 레이아웃 침범 방지) */}
             <View style={styles.devCheatRow}>
               {/* E2E 테스트 호환용 피격 모의 단추 */}
@@ -1465,6 +1645,9 @@ export default function PlanetDetailScreen({ route, navigation }) {
               </TouchableOpacity>
               <TouchableOpacity style={styles.cheatBtn} onPress={() => { cheatMaxEnergy(10000); setTimeout(() => saveGame(), 100); }}>
                 <Text style={styles.cheatBtnText}>+10,000 W</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.05)' }]} onPress={() => setActiveTab('dev_balance')}>
+                <Text style={[styles.cheatBtnText, { color: '#ffd700', fontWeight: 'bold' }]}>🔧 실시간 밸런스 조절기</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.cheatBtn, { backgroundColor: '#c23b3b' }]} onPress={handleResetDb}>
                 <Text style={styles.cheatBtnText}>DB 초기화 (전체 초기화)</Text>

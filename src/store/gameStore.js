@@ -219,6 +219,8 @@ export const useGameStore = create((set, get) => ({
   
   currentWave: 1,
   enemiesRemainingToSpawn: 16,
+  alienSpecOverrides: {},
+  satelliteSpecOverrides: {},
   gameSpeed: 1,
   isPaused: false,
   timeMachineGauge: 0,
