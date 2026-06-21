@@ -11,6 +11,8 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     // timeParticles 및 업그레이드 수동 초기화
     useGameStore.setState({
       timeParticles: 0,
+      rebirthSkipTicks: 0,
+      satelliteRotation: 0,
       chronosUpgrades: {
         creditGen: 0,
         energyGen: 0,
@@ -561,8 +563,8 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
       enemies: [{
         id: 'upgrade-test-enemy',
         type: 'scout',
-        x: 100, // 지구 근처
-        y: 100,
+        x: 200, // 지구 근처
+        y: 200,
         hp: 200,
         maxHp: 200,
         speed: 10,
@@ -593,8 +595,8 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
       enemies: [{
         id: 'milestone-test-enemy',
         type: 'scout',
-        x: 100,
-        y: 100,
+        x: 200,
+        y: 200,
         hp: 500,
         maxHp: 500,
         speed: 10,

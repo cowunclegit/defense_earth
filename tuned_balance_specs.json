@@ -1,0 +1,156 @@
+{
+  "timestamp": "2026-06-21T08:36:59.927Z",
+  "funScore": 86,
+  "rebirthCount": 5,
+  "rebirthHistory": [
+    {
+      "rebirthIndex": 0,
+      "maxWaveReached": 12,
+      "tensionRatio": 0.09090909090909091,
+      "timestamp": "5:34:28 PM"
+    },
+    {
+      "rebirthIndex": 1,
+      "maxWaveReached": 17,
+      "tensionRatio": 0.25,
+      "timestamp": "5:34:49 PM"
+    },
+    {
+      "rebirthIndex": 2,
+      "maxWaveReached": 22,
+      "tensionRatio": 0.14285714285714285,
+      "timestamp": "5:35:22 PM"
+    },
+    {
+      "rebirthIndex": 3,
+      "maxWaveReached": 27,
+      "tensionRatio": 0.11538461538461539,
+      "timestamp": "5:36:05 PM"
+    },
+    {
+      "rebirthIndex": 4,
+      "maxWaveReached": 27,
+      "tensionRatio": 0.038461538461538464,
+      "timestamp": "5:36:59 PM"
+    }
+  ],
+  "overrides": {
+    "alienSpecOverrides": {
+      "scout": {
+        "maxHp": 3,
+        "damage": 4
+      },
+      "raider": {
+        "maxHp": 3,
+        "damage": 9
+      },
+      "destroyer": {
+        "maxHp": 10,
+        "damage": 10
+      },
+      "boss_apocalypse": {
+        "maxHp": 2708,
+        "damage": 117
+      },
+      "boss_chrono": {
+        "maxHp": 7287,
+        "damage": 189
+      }
+    },
+    "satelliteSpecOverrides": {}
+  },
+  "specs": {
+    "alienSpecs": {
+      "scout": {
+        "name": "외계 정찰기",
+        "maxHp": 3,
+        "damage": 4,
+        "speed": 60
+      },
+      "raider": {
+        "name": "외계 약탈함",
+        "maxHp": 3,
+        "damage": 9,
+        "speed": 40
+      },
+      "destroyer": {
+        "name": "외계 아머 멜터",
+        "maxHp": 10,
+        "damage": 10,
+        "speed": 25
+      },
+      "boss_apocalypse": {
+        "name": "보스: 아포칼립스 파괴함",
+        "maxHp": 2708,
+        "damage": 117,
+        "speed": 12
+      },
+      "boss_chrono": {
+        "name": "보스: 크로노 디바우러",
+        "maxHp": 7287,
+        "damage": 189,
+        "speed": 8
+      }
+    },
+    "satelliteSpecs": {
+      "laser": {
+        "name": "타겟팅 레이저 위성",
+        "cost": 200,
+        "dmg": 40,
+        "cd": 0.4,
+        "range": 250
+      },
+      "plasmaLaser": {
+        "name": "플라즈마 레이저 위성",
+        "cost": 5000,
+        "dmg": 3500,
+        "cd": 5,
+        "range": 450
+      },
+      "emp": {
+        "name": "EMP 위성",
+        "cost": 1000,
+        "dmg": 480,
+        "cd": 3,
+        "range": 400
+      },
+      "clusterMissile": {
+        "name": "클러스터 미사일 위성",
+        "cost": 120000,
+        "dmg": 35000,
+        "cd": 8,
+        "range": 550
+      },
+      "gravityBomb": {
+        "name": "중력 포탄 위성",
+        "cost": 25000,
+        "dmg": 20000,
+        "cd": 6,
+        "range": 500
+      },
+      "antimatter": {
+        "name": "반물질 포 위성",
+        "cost": 600000,
+        "dmg": 600000,
+        "cd": 15,
+        "range": 650
+      },
+      "sensor": {
+        "name": "조기 경보 센서 위성",
+        "cost": 500
+      },
+      "forceShield": {
+        "name": "포스 실드 위성",
+        "cost": 12500
+      },
+      "decoy": {
+        "name": "디코이 위성",
+        "cost": 100
+      },
+      "repairDrone": {
+        "name": "수리 드론 위성",
+        "cost": 2500
+      }
+    }
+  }
+}

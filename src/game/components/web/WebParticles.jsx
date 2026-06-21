@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function WebParticles({ particles }) {
+const WebParticles = memo(function WebParticles({ particles }) {
   return (
     <>
       {particles.map((part) => (
@@ -8,4 +8,7 @@ export default function WebParticles({ particles }) {
       ))}
     </>
   );
-}
+});
+
+export default WebParticles;
+

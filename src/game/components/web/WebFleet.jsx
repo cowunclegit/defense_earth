@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { SHIP_TYPES } from '../../../store/gameStore';
 
 const SHIP_VISUALS = {
@@ -13,7 +13,7 @@ const SHIP_VISUALS = {
   [SHIP_TYPES.BARRIER_SHIP]: { color: '#ffd700', size: 8, muteColor: '#8c8038' }      // Gold
 };
 
-export default function WebFleet({ fleet, chronoMuteTimer }) {
+const WebFleet = memo(function WebFleet({ fleet, chronoMuteTimer }) {
   return (
     <>
       {fleet.map((ship) => {
@@ -30,4 +30,7 @@ export default function WebFleet({ fleet, chronoMuteTimer }) {
       })}
     </>
   );
-}
+});
+
+export default WebFleet;
+

@@ -192,6 +192,7 @@ export const saveLoadActions = (
     const cleanSynergies = calculateSynergies(cleanPlanets, cleanChronos);
 
     set({
+      rebirthCount: 0,
       credits: 1000,
       maxEnergy: 100,
       usedEnergy: 20,

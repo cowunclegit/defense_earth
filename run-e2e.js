@@ -49,8 +49,9 @@ async function startServer() {
 
 async function runTests() {
   console.log('Running Playwright tests...');
+  const testArgs = ['playwright', 'test', ...process.argv.slice(2)];
   return new Promise((resolve) => {
-    const playwright = spawn('npx', ['playwright', 'test'], {
+    const playwright = spawn('npx', testArgs, {
       stdio: 'inherit',
       shell: true,
     });

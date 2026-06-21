@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function WebEnemies({ enemies }) {
+const WebEnemies = memo(function WebEnemies({ enemies }) {
   return (
     <>
       {enemies.map((enemy) => {
@@ -45,4 +45,7 @@ export default function WebEnemies({ enemies }) {
       })}
     </>
   );
-}
+});
+
+export default WebEnemies;
+

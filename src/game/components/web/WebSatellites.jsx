@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { SATELLITE_SPECS, useGameStore } from '../../../store/gameStore';
 
-export default function WebSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
+const WebSatellites = memo(function WebSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
   const satelliteRotation = useGameStore(state => state.satelliteRotation || 0);
 
   const currentRotation = satelliteRotation % 360;
@@ -69,4 +69,6 @@ export default function WebSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_C
       })}
     </>
   );
-}
+});
+
+export default WebSatellites;

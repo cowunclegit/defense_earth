@@ -221,7 +221,14 @@ export const simulatePlanetaryDefenses = (
             const dx = target.x - satX;
             const dy = target.y - satY;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const speed = 400;
+            
+            let speed = 400;
+            if (type === 'laser') speed = 1200;
+            else if (type === 'plasmaLaser') speed = 360;
+            else if (type === 'emp') speed = 480;
+            else if (type === 'clusterMissile') speed = 300;
+            else if (type === 'gravityBomb') speed = 220;
+            else if (type === 'antimatter') speed = 800;
 
             const targetAngle = Math.atan2(dy, dx);
             const anglesToSpawn = type === 'clusterMissile' ? [-0.2, 0, 0.2] : [0];
@@ -234,6 +241,7 @@ export const simulatePlanetaryDefenses = (
               updatedProjectiles.push({
                 id: Math.random().toString(),
                 type: type === 'clusterMissile' ? 'kinetic' : 'energy',
+                bulletType: type,
                 x: satX,
                 y: satY,
                 vx: vx,
@@ -660,13 +668,11 @@ export const simulateEnemyMovementAndAttack = (
   const totalDistorters = Object.values(updatedPlanets).reduce((acc, p) => acc + (p.orbitalStationsList?.gravityDistorter || 0), 0);
   const distorterMultiplier = totalDistorters > 0 ? 0.75 : 1.0;
 
-  const results = updatedEnemies.map(enemy => {
+  for (let i = 0; i < updatedEnemies.length; i++) {
+    const enemy = updatedEnemies[i];
     const dx = EARTH_CENTER_X - enemy.x;
     const dy = EARTH_CENTER_Y - enemy.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    
-    let nextX = enemy.x;
-    let nextY = enemy.y;
 
     const isBoss = enemy.type === ALIEN_TYPES.BOSS_APOCALYPSE || enemy.type === ALIEN_TYPES.BOSS_CHRONO;
     const border = isBoss ? SHIELD_RADIUS + 40 : SHIELD_RADIUS + 20;
@@ -682,13 +688,13 @@ export const simulateEnemyMovementAndAttack = (
 
     if (dist > border) {
       const moveDist = currentSpeed * sensorSpeedMultiplier * distorterMultiplier * state.synergies.enemySpeedMultiplier * actualDelta;
-      nextX += (dx / dist) * moveDist;
-      nextY += (dy / dist) * moveDist;
+      enemy.x += (dx / dist) * moveDist;
+      enemy.y += (dy / dist) * moveDist;
     }
 
-    let nextAttackTimer = enemy.attackTimer + actualDelta;
-    if (nextAttackTimer >= enemy.spec.cooldown) {
-      nextAttackTimer = 0;
+    enemy.attackTimer = (enemy.attackTimer || 0) + actualDelta;
+    if (enemy.attackTimer >= enemy.spec.cooldown) {
+      enemy.attackTimer = 0;
 
       if (enemy.type === ALIEN_TYPES.BOSS_CHRONO) {
         nextMuteTimer = 4.0;
@@ -696,14 +702,14 @@ export const simulateEnemyMovementAndAttack = (
         
         const px = -dy / dist;
         const py = dx / dist;
-        for (let i = 0; i < 3; i++) {
-          const offset = (i - 1) * 15;
-          const spreadV = (i - 1) * 30;
+        for (let j = 0; j < 3; j++) {
+          const offset = (j - 1) * 15;
+          const spreadV = (j - 1) * 30;
           updatedProjectiles.push({
             id: Math.random().toString(),
             type: 'kinetic',
-            x: nextX + px * offset,
-            y: nextY + py * offset,
+            x: enemy.x + px * offset,
+            y: enemy.y + py * offset,
             vx: (dx / dist) * 120 + px * spreadV,
             vy: (dy / dist) * 120 + py * spreadV,
             damage: (enemy.spec.damage / 3) * barrierDamageReduction,
@@ -711,15 +717,15 @@ export const simulateEnemyMovementAndAttack = (
           });
         }
       } else {
-        const projDx = EARTH_CENTER_X - nextX;
-        const projDy = EARTH_CENTER_Y - nextY;
+        const projDx = EARTH_CENTER_X - enemy.x;
+        const projDy = EARTH_CENTER_Y - enemy.y;
         const projDist = Math.sqrt(projDx * projDx + projDy * projDy);
 
         updatedProjectiles.push({
           id: Math.random().toString(),
           type: enemy.spec.attackType,
-          x: nextX,
-          y: nextY,
+          x: enemy.x,
+          y: enemy.y,
           vx: (projDx / projDist) * (isBoss ? 110 : 150),
           vy: (projDy / projDist) * (isBoss ? 110 : 150),
           damage: enemy.spec.damage * barrierDamageReduction,
@@ -731,17 +737,10 @@ export const simulateEnemyMovementAndAttack = (
         }
       }
     }
-
-    return {
-      ...enemy,
-      x: nextX,
-      y: nextY,
-      attackTimer: nextAttackTimer
-    };
-  });
+  }
 
   return {
-    updatedEnemies: results,
+    updatedEnemies,
     nextMuteTimer
   };
 };
@@ -757,18 +756,18 @@ export const simulateFleetMovementAndCombat = (
   totalRepairShips,
   totalRepairDrones
 ) => {
-  const results = updatedFleet.map(ship => {
+  for (let i = 0; i < updatedFleet.length; i++) {
+    const ship = updatedFleet[i];
     const spec = SHIP_SPECS[ship.type];
     
-    let nextHp = ship.hp;
-    if (nextHp < ship.maxHp) {
+    if (ship.hp < ship.maxHp) {
       const passiveHeal = state.researchUpgrades.selfRepair ? ship.maxHp * 0.01 : 0;
       const activeHeal = totalRepairShips * 50 + totalRepairDrones * 20;
-      nextHp = Math.min(ship.maxHp, nextHp + (passiveHeal + activeHeal) * actualDelta);
+      ship.hp = Math.min(ship.maxHp, ship.hp + (passiveHeal + activeHeal) * actualDelta);
     }
 
     if (isMuted) {
-      return { ...ship, hp: nextHp };
+      continue;
     }
 
     let targetEnemy = null;
@@ -785,41 +784,38 @@ export const simulateFleetMovementAndCombat = (
       });
     }
 
-    const flockOffsetX = ship.flockOffsetX !== undefined ? ship.flockOffsetX : ((Math.random() - 0.5) * 30);
-    const flockOffsetY = ship.flockOffsetY !== undefined ? ship.flockOffsetY : ((Math.random() - 0.5) * 30);
-    const orbitSpeedOffset = ship.orbitSpeedOffset !== undefined ? ship.orbitSpeedOffset : ((Math.random() - 0.5) * 0.15);
-    const orbitRadiusOffset = ship.orbitRadiusOffset !== undefined ? ship.orbitRadiusOffset : ((Math.random() - 0.5) * 20);
-
-    let nextX = ship.x;
-    let nextY = ship.y;
-    let nextAngle = ship.angle;
+    if (ship.flockOffsetX === undefined) ship.flockOffsetX = (Math.random() - 0.5) * 30;
+    if (ship.flockOffsetY === undefined) ship.flockOffsetY = (Math.random() - 0.5) * 30;
+    if (ship.orbitSpeedOffset === undefined) ship.orbitSpeedOffset = (Math.random() - 0.5) * 0.15;
+    if (ship.orbitRadiusOffset === undefined) ship.orbitRadiusOffset = (Math.random() - 0.5) * 20;
 
     if (targetEnemy && spec.damage > 0) {
-      const targetX = targetEnemy.x + flockOffsetX;
-      const targetY = targetEnemy.y + flockOffsetY;
+      const targetX = targetEnemy.x + ship.flockOffsetX;
+      const targetY = targetEnemy.y + ship.flockOffsetY;
       const tDx = targetX - ship.x;
       const tDy = targetY - ship.y;
       const tDist = Math.sqrt(tDx * tDx + tDy * tDy);
 
       if (tDist > spec.range) {
         const shipMove = spec.speed * actualDelta;
-        nextX += (tDx / tDist) * shipMove;
-        nextY += (tDy / tDist) * shipMove;
+        ship.x += (tDx / tDist) * shipMove;
+        ship.y += (tDy / tDist) * shipMove;
       }
 
-      nextAngle = Math.atan2(tDy, tDx);
+      ship.angle = Math.atan2(tDy, tDx);
 
-      let nextCooldown = Math.max(0, ship.cooldownTimer - actualDelta);
-      if (nextCooldown <= 0 && tDist <= spec.range) {
-        nextCooldown = spec.cooldown * state.synergies.towerCooldownMultiplier;
+      if (ship.cooldownTimer === undefined) ship.cooldownTimer = 0;
+      ship.cooldownTimer = Math.max(0, ship.cooldownTimer - actualDelta);
+      if (ship.cooldownTimer <= 0 && tDist <= spec.range) {
+        ship.cooldownTimer = spec.cooldown * state.synergies.towerCooldownMultiplier;
         
         const dmgMultiplier = 1 + (state.chronosUpgrades.fleetDamage * 0.1) + (state.researchUpgrades.tachionTargeting ? 0.25 : 0.0);
 
         updatedProjectiles.push({
           id: Math.random().toString(),
           type: 'kinetic',
-          x: nextX,
-          y: nextY,
+          x: ship.x,
+          y: ship.y,
           vx: (tDx / tDist) * 220,
           vy: (tDy / tDist) * 220,
           damage: spec.damage * dmgMultiplier,
@@ -827,44 +823,19 @@ export const simulateFleetMovementAndCombat = (
           targetEnemyId: targetEnemy.id
         });
       }
-
-      return {
-        ...ship,
-        x: nextX,
-        y: nextY,
-        angle: nextAngle,
-        hp: nextHp,
-        targetEnemyId: targetEnemy.id,
-        cooldownTimer: nextCooldown,
-        flockOffsetX,
-        flockOffsetY,
-        orbitSpeedOffset,
-        orbitRadiusOffset
-      };
+      ship.targetEnemyId = targetEnemy.id;
     } else {
-      nextAngle += (0.4 + orbitSpeedOffset) * actualDelta;
+      ship.angle += (0.4 + ship.orbitSpeedOffset) * actualDelta;
       const baseRadius = ship.type === SHIP_TYPES.INTERCEPTOR ? 120 : ship.type === SHIP_TYPES.ESCORT ? 135 : 150;
-      const orbitalRadius = baseRadius + orbitRadiusOffset;
-      nextX = EARTH_CENTER_X + Math.cos(nextAngle) * orbitalRadius;
-      nextY = EARTH_CENTER_Y + Math.sin(nextAngle) * orbitalRadius;
-
-      return {
-        ...ship,
-        x: nextX,
-        y: nextY,
-        angle: nextAngle,
-        hp: nextHp,
-        targetEnemyId: null,
-        cooldownTimer: 0,
-        flockOffsetX,
-        flockOffsetY,
-        orbitSpeedOffset,
-        orbitRadiusOffset
-      };
+      const orbitalRadius = baseRadius + ship.orbitRadiusOffset;
+      ship.x = EARTH_CENTER_X + Math.cos(ship.angle) * orbitalRadius;
+      ship.y = EARTH_CENTER_Y + Math.sin(ship.angle) * orbitalRadius;
+      ship.targetEnemyId = null;
+      ship.cooldownTimer = 0;
     }
-  });
+  }
 
-  return results;
+  return updatedFleet;
 };
 
 // 9. 투사체 이동 및 충돌 체크
@@ -882,13 +853,14 @@ export const simulateProjectilesAndCollisions = (
   const projectilesToRemove = new Set();
   const enemiesToRemove = new Set();
 
-  const results = updatedProjectiles.map(proj => {
-    const nextX = proj.x + proj.vx * actualDelta;
-    const nextY = proj.y + proj.vy * actualDelta;
+  for (let i = 0; i < updatedProjectiles.length; i++) {
+    const proj = updatedProjectiles[i];
+    proj.x += proj.vx * actualDelta;
+    proj.y += proj.vy * actualDelta;
 
     if (proj.isEnemy) {
-      const dx = EARTH_CENTER_X - nextX;
-      const dy = EARTH_CENTER_Y - nextY;
+      const dx = EARTH_CENTER_X - proj.x;
+      const dy = EARTH_CENTER_Y - proj.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist <= SHIELD_RADIUS) {
@@ -902,19 +874,19 @@ export const simulateProjectilesAndCollisions = (
             addBattleLog('키네틱 실드가 적의 탄환을 요격했습니다.');
             updatedParticles.push({
               id: Math.random().toString(),
-              x: nextX,
-              y: nextY,
+              x: proj.x,
+              y: proj.y,
               radius: 1,
               maxRadius: 25,
               alpha: 1.0,
               color: '#ff8a00'
             });
-            return { ...proj, x: nextX, y: nextY };
+            continue;
           }
         } else if (proj.type === 'energy' && decoyInterceptBonus > 0) {
           if (Math.random() <= decoyInterceptBonus) {
             addBattleLog('미끼 위성이 에너지 빔을 유도하여 차단했습니다.');
-            return { ...proj, x: nextX, y: nextY };
+            continue;
           }
         }
         
@@ -925,8 +897,8 @@ export const simulateProjectilesAndCollisions = (
       if (proj.targetEnemyId) {
         const target = updatedEnemies.find(e => e.id === proj.targetEnemyId);
         if (target) {
-          const eDx = target.x - nextX;
-          const eDy = target.y - nextY;
+          const eDx = target.x - proj.x;
+          const eDy = target.y - proj.y;
           const checkRadius = target.type.startsWith('boss') ? 35 : 18;
           if (Math.sqrt(eDx * eDx + eDy * eDy) < checkRadius) {
             hitEnemy = target;
@@ -935,8 +907,8 @@ export const simulateProjectilesAndCollisions = (
       }
       if (!hitEnemy) {
         hitEnemy = updatedEnemies.find(e => {
-          const eDx = e.x - nextX;
-          const eDy = e.y - nextY;
+          const eDx = e.x - proj.x;
+          const eDy = e.y - proj.y;
           const checkRadius = e.type.startsWith('boss') ? 35 : 18;
           return Math.sqrt(eDx * eDx + eDy * eDy) < checkRadius;
         });
@@ -947,7 +919,7 @@ export const simulateProjectilesAndCollisions = (
         hitEnemy.hp -= proj.damage;
 
         if (proj.emp) {
-          hitEnemy.stunTimer = 2.0; // 2초 마비 효과 부여
+          hitEnemy.stunTimer = 2.0;
         }
         if (proj.gravityBomb) {
           hitEnemy.slowTimer = 3.0;
@@ -956,8 +928,8 @@ export const simulateProjectilesAndCollisions = (
         
         updatedParticles.push({
           id: Math.random().toString(),
-          x: nextX,
-          y: nextY,
+          x: proj.x,
+          y: proj.y,
           radius: 1,
           maxRadius: 12,
           alpha: 1.0,
@@ -971,14 +943,12 @@ export const simulateProjectilesAndCollisions = (
       }
     }
 
-    if (nextX < -2000 || nextX > 2500 || nextY < -2000 || nextY > 2500) {
+    if (proj.x < -2000 || proj.x > 2500 || proj.y < -2000 || proj.y > 2500) {
       projectilesToRemove.add(proj.id);
     }
+  }
 
-    return { ...proj, x: nextX, y: nextY };
-  });
-
-  const cleanedProjectiles = results.filter(p => !projectilesToRemove.has(p.id));
+  const cleanedProjectiles = updatedProjectiles.filter(p => !projectilesToRemove.has(p.id));
   const cleanedEnemies = updatedEnemies.filter(e => !enemiesToRemove.has(e.id) && e.hp > 0);
 
   return {
@@ -989,17 +959,42 @@ export const simulateProjectilesAndCollisions = (
 
 // 10. 폭발 파티클 갱신
 export const simulateExplosionParticles = (updatedParticles, actualDelta) => {
-  return updatedParticles.map(part => {
+  const activeParticles = [];
+  for (let i = 0; i < updatedParticles.length; i++) {
+    const part = updatedParticles[i];
     const expansion = part.maxRadius * 3 * actualDelta;
-    const newRadius = Math.min(part.maxRadius, part.radius + expansion);
-    const newAlpha = Math.max(0, part.alpha - 1.8 * actualDelta);
-    return { ...part, radius: newRadius, alpha: newAlpha };
-  }).filter(part => part.alpha > 0);
+    part.radius = Math.min(part.maxRadius, part.radius + expansion);
+    part.alpha = Math.max(0, part.alpha - 1.8 * actualDelta);
+    if (part.alpha > 0) {
+      activeParticles.push(part);
+    }
+  }
+  return activeParticles;
+};
+
+
+export const clonePlanets = (planets) => {
+  if (!planets) return {};
+  const copy = {};
+  for (const planetId of Object.keys(planets)) {
+    const p = planets[planetId];
+    copy[planetId] = {
+      ...p,
+      groundBasesList: p.groundBasesList ? { ...p.groundBasesList } : {},
+      groundBaseTimers: p.groundBaseTimers ? { ...p.groundBaseTimers } : {},
+      orbitalSatellitesList: p.orbitalSatellitesList ? { ...p.orbitalSatellitesList } : {},
+      satelliteTimers: p.satelliteTimers ? { ...p.satelliteTimers } : {},
+      orbitalStationsList: p.orbitalStationsList ? { ...p.orbitalStationsList } : {},
+      stationTimers: p.stationTimers ? { ...p.stationTimers } : {},
+      infrastructure: p.infrastructure ? { ...p.infrastructure } : {}
+    };
+  }
+  return copy;
 };
 
 // 11. 대통합 틱 시뮬레이터 실행
 export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth) => {
-  const updatedPlanets = JSON.parse(JSON.stringify(state.planets));
+  const updatedPlanets = clonePlanets(state.planets);
   let nextMuteTimer = Math.max(0, state.chronoMuteTimer - actualDelta);
   const isMuted = nextMuteTimer > 0;
 
@@ -1101,7 +1096,8 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   let newHp = shieldHP.newHp;
 
   // 4. 타임머신 충전
-  const timeMachineRate = 0.1 * state.synergies.timeMachineChargeSpeedMultiplier * actualDelta;
+  const timeMachineSpeedUp = state.isAiPlaytestActive ? 10.0 : 1.0;
+  const timeMachineRate = 0.1 * state.synergies.timeMachineChargeSpeedMultiplier * actualDelta * timeMachineSpeedUp;
   const newTimeMachineGauge = Math.min(100, state.timeMachineGauge + timeMachineRate);
 
   // 5. 함대 재생산 및 수리 전력 소모 연산

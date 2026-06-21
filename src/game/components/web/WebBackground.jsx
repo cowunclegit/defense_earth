@@ -1,6 +1,7 @@
 import React from 'react';
+import { memo } from 'react';
 
-export default function WebBackground() {
+const WebBackground = memo(function WebBackground() {
   const gridLines = [];
   const start = -990;
   const end = 1530;
@@ -60,4 +61,6 @@ export default function WebBackground() {
       {starTracks}
     </>
   );
-}
+});
+
+export default WebBackground;

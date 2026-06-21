@@ -6,6 +6,8 @@ import { planetActions } from './planetActions';
 import { earthDamageActions } from './earthDamageActions';
 import { saveLoadActions } from './saveLoadActions';
 import { cheatActions } from './cheatActions';
+import { runAutoPlayAgentTick } from './autoPlayAgent';
+import { autoBalancerActions } from './autoBalancer';
 
 // 초기 행성 상태 템플릿
 const createDefaultPlanetState = (unlocked = false, terraformProgress = 0, population = 0, shipyard = 0) => ({
@@ -169,6 +171,14 @@ export const useGameStore = create((set, get) => ({
   timeParticles: 0,
   cheatEnergyBonus: 0,
 
+  isAiPlaytestActive: false,
+  aiPlaytestSpeed: 1,
+  playtestMetrics: [],
+  aiTimer: 0,
+  waveStartTime: null,
+  minShieldDuringWave: 100,
+  minHpDuringWave: 100,
+
   activeAlerts: [],
   showAlert: (title, message, buttons) => set((state) => {
     const newAlert = { id: Math.random().toString(), title, message, buttons };
@@ -225,10 +235,12 @@ export const useGameStore = create((set, get) => ({
   isPaused: false,
   timeMachineGauge: 0,
   timeLoopCountdown: 0,
+  rebirthCount: 0,
+  rebirthSkipTicks: 0,
 
-  planets: initialPlanetsState,
-  chronosUpgrades: initialChronosUpgrades,
-  synergies: calculateSynergies(initialPlanetsState, initialChronosUpgrades),
+  planets: JSON.parse(JSON.stringify(initialPlanetsState)),
+  chronosUpgrades: JSON.parse(JSON.stringify(initialChronosUpgrades)),
+  synergies: calculateSynergies(JSON.parse(JSON.stringify(initialPlanetsState)), JSON.parse(JSON.stringify(initialChronosUpgrades))),
 
   researchUpgrades: {
     beamConversion: false,
@@ -374,9 +386,14 @@ export const useGameStore = create((set, get) => ({
   ...earthDamageActions(set, get),
   ...saveLoadActions(set, get, initialPlanetsState, initialChronosUpgrades, calculateSynergies, recalculateUsedEnergyState, SHIP_TYPES),
   ...cheatActions(set, get),
+  ...autoBalancerActions(set, get),
 
   triggerTimeLoop: () => {
     const state = get();
+    let newRecord = null;
+    if (state.recordRebirth) {
+      newRecord = state.recordRebirth();
+    }
     let totalTerraformProgress = 0;
     Object.values(state.planets).forEach((p) => {
       totalTerraformProgress += p.terraformProgress;
@@ -387,14 +404,24 @@ export const useGameStore = create((set, get) => ({
     const plutoBonus = state.synergies.timeMachineChargeSpeedMultiplier;
     const earnedTP = Math.floor(baseTP * upgradeBonus * plutoBonus);
 
-    state.addBattleLog(`시간 회귀 가동! TP ${earnedTP} 획득.`);
+    if (newRecord) {
+      state.addBattleLog(`시간 회귀 가동! TP ${earnedTP} 획득. (도달 웨이브: W${newRecord.maxWaveReached}, 긴장감 비율: ${Math.round(newRecord.tensionRatio * 100)}%)`);
+    } else {
+      state.addBattleLog(`시간 회귀 가동! TP ${earnedTP} 획득.`);
+    }
 
     set((state) => {
-      const resetPlanets = { ...initialPlanetsState };
+      const resetPlanets = JSON.parse(JSON.stringify(initialPlanetsState));
       const newSynergies = calculateSynergies(resetPlanets, state.chronosUpgrades);
       const newMaxShield = 100 * (1 + state.chronosUpgrades.shieldCap * 0.15);
+      const updatedHistory = newRecord 
+        ? [...(state.rebirthHistory || []), newRecord]
+        : (state.rebirthHistory || []);
 
       return {
+        rebirthCount: state.rebirthCount + 1,
+        rebirthSkipTicks: 3,
+        rebirthHistory: updatedHistory,
         credits: 1000,
         maxEnergy: 100,
         usedEnergy: 20,
@@ -448,7 +475,10 @@ export const useGameStore = create((set, get) => ({
         projectiles: [],
         particles: [],
         shipyardQueue: null,
-        chronoMuteTimer: 0
+        chronoMuteTimer: 0,
+        waveStartTime: null, // Reset wave statistics timers
+        minShieldDuringWave: 100,
+        minHpDuringWave: 100
       };
     });
     // 자동 세이브 트리거
@@ -460,107 +490,172 @@ export const useGameStore = create((set, get) => ({
     const state = get();
     if (state.isPaused) return;
 
-    const actualDelta = deltaTime * state.gameSpeed;
-    const nextRotation = (state.satelliteRotation || 0) + 15 * actualDelta;
-
-    // 만약 지구 체력이 0 이하인 상태라면, 파괴 시퀀스(대폭발 카운트다운)만 처리
-    if (state.earthHp <= 0) {
-      if (state.timeLoopCountdown > 0) {
-        const nextCountdown = Math.max(0, state.timeLoopCountdown - actualDelta);
-        
-        // 매 프레임마다 무작위로 추가 파편 파티클 생성
-        const newParticles = [...state.particles];
-        const spawnCount = Math.floor(Math.random() * 3) + 1;
-        for (let i = 0; i < spawnCount; i++) {
-          const angle = Math.random() * 2 * Math.PI;
-          const dist = Math.random() * 40;
-          newParticles.push({
-            id: `earth-dying-${Date.now()}-${i}-${Math.random()}`,
-            x: EARTH_CENTER_X + Math.cos(angle) * dist,
-            y: EARTH_CENTER_Y + Math.sin(angle) * dist,
-            radius: 1 + Math.random() * 3,
-            maxRadius: 20 + Math.random() * 40,
-            alpha: 1.0,
-            color: ['#ff3300', '#ffaa00', '#ffffff', '#ff0055'][Math.floor(Math.random() * 4)]
-          });
-        }
-
-        // 모든 폭발 파티클 업데이트
-        const updatedParticles = newParticles.map(part => {
-          const expansion = part.maxRadius * 3 * actualDelta;
-          const newRadius = Math.min(part.maxRadius, part.radius + expansion);
-          const decayRate = part.id.includes('earth') ? (0.3 + Math.random() * 0.8) : 1.8;
-          const newAlpha = Math.max(0, part.alpha - decayRate * actualDelta);
-          return { ...part, radius: newRadius, alpha: newAlpha };
-        }).filter(part => part.alpha > 0);
-
-        set({
-          timeLoopCountdown: nextCountdown,
-          particles: updatedParticles
-        });
-
-        if (nextCountdown <= 0) {
-          get().triggerTimeLoop();
-        }
-      }
+    if (state.rebirthSkipTicks > 0) {
+      set({ rebirthSkipTicks: state.rebirthSkipTicks - 1 });
       return;
     }
-    const {
-      updatedCredits,
-      updatedNanocores,
-      calculatedMaxEnergy,
-      targetUsedEnergy,
-      maxShield,
-      newShield,
-      newHp,
-      newTimeMachineGauge,
-      updatedShipyardQueue,
-      updatedFleet,
-      updatedEnemies,
-      updatedProjectiles,
-      updatedParticles,
-      updatedSpawnTimer,
-      nextMuteTimer,
-      updatedPlanets: finalPlanets,
-      nextWave,
-      enemiesRemaining,
-      newOverloadEnergy,
-      maxOverloadEnergy,
-      newIsPowerOffline,
-      newOnlineSatelliteCount,
-      newSatelliteBootTimer
-    } = runTickSimulation(state, actualDelta, (msg) => state.addBattleLog(msg), (dmg, type) => state.damageEarth(dmg, type));
 
-    // Get final values from store updated by damageEarth
-    const finalState = get();
+    // AI 플레이테스트 활성화 여부에 따른 배속 결정
+    const activeSpeed = state.isAiPlaytestActive ? state.aiPlaytestSpeed : state.gameSpeed;
 
-    set({
-      credits: updatedCredits,
-      nanocores: updatedNanocores,
-      maxEnergy: calculatedMaxEnergy,
-      usedEnergy: targetUsedEnergy,
-      earthShield: finalState.earthHp > 0 ? Math.min(maxShield, finalState.earthShield + (newShield - state.earthShield)) : 0,
-      earthMaxShield: maxShield,
-      earthHp: finalState.earthHp > 0 ? Math.min(finalState.earthMaxHp, finalState.earthHp + (newHp - state.earthHp)) : 0,
-      timeMachineGauge: newTimeMachineGauge,
-      shipyardQueue: updatedShipyardQueue,
-      fleet: updatedFleet,
-      enemies: updatedEnemies,
-      projectiles: updatedProjectiles,
-      particles: updatedParticles,
-      enemySpawnTimer: updatedSpawnTimer,
-      chronoMuteTimer: nextMuteTimer,
-      planets: finalPlanets,
-      currentWave: nextWave,
-      enemiesRemainingToSpawn: enemiesRemaining,
-      satelliteRotation: nextRotation,
-      kineticDefenseTowers: finalPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0,
-      overloadEnergy: newOverloadEnergy,
-      overloadMaxEnergy: maxOverloadEnergy,
-      isPowerOffline: newIsPowerOffline,
-      onlineSatelliteCount: newOnlineSatelliteCount,
-      satelliteBootTimer: newSatelliteBootTimer
-    });
+    // 시뮬레이션 타임 안정성을 위해 고배속 시 서브틱 분할 실행
+    let ticksToRun = 1;
+    let subDelta = deltaTime * activeSpeed;
+
+    if (activeSpeed > 4) {
+      ticksToRun = Math.ceil(activeSpeed / 2); // 10배속 -> 5회 서브틱, 20배속 -> 10회 서브틱
+      subDelta = (deltaTime * activeSpeed) / ticksToRun;
+    }
+
+    for (let step = 0; step < ticksToRun; step++) {
+      const currentState = get();
+      if (currentState.rebirthSkipTicks > 0) {
+        break;
+      }
+      
+      // AI 에이전트 오토파일럿 실행
+      if (currentState.isAiPlaytestActive) {
+        runAutoPlayAgentTick(set, get, subDelta);
+        if (get().rebirthSkipTicks > 0) {
+          break;
+        }
+      }
+
+      // 웨이브 시작 기록 초기화
+      if (!currentState.waveStartTime) {
+        currentState.recordWaveStart(currentState.currentWave);
+      }
+
+      const nextRotation = (currentState.satelliteRotation || 0) + 15 * subDelta;
+
+      // 만약 지구 체력이 0 이하인 상태라면, 파괴 시퀀스(대폭발 카운트다운)만 처리
+      if (currentState.earthHp <= 0) {
+        if (currentState.timeLoopCountdown > 0) {
+          const nextCountdown = Math.max(0, currentState.timeLoopCountdown - subDelta);
+          
+          // 매 프레임마다 무작위로 추가 파편 파티클 생성
+          const newParticles = [...currentState.particles];
+          const spawnCount = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < spawnCount; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const dist = Math.random() * 40;
+            newParticles.push({
+              id: `earth-dying-${Date.now()}-${i}-${Math.random()}`,
+              x: EARTH_CENTER_X + Math.cos(angle) * dist,
+              y: EARTH_CENTER_Y + Math.sin(angle) * dist,
+              radius: 1 + Math.random() * 3,
+              maxRadius: 20 + Math.random() * 40,
+              alpha: 1.0,
+              color: ['#ff3300', '#ffaa00', '#ffffff', '#ff0055'][Math.floor(Math.random() * 4)]
+            });
+          }
+
+          // 모든 폭발 파티클 업데이트
+          const updatedParticles = newParticles.map(part => {
+            const expansion = part.maxRadius * 3 * subDelta;
+            const newRadius = Math.min(part.maxRadius, part.radius + expansion);
+            const decayRate = part.id.includes('earth') ? (0.3 + Math.random() * 0.8) : 1.8;
+            const newAlpha = Math.max(0, part.alpha - decayRate * subDelta);
+            return { ...part, radius: newRadius, alpha: newAlpha };
+          }).filter(part => part.alpha > 0);
+
+          if (nextCountdown <= 0) {
+            currentState.triggerTimeLoop();
+          } else {
+            set({
+              timeLoopCountdown: nextCountdown,
+              particles: updatedParticles
+            });
+          }
+        }
+        // 이 서브틱 루프 종료 (더이상 진행 불가)
+        break; 
+      }
+
+      // 정상 게임 시뮬레이션
+      const {
+        updatedCredits,
+        updatedNanocores,
+        calculatedMaxEnergy,
+        targetUsedEnergy,
+        maxShield,
+        newShield,
+        newHp,
+        newTimeMachineGauge,
+        updatedShipyardQueue,
+        updatedFleet,
+        updatedEnemies,
+        updatedProjectiles,
+        updatedParticles,
+        updatedSpawnTimer,
+        nextMuteTimer,
+        updatedPlanets: finalPlanets,
+        nextWave,
+        enemiesRemaining,
+        newOverloadEnergy,
+        maxOverloadEnergy,
+        newIsPowerOffline,
+        newOnlineSatelliteCount,
+        newSatelliteBootTimer
+      } = runTickSimulation(currentState, subDelta, (msg) => currentState.addBattleLog(msg), (dmg, type) => currentState.damageEarth(dmg, type));
+
+      // damageEarth 콜백에 의해 변경된 상태를 동기적으로 불러옴
+      const postDamageState = get();
+
+      // 만약 지구 피격으로 인해 체력이 0 이하가 되었다면 Defeat 처리
+      const isDefeatedThisStep = postDamageState.earthHp <= 0;
+      if (isDefeatedThisStep) {
+        currentState.recordWaveEnd(currentState.currentWave, true);
+      }
+
+      // 웨이브 클리어 및 다음 웨이브 시작 체크
+      let waveChanged = false;
+      if (!isDefeatedThisStep && nextWave > currentState.currentWave) {
+        currentState.recordWaveEnd(currentState.currentWave, false);
+        waveChanged = true;
+      }
+
+      // 실드 및 체력의 현재 서브틱 최소치 집계
+      const calculatedShield = isDefeatedThisStep ? 0 : Math.min(maxShield, postDamageState.earthShield + (newShield - currentState.earthShield));
+      const calculatedHp = isDefeatedThisStep ? 0 : Math.min(postDamageState.earthMaxHp, postDamageState.earthHp + (newHp - currentState.earthHp));
+
+      const nextMinShield = waveChanged ? calculatedShield : Math.min(currentState.minShieldDuringWave || 99999, calculatedShield);
+      const nextMinHp = waveChanged ? calculatedHp : Math.min(currentState.minHpDuringWave || 99999, calculatedHp);
+
+      set({
+        credits: updatedCredits,
+        nanocores: updatedNanocores,
+        maxEnergy: calculatedMaxEnergy,
+        usedEnergy: targetUsedEnergy,
+        earthShield: calculatedShield,
+        earthMaxShield: maxShield,
+        earthHp: calculatedHp,
+        timeMachineGauge: newTimeMachineGauge,
+        shipyardQueue: updatedShipyardQueue,
+        fleet: updatedFleet,
+        enemies: updatedEnemies,
+        projectiles: updatedProjectiles,
+        particles: updatedParticles,
+        enemySpawnTimer: updatedSpawnTimer,
+        chronoMuteTimer: nextMuteTimer,
+        planets: finalPlanets,
+        currentWave: nextWave,
+        enemiesRemainingToSpawn: enemiesRemaining,
+        satelliteRotation: nextRotation,
+        kineticDefenseTowers: finalPlanets[PLANETS.EARTH]?.orbitalSatellitesList?.laser || 0,
+        overloadEnergy: newOverloadEnergy,
+        overloadMaxEnergy: maxOverloadEnergy,
+        isPowerOffline: newIsPowerOffline,
+        onlineSatelliteCount: newOnlineSatelliteCount,
+        satelliteBootTimer: newSatelliteBootTimer,
+        minShieldDuringWave: nextMinShield,
+        minHpDuringWave: nextMinHp,
+      });
+
+      if (waveChanged) {
+        get().recordWaveStart(nextWave);
+      }
+    }
   }
 }));
 

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function WebEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH_CENTER_Y, angles }) {
+const WebEarth = memo(function WebEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH_CENTER_Y, angles }) {
   return (
     <>
       <circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} fill={earthColor} />
@@ -38,4 +38,6 @@ export default function WebEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH
       })}
     </>
   );
-}
+});
+
+export default WebEarth;

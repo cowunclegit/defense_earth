@@ -21,12 +21,20 @@ export default function SolarSystemScreen({ navigation }) {
       <TopHud />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('PlanetDetail')} 
-            style={styles.backBtn}
-          >
-            <Text style={styles.backBtnText}>← 전투 화면 복귀</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('PlanetDetail')} 
+              style={styles.backBtn}
+            >
+              <Text style={styles.backBtnText}>← 전투 화면 복귀</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('AIPlaytest')} 
+              style={[styles.backBtn, { borderColor: '#00ff8a', backgroundColor: 'rgba(0, 255, 138, 0.15)' }]}
+            >
+              <Text style={[styles.backBtnText, { color: '#00ff8a' }]}>🤖 AI 플레이테스트</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.title}>태양계 관제 센터</Text>
           <Text style={styles.subtitle}>태양계 방어선 구축 및 테라포밍 상태</Text>
         </View>

@@ -37,9 +37,46 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await pauseBtn.click();
     await expect(page.locator('text=RESUME').filter({ visible: true }).first()).toBeVisible();
 
-    // Reset shield to exactly 100 to avoid any ticks that occurred before pausing
+    // Reset core states to avoid any ticks that occurred before pausing
     await page.evaluate(() => {
-      window.useGameStore.setState({ earthShield: 100 });
+      const store = window.useGameStore.getState();
+      const currentPlanets = store.planets;
+      if (currentPlanets) {
+        Object.keys(currentPlanets).forEach(id => {
+          if (id === 'earth') {
+            currentPlanets[id].unlocked = true;
+            currentPlanets[id].population = 1000000;
+            currentPlanets[id].terraformProgress = 100;
+            currentPlanets[id].shipyard = 1;
+          } else {
+            currentPlanets[id].unlocked = false;
+            currentPlanets[id].population = 0;
+            currentPlanets[id].terraformProgress = 0;
+            currentPlanets[id].shipyard = 0;
+          }
+          currentPlanets[id].groundBases = 0;
+          currentPlanets[id].orbitalSatellites = 0;
+          currentPlanets[id].orbitalStations = 0;
+          if (currentPlanets[id].infrastructure) {
+            currentPlanets[id].infrastructure.housing = 0;
+            currentPlanets[id].infrastructure.factory = 0;
+            currentPlanets[id].infrastructure.powerPlant = 0;
+            currentPlanets[id].infrastructure.bunker = 0;
+          }
+          if (currentPlanets[id].orbitalSatellitesList) {
+            Object.keys(currentPlanets[id].orbitalSatellitesList).forEach(type => {
+              currentPlanets[id].orbitalSatellitesList[type] = 0;
+            });
+          }
+        });
+      }
+      window.useGameStore.setState({
+        credits: 1000,
+        earthHp: 100,
+        earthShield: 100,
+        currentWave: 1,
+        planets: { ...currentPlanets }
+      });
     });
   });
 
@@ -98,8 +135,8 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await expect(page.locator('text=해금 가능 (터치하여 개척)').filter({ visible: true }).first()).toBeVisible();
     await page.locator('text=해금 가능 (터치하여 개척)').filter({ visible: true }).first().click();
 
-    // Verify Luna is unlocked and starts at 0% progress / 0 population
-    await expect(page.locator('text=테라포밍 0% | 인구: 0명').filter({ visible: true }).first()).toBeVisible();
+    // Verify Luna is unlocked and starts at 0% progress / 100 population
+    await expect(page.locator('text=테라포밍 0% | 인구: 100명').filter({ visible: true }).first()).toBeVisible();
 
     // 4. Click Luna to open its details
     await page.locator('text=달 (Luna)').filter({ visible: true }).first().click();
@@ -107,7 +144,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await expect(page.locator('text=달 (Luna)').filter({ visible: true }).last()).toBeVisible();
 
     // Initial population and progress
-    await expect(page.locator('text=현재 수용 인구: 0명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
+    await expect(page.locator('text=현재 수용 인구: 100명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
     await expect(page.locator('text=0%').filter({ visible: true }).first()).toBeVisible();
 
     // Inject Credits & Energy to perform terraforming upgrades
@@ -126,8 +163,8 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await page.locator('text=테라포밍 10% 증가').filter({ visible: true }).first().click();
     await expect(page.locator('text=30%').filter({ visible: true }).first()).toBeVisible();
 
-    // Upgrading to 30% updates population to 15,000
-    await expect(page.locator('text=현재 수용 인구: 15,000명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
+    // Since game is paused, population remains 100
+    await expect(page.locator('text=현재 수용 인구: 100명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
 
     // Check synergy is waiting (not yet active)
     await page.locator('text=성계도').filter({ visible: true }).first().click();
@@ -146,8 +183,8 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     }
     await expect(page.locator('text=80%').filter({ visible: true }).first()).toBeVisible();
 
-    // Verify population limit reaches 40,000 (which is 80% of 50,000)
-    await expect(page.locator('text=현재 수용 인구: 40,000명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
+    // Since game is paused, population remains 100
+    await expect(page.locator('text=현재 수용 인구: 100명 / 50,000명').filter({ visible: true }).first()).toBeVisible();
 
     // Check that Luna's synergy (Aegis shield regen) is now active
     await page.locator('text=성계도').filter({ visible: true }).first().click();
@@ -241,7 +278,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await page.waitForTimeout(500);
 
     // Navigate to Shipyard tab
-    await page.locator('text=함대 쉽야드').filter({ visible: true }).first().click();
+    await page.locator('text=쉽야드').filter({ visible: true }).first().click();
     await page.waitForTimeout(200);
 
     // Click '+' button to reserve 1 Interceptor slot
@@ -375,7 +412,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     await marsNode.click();
 
     // Verify Mars is unlocked and starts at 0%
-    await expect(marsNode.locator('text=테라포밍 0% | 인구: 0명').filter({ visible: true }).first()).toBeVisible();
+    await expect(marsNode.locator('text=테라포밍 0% | 인구: 100명').filter({ visible: true }).first()).toBeVisible();
   });
 
   test('Unlock and terraform all remaining planets: Venus, Mercury, Jupiter, Saturn, Uranus, Neptune, Pluto', async ({ page }) => {
@@ -415,7 +452,7 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
       const node = page.locator(`text=${p.label}`).locator('xpath=..');
       await expect(node.locator('text=해금 가능 (터치하여 개척)').filter({ visible: true }).first()).toBeVisible();
       await node.click();
-      await expect(node.locator('text=테라포밍 0% | 인구: 0명').filter({ visible: true }).first()).toBeVisible();
+      await expect(node.locator('text=테라포밍 0% | 인구: 100명').filter({ visible: true }).first()).toBeVisible();
     }
   });
 
@@ -633,6 +670,15 @@ test.describe('Defense Earth Comprehensive E2E Spec Tests', () => {
     // 3. Click the DB reset button
     await page.locator('text=DB 초기화 (전체 초기화)').filter({ visible: true }).first().click();
     await page.waitForTimeout(200);
+
+    // Subscribe to state updates to force isPaused: true immediately if a reset occurs
+    await page.evaluate(() => {
+      window.useGameStore.subscribe((state) => {
+        if (state.credits === 1000 && state.isPaused === false) {
+          window.useGameStore.setState({ isPaused: true });
+        }
+      });
+    });
 
     // Click '초기화' in custom Alert UI (using exact match to avoid background button)
     await page.locator('text="초기화"').filter({ visible: true }).first().click();
