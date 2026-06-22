@@ -177,33 +177,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
         </View>
 
         {/* 하단: 업그레이드 및 기지 건설 제어 영역 */}
-        <View style={styles.controlPanelContainer} pointerEvents="auto">
-          {/* 탭 버튼 가로 스크롤 */}
-          <View style={styles.tabScrollWrapper}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScrollView}>
-              {[
-                { id: 'defense_facility', label: '🛡️ 실드&반격', color: '#00f0ff' },
-                { id: 'attack_satellite', label: '🚀 공격 위성', color: '#ff8a00' },
-                { id: 'defense_satellite', label: '🛰️ 방어 위성', color: '#ffd700' },
-                { id: 'shipyard', label: '🛸 함대 쉽야드', color: '#00ff8a' },
-                { id: 'infrastructure', label: '🏢 행성 인프라', color: '#af52de' },
-                { id: 'dev_balance', label: '🔧 밸런스 툴', color: '#ffd700' }
-              ].map(tab => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <TouchableOpacity
-                    key={tab.id}
-                    style={[styles.tabButton, isActive && { borderBottomColor: tab.color, backgroundColor: 'rgba(255,255,255,0.02)' }]}
-                    onPress={() => setActiveTab(tab.id)}
-                  >
-                    <Text style={[styles.tabButtonText, isActive ? { color: tab.color, fontWeight: 'bold' } : { color: '#8fa0c4' }]}>
-                      {tab.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
+        <View style={styles.controlPanel} pointerEvents="auto">
 
           {/* Upgrades Section Header & Multiplier */}
           <View style={styles.gridHeaderRow}>

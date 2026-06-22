@@ -1,37 +1,37 @@
 {
-  "timestamp": "2026-06-21T08:36:59.927Z",
-  "funScore": 86,
+  "timestamp": "2026-06-21T12:02:09.531Z",
+  "funScore": 87,
   "rebirthCount": 5,
   "rebirthHistory": [
     {
       "rebirthIndex": 0,
       "maxWaveReached": 12,
-      "tensionRatio": 0.09090909090909091,
-      "timestamp": "5:34:28 PM"
+      "tensionRatio": 0,
+      "timestamp": "8:59:47 PM"
     },
     {
       "rebirthIndex": 1,
       "maxWaveReached": 17,
-      "tensionRatio": 0.25,
-      "timestamp": "5:34:49 PM"
+      "tensionRatio": 0.1875,
+      "timestamp": "9:00:06 PM"
     },
     {
       "rebirthIndex": 2,
       "maxWaveReached": 22,
       "tensionRatio": 0.14285714285714285,
-      "timestamp": "5:35:22 PM"
+      "timestamp": "9:00:39 PM"
     },
     {
       "rebirthIndex": 3,
       "maxWaveReached": 27,
       "tensionRatio": 0.11538461538461539,
-      "timestamp": "5:36:05 PM"
+      "timestamp": "9:01:19 PM"
     },
     {
       "rebirthIndex": 4,
-      "maxWaveReached": 27,
-      "tensionRatio": 0.038461538461538464,
-      "timestamp": "5:36:59 PM"
+      "maxWaveReached": 29,
+      "tensionRatio": 0.10344827586206896,
+      "timestamp": "9:02:09 PM"
     }
   ],
   "overrides": {
@@ -42,11 +42,11 @@
       },
       "raider": {
         "maxHp": 3,
-        "damage": 9
+        "damage": 8
       },
       "destroyer": {
-        "maxHp": 10,
-        "damage": 10
+        "maxHp": 3,
+        "damage": 9
       },
       "boss_apocalypse": {
         "maxHp": 2708,
@@ -70,13 +70,13 @@
       "raider": {
         "name": "외계 약탈함",
         "maxHp": 3,
-        "damage": 9,
+        "damage": 8,
         "speed": 40
       },
       "destroyer": {
         "name": "외계 아머 멜터",
-        "maxHp": 10,
-        "damage": 10,
+        "maxHp": 3,
+        "damage": 9,
         "speed": 25
       },
       "boss_apocalypse": {
