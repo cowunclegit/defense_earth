@@ -54,13 +54,40 @@ const WebProjectiles = memo(function WebProjectiles({ projectiles }) {
             </g>
           );
         } else if (type === 'clusterMissile') {
-          // Slow Kinetic Spreader: Fiery orange rocket shape (circle with orange tail)
-          const dx = proj.vx * 0.06;
-          const dy = proj.vy * 0.06;
+          // Guided Kinetic Rocket: Orange particle trail + glowing head
           return (
             <g key={proj.id}>
-              <line x1={proj.x} y1={proj.y} x2={proj.x - dx} y2={proj.y - dy} stroke="#ff3300" strokeWidth={3.5} opacity={0.6} />
-              <circle cx={proj.x} cy={proj.y} r={3} fill="#ffaa00" />
+              {proj.trail && proj.trail.map((pt, idx) => {
+                if (idx === 0) return null;
+                const prev = proj.trail[idx - 1];
+                const progress = pt.life / 2.5;
+                const opacity = progress * 0.7;
+                const width = progress * 4.0;
+                return (
+                  <line
+                    key={`${proj.id}-trail-${idx}`}
+                    x1={prev.x}
+                    y1={prev.y}
+                    x2={pt.x}
+                    y2={pt.y}
+                    stroke="#ff3300"
+                    strokeWidth={width}
+                    opacity={opacity}
+                  />
+                );
+              })}
+              {!proj.trail && !proj.isExploded && (
+                <line
+                  x1={proj.x}
+                  y1={proj.y}
+                  x2={proj.x - proj.vx * 0.06}
+                  y2={proj.y - proj.vy * 0.06}
+                  stroke="#ff3300"
+                  strokeWidth={3.5}
+                  opacity={0.6}
+                />
+              )}
+              {!proj.isExploded && <circle cx={proj.x} cy={proj.y} r={3.5} fill="#ffaa00" />}
             </g>
           );
         } else if (type === 'gravityBomb') {

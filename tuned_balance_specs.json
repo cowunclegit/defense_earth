@@ -1,37 +1,37 @@
 {
-  "timestamp": "2026-06-21T12:02:09.531Z",
-  "funScore": 87,
+  "timestamp": "2026-06-27T14:28:23.543Z",
+  "funScore": 100,
   "rebirthCount": 5,
   "rebirthHistory": [
     {
       "rebirthIndex": 0,
       "maxWaveReached": 12,
-      "tensionRatio": 0,
-      "timestamp": "8:59:47 PM"
+      "tensionRatio": 0.2727272727272727,
+      "timestamp": "11:26:00 PM"
     },
     {
       "rebirthIndex": 1,
       "maxWaveReached": 17,
-      "tensionRatio": 0.1875,
-      "timestamp": "9:00:06 PM"
+      "tensionRatio": 0.25,
+      "timestamp": "11:26:19 PM"
     },
     {
       "rebirthIndex": 2,
       "maxWaveReached": 22,
       "tensionRatio": 0.14285714285714285,
-      "timestamp": "9:00:39 PM"
+      "timestamp": "11:26:52 PM"
     },
     {
       "rebirthIndex": 3,
       "maxWaveReached": 27,
       "tensionRatio": 0.11538461538461539,
-      "timestamp": "9:01:19 PM"
+      "timestamp": "11:27:33 PM"
     },
     {
       "rebirthIndex": 4,
-      "maxWaveReached": 29,
-      "tensionRatio": 0.10344827586206896,
-      "timestamp": "9:02:09 PM"
+      "maxWaveReached": 32,
+      "tensionRatio": 0.12903225806451613,
+      "timestamp": "11:28:22 PM"
     }
   ],
   "overrides": {
@@ -42,15 +42,15 @@
       },
       "raider": {
         "maxHp": 3,
-        "damage": 8
+        "damage": 9
       },
       "destroyer": {
         "maxHp": 3,
-        "damage": 9
+        "damage": 10
       },
       "boss_apocalypse": {
-        "maxHp": 2708,
-        "damage": 117
+        "maxHp": 2573,
+        "damage": 111
       },
       "boss_chrono": {
         "maxHp": 7287,
@@ -70,19 +70,19 @@
       "raider": {
         "name": "외계 약탈함",
         "maxHp": 3,
-        "damage": 8,
+        "damage": 9,
         "speed": 40
       },
       "destroyer": {
         "name": "외계 아머 멜터",
         "maxHp": 3,
-        "damage": 9,
+        "damage": 10,
         "speed": 25
       },
       "boss_apocalypse": {
         "name": "보스: 아포칼립스 파괴함",
-        "maxHp": 2708,
-        "damage": 117,
+        "maxHp": 2573,
+        "damage": 111,
         "speed": 12
       },
       "boss_chrono": {

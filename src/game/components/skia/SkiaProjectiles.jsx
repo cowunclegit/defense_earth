@@ -63,13 +63,36 @@ export default function SkiaProjectiles({ projectiles }) {
             </Group>
           );
         } else if (type === 'clusterMissile') {
-          // Slow Kinetic Spreader: Fiery orange rocket shape (circle with orange tail)
-          const dx = proj.vx * 0.06;
-          const dy = proj.vy * 0.06;
+          // Guided Kinetic Rocket: Orange particle trail + glowing head
           return (
             <Group key={proj.id}>
-              <Line p1={{ x: proj.x, y: proj.y }} p2={{ x: proj.x - dx, y: proj.y - dy }} color="#ff3300" strokeWidth={3.5} opacity={0.6} />
-              <Circle cx={proj.x} cy={proj.y} r={3} color="#ffaa00" />
+              {proj.trail && proj.trail.map((pt, idx) => {
+                if (idx === 0) return null;
+                const prev = proj.trail[idx - 1];
+                const progress = pt.life / 2.5;
+                const opacity = progress * 0.7;
+                const width = progress * 4.0;
+                return (
+                  <Line
+                    key={`${proj.id}-trail-${idx}`}
+                    p1={{ x: prev.x, y: prev.y }}
+                    p2={{ x: pt.x, y: pt.y }}
+                    color="#ff3300"
+                    strokeWidth={width}
+                    opacity={opacity}
+                  />
+                );
+              })}
+              {!proj.trail && !proj.isExploded && (
+                <Line
+                  p1={{ x: proj.x, y: proj.y }}
+                  p2={{ x: proj.x - proj.vx * 0.06, y: proj.y - proj.vy * 0.06 }}
+                  color="#ff3300"
+                  strokeWidth={3.5}
+                  opacity={0.6}
+                />
+              )}
+              {!proj.isExploded && <Circle cx={proj.x} cy={proj.y} r={3.5} color="#ffaa00" />}
             </Group>
           );
         } else if (type === 'gravityBomb') {
