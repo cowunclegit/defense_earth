@@ -163,7 +163,7 @@ export const SATELLITE_SPECS = {
   emp: { name: 'EMP 위성', cost: 1000, energy: 7, isWeapon: true, dmg: 480, cd: 3.0, range: 400 },
   clusterMissile: { name: '클러스터 미사일 위성', cost: 120000, energy: 10, isWeapon: true, dmg: 35000, cd: 8.0, range: 550 },
   gravityBomb: { name: '중력 포탄 위성', cost: 25000, energy: 9, isWeapon: true, dmg: 20000, cd: 6.0, range: 500 },
-  antimatter: { name: '반물질 미사일 위성', cost: 600000, energy: 15, isWeapon: true, dmg: 600000, cd: 15.0, range: 950 },
+  antimatter: { name: '반물질 미사일 위성', cost: 600000, energy: 15, isWeapon: true, dmg: 600000, cd: 8.0, range: 950 },
   sensor: { name: '조기 경보 센서 위성', cost: 500, energy: 8, isWeapon: false },
   forceShield: { name: '포스 실드 위성', cost: 12500, energy: 12, isWeapon: false },
   decoy: { name: '디코이 위성', cost: 100, energy: 5, isWeapon: false },
