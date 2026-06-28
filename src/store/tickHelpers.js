@@ -251,7 +251,7 @@ export const simulatePlanetaryDefenses = (
                 targetEnemyId: target.id,
                 emp: type === 'emp',
                 gravityBomb: type === 'gravityBomb',
-                lifetime: type === 'clusterMissile' ? 5.0 : undefined
+                lifetime: (type === 'clusterMissile' || type === 'antimatter') ? 5.0 : undefined
               });
             });
           }
@@ -854,6 +854,23 @@ export const simulateProjectilesAndCollisions = (
   const projectilesToRemove = new Set();
   const enemiesToRemove = new Set();
 
+  const applySplashDamage = (projX, projY, damage, splashRadius = 100) => {
+    updatedEnemies.forEach(e => {
+      if (e.hp > 0) {
+        const dx = e.x - projX;
+        const dy = e.y - projY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= splashRadius) {
+          e.hp -= damage;
+          if (e.hp <= 0) {
+            enemiesToRemove.add(e.id);
+            checkAndLogEnemyKill(e);
+          }
+        }
+      }
+    });
+  };
+
   for (let i = 0; i < updatedProjectiles.length; i++) {
     const proj = updatedProjectiles[i];
 
@@ -870,21 +887,24 @@ export const simulateProjectilesAndCollisions = (
       continue;
     }
 
-    if (proj.bulletType === 'clusterMissile' && !proj.isEnemy) {
+    if ((proj.bulletType === 'clusterMissile' || proj.bulletType === 'antimatter') && !proj.isEnemy) {
       if (proj.lifetime === undefined) {
         proj.lifetime = 5.0;
       }
       proj.lifetime -= actualDelta;
       if (proj.lifetime <= 0) {
         proj.isExploded = true;
+        if (proj.bulletType === 'antimatter') {
+          applySplashDamage(proj.x, proj.y, proj.damage);
+        }
         updatedParticles.push({
           id: Math.random().toString(),
           x: proj.x,
           y: proj.y,
-          radius: 1,
-          maxRadius: 12,
+          radius: proj.bulletType === 'antimatter' ? 3 : 1,
+          maxRadius: proj.bulletType === 'antimatter' ? 35 : 12,
           alpha: 1.0,
-          color: '#ffcc00'
+          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
         continue;
       } else {
@@ -938,7 +958,7 @@ export const simulateProjectilesAndCollisions = (
     proj.x += proj.vx * actualDelta;
     proj.y += proj.vy * actualDelta;
 
-    if (proj.bulletType === 'clusterMissile' && !proj.isEnemy) {
+    if ((proj.bulletType === 'clusterMissile' || proj.bulletType === 'antimatter') && !proj.isEnemy) {
       if (!proj.trail) {
         proj.trail = [];
       }
@@ -1007,31 +1027,36 @@ export const simulateProjectilesAndCollisions = (
       }
 
       if (hitEnemy) {
-        hitEnemy.hp -= proj.damage;
+        if (proj.bulletType === 'antimatter') {
+          applySplashDamage(proj.x, proj.y, proj.damage);
+        } else {
+          hitEnemy.hp -= proj.damage;
 
-        if (proj.emp) {
-          hitEnemy.stunTimer = 2.0;
-        }
-        if (proj.gravityBomb) {
-          hitEnemy.slowTimer = 3.0;
-          hitEnemy.slowAmount = 0.4;
+          if (proj.emp) {
+            hitEnemy.stunTimer = 2.0;
+          }
+          if (proj.gravityBomb) {
+            hitEnemy.slowTimer = 3.0;
+            hitEnemy.slowAmount = 0.4;
+          }
+
+          if (hitEnemy.hp <= 0) {
+            enemiesToRemove.add(hitEnemy.id);
+            checkAndLogEnemyKill(hitEnemy);
+          }
         }
         
         updatedParticles.push({
           id: Math.random().toString(),
           x: proj.x,
           y: proj.y,
-          radius: 1,
-          maxRadius: 12,
+          radius: proj.bulletType === 'antimatter' ? 3 : 1,
+          maxRadius: proj.bulletType === 'antimatter' ? 35 : 12,
           alpha: 1.0,
-          color: '#ffcc00'
+          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
 
-        if (hitEnemy.hp <= 0) {
-          enemiesToRemove.add(hitEnemy.id);
-          checkAndLogEnemyKill(hitEnemy);
-        }
-        if (proj.bulletType === 'clusterMissile' && !proj.isEnemy) {
+        if ((proj.bulletType === 'clusterMissile' || proj.bulletType === 'antimatter') && !proj.isEnemy) {
           proj.isExploded = true;
         } else {
           projectilesToRemove.add(proj.id);

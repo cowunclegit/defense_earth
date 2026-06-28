@@ -1708,7 +1708,7 @@ function DevBalanceTab({ planetId, editorCategory, setEditorCategory, editorSele
             { id: 'plasmaLaser', label: '플라즈마' },
             { id: 'gravityBomb', label: '중력포' },
             { id: 'clusterMissile', label: '미사일' },
-            { id: 'antimatter', label: '반물질' }
+            { id: 'antimatter', label: '반물질 미사일' }
           ].map(item => (
             <TouchableOpacity
               key={item.id}

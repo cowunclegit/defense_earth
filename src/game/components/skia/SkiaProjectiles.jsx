@@ -104,13 +104,41 @@ export default function SkiaProjectiles({ projectiles }) {
             </Group>
           );
         } else if (type === 'antimatter') {
-          // Heavy Antimatter Cannon: Glowing White beam with outer Red halo
-          const dx = proj.vx * 0.05;
-          const dy = proj.vy * 0.05;
+          // Heavy Antimatter Missile: Crimson Red trail + glowing head
           return (
             <Group key={proj.id}>
-              <Line p1={{ x: proj.x, y: proj.y }} p2={{ x: proj.x - dx, y: proj.y - dy }} color="#ff0000" strokeWidth={12.0} opacity={0.45} />
-              <Line p1={{ x: proj.x, y: proj.y }} p2={{ x: proj.x - dx, y: proj.y - dy }} color="#ffffff" strokeWidth={3.5} />
+              {proj.trail && proj.trail.map((pt, idx) => {
+                if (idx === 0) return null;
+                const prev = proj.trail[idx - 1];
+                const progress = pt.life / 2.5;
+                const opacity = progress * 0.8;
+                const width = progress * 6.0;
+                return (
+                  <Line
+                    key={`${proj.id}-trail-${idx}`}
+                    p1={{ x: prev.x, y: prev.y }}
+                    p2={{ x: pt.x, y: pt.y }}
+                    color="#ff0055"
+                    strokeWidth={width}
+                    opacity={opacity}
+                  />
+                );
+              })}
+              {!proj.trail && !proj.isExploded && (
+                <Line
+                  p1={{ x: proj.x, y: proj.y }}
+                  p2={{ x: proj.x - proj.vx * 0.06, y: proj.y - proj.vy * 0.06 }}
+                  color="#ff0055"
+                  strokeWidth={5.0}
+                  opacity={0.7}
+                />
+              )}
+              {!proj.isExploded && (
+                <Group>
+                  <Circle cx={proj.x} cy={proj.y} r={6} color="#ff0055" opacity={0.5} />
+                  <Circle cx={proj.x} cy={proj.y} r={3} color="#ffffff" />
+                </Group>
+              )}
             </Group>
           );
         } else {
