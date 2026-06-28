@@ -341,9 +341,14 @@ export const simulateShieldAndHP = (
   const isShieldCollapsed = state.earthShield > 0 && newShield <= 0;
   if (isShieldCollapsed) {
     if (state.counterattackModules.discharge && (state.overloadEnergy || 0) > 0 && updatedEnemies.length > 0) {
-      addBattleLog(`실드 과부하 방전 발동! 모든 적에게 200 광역 피해!`);
+      addBattleLog(`실드 과부하 방전 발동! 주변 적에게 200 광역 피해!`);
       updatedEnemies.forEach(e => {
-        e.hp -= 200;
+        const dx = e.x - EARTH_CENTER_X;
+        const dy = e.y - EARTH_CENTER_Y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= 200) { // maxRadius of visual effect is 200
+          e.hp -= 200;
+        }
       });
       // 처치 및 필터
       for (let i = updatedEnemies.length - 1; i >= 0; i--) {
@@ -372,7 +377,12 @@ export const simulateShieldAndHP = (
   // 전기장 역류 지속 데미지
   if (state.counterattackModules.electricField && (state.overloadEnergy || 0) > 0 && newShield > 0 && updatedEnemies.length > 0) {
     updatedEnemies.forEach(e => {
-      e.hp -= 80 * actualDelta;
+      const dx = e.x - EARTH_CENTER_X;
+      const dy = e.y - EARTH_CENTER_Y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= 250) { // Proximity range for electric field
+        e.hp -= 80 * actualDelta;
+      }
     });
     // 처치 및 필터
     for (let i = updatedEnemies.length - 1; i >= 0; i--) {
