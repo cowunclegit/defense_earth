@@ -902,7 +902,7 @@ export const simulateProjectilesAndCollisions = (
           x: proj.x,
           y: proj.y,
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
-          maxRadius: proj.bulletType === 'antimatter' ? 350 : 12,
+          maxRadius: proj.bulletType === 'antimatter' ? 1000 : 12,
           alpha: 1.0,
           color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
@@ -1051,7 +1051,7 @@ export const simulateProjectilesAndCollisions = (
           x: proj.x,
           y: proj.y,
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
-          maxRadius: proj.bulletType === 'antimatter' ? 350 : 12,
+          maxRadius: proj.bulletType === 'antimatter' ? 1000 : 12,
           alpha: 1.0,
           color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
