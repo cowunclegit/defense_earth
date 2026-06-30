@@ -1877,8 +1877,21 @@ function DevCheatPanel({ setActiveTab, planetId }) {
       <TouchableOpacity style={styles.cheatBtn} onPress={() => { cheatMaxEnergy(10000); setTimeout(() => saveGame(), 100); }}>
         <Text style={styles.cheatBtnText}>+10,000 W</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.05)' }]} onPress={() => {
+        useGameStore.setState((s) => ({
+          unlockedCounterattacks: { reflector: true, discharge: true, electricField: true },
+          counterattackModules: {
+            reflector: !s.counterattackModules?.reflector,
+            discharge: !s.counterattackModules?.discharge,
+            electricField: !s.counterattackModules?.electricField
+          }
+        }));
+        setTimeout(() => saveGame(), 100);
+      }}>
+        <Text style={[styles.cheatBtnText, { color: '#a855f7', fontWeight: 'bold' }]}>⚡ 반격기 일괄 ON/OFF</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={[styles.cheatBtn, { borderColor: '#ffd700', backgroundColor: 'rgba(255, 215, 0, 0.05)' }]} onPress={() => setActiveTab('dev_balance')}>
-        <Text style={[styles.cheatBtnText, { color: '#ffd700', fontWeight: 'bold' }]}>🔧 실시간 밸런스 조절기</Text>
+        <Text style={[styles.gridBuildBtnText, { color: '#ffd700', fontWeight: 'bold' }]}>🔧 실시간 밸런스 조절기</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.cheatBtn, { backgroundColor: '#c23b3b' }]} onPress={handleResetDb}>
         <Text style={styles.cheatBtnText}>DB 초기화 (전체 초기화)</Text>

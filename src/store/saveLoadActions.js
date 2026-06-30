@@ -49,6 +49,7 @@ export const saveLoadActions = (
       shieldModule: state.shieldModule,
       counterattackModules: state.counterattackModules,
       unlockedCounterattacks: state.unlockedCounterattacks,
+      dischargeTimer: state.dischargeTimer || 0,
       satelliteLevels: state.satelliteLevels,
       earthHpRegenLevel: state.earthHpRegenLevel,
       earthShieldRegenLevel: state.earthShieldRegenLevel,
@@ -133,6 +134,7 @@ export const saveLoadActions = (
           isPowerOffline: loaded.isPowerOffline !== undefined ? loaded.isPowerOffline : false,
           onlineSatelliteCount: loaded.onlineSatelliteCount !== undefined ? loaded.onlineSatelliteCount : 0,
           satelliteBootTimer: loaded.satelliteBootTimer !== undefined ? loaded.satelliteBootTimer : 2.0,
+          dischargeTimer: loaded.dischargeTimer !== undefined ? loaded.dischargeTimer : 0,
           unlockedCounterattacks: loaded.unlockedCounterattacks !== undefined ? loaded.unlockedCounterattacks : {
             reflector: false,
             discharge: false,
@@ -223,6 +225,7 @@ export const saveLoadActions = (
         discharge: false,
         electricField: false
       },
+      dischargeTimer: 0,
       currentWave: 1,
       enemiesRemainingToSpawn: 16,
       gameSpeed: 1,

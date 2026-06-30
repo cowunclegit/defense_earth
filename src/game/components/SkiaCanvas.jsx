@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { useGameStore } from '../../store/gameStore';
 import { getOrderedBuiltSatellites } from '../../store/gameSpecs';
 import SkiaBackground from './skia/SkiaBackground';
@@ -37,7 +37,8 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
     onlineSatelliteCount,
     counterattackModules,
     overloadEnergy,
-    satelliteRotation
+    satelliteRotation,
+    dischargeTimer
   } = useGameStore();
 
   const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
@@ -101,7 +102,8 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const scaleFactor = canvasSize / 540;
 
   return (
-    <Canvas style={styles.skiaCanvas}>
+    <View style={styles.container}>
+      <Canvas style={styles.skiaCanvas}>
       <Group transform={[{ scale: scaleFactor }]}>
         <Group transform={[{ translateX: panX + 270 }, { translateY: panY + 270 }, { scale: zoom }, { translateX: -270 }, { translateY: -270 }]}>
           <SkiaBackground />
@@ -152,12 +154,46 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
           />
         </Group>
       </Group>
-    </Canvas>
+      </Canvas>
+      {dischargeTimer > 0 && counterattackModules?.discharge && (
+        <View 
+          style={[
+            styles.cooldownOverlay, 
+            { 
+              left: EARTH_CENTER_X + panX - 100, // Center of overlay on Earth
+              top: 55 * zoom + EARTH_CENTER_Y + panY, // Dynamically tracks Earth Y position under zoom/pan
+            }
+          ]}
+        >
+          <Text style={[styles.cooldownText, { fontSize: Math.max(7, 10 * zoom) }]}>
+            ⚡ 과부하 방전: {dischargeTimer.toFixed(1)}초
+          </Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   skiaCanvas: {
     flex: 1,
+  },
+  cooldownOverlay: {
+    position: 'absolute',
+    width: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none'
+  },
+  cooldownText: {
+    color: '#00f0ff',
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    textShadowColor: 'rgba(0, 240, 255, 0.7)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 4,
   }
 });

@@ -226,6 +226,7 @@ export const useGameStore = create((set, get) => ({
     discharge: false,
     electricField: false
   },
+  dischargeTimer: 0,
   
   currentWave: 1,
   enemiesRemainingToSpawn: 16,
@@ -596,7 +597,8 @@ export const useGameStore = create((set, get) => ({
         maxOverloadEnergy,
         newIsPowerOffline,
         newOnlineSatelliteCount,
-        newSatelliteBootTimer
+        newSatelliteBootTimer,
+        dischargeTimer: nextDischargeTimer
       } = runTickSimulation(currentState, subDelta, (msg) => currentState.addBattleLog(msg), (dmg, type) => currentState.damageEarth(dmg, type));
 
       // damageEarth 콜백에 의해 변경된 상태를 동기적으로 불러옴
@@ -648,6 +650,7 @@ export const useGameStore = create((set, get) => ({
         isPowerOffline: newIsPowerOffline,
         onlineSatelliteCount: newOnlineSatelliteCount,
         satelliteBootTimer: newSatelliteBootTimer,
+        dischargeTimer: nextDischargeTimer,
         minShieldDuringWave: nextMinShield,
         minHpDuringWave: nextMinHp,
       });

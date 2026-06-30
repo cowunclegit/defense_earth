@@ -339,8 +339,11 @@ export const simulateShieldAndHP = (
 
   // 실드 붕괴 시의 동작들 (과부하 방전 및 즉시 체력 복구)
   const isShieldCollapsed = state.earthShield > 0 && newShield <= 0;
+  let newDischargeTimer = Math.max(0, (state.dischargeTimer || 0) - actualDelta);
+
   if (isShieldCollapsed) {
-    if (state.counterattackModules.discharge && (state.overloadEnergy || 0) > 0 && updatedEnemies.length > 0) {
+    if (state.counterattackModules.discharge && (state.overloadEnergy || 0) > 0 && updatedEnemies.length > 0 && newDischargeTimer <= 0) {
+      newDischargeTimer = 20.0; // 20s Cooldown
       addBattleLog(`실드 과부하 방전 발동! 주변 적에게 200 광역 피해!`);
       updatedEnemies.forEach(e => {
         const dx = e.x - EARTH_CENTER_X;
@@ -418,7 +421,8 @@ export const simulateShieldAndHP = (
 
   return {
     newShield,
-    newHp
+    newHp,
+    newDischargeTimer
   };
 };
 
@@ -1247,6 +1251,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   );
   let newShield = shieldHP.newShield;
   let newHp = shieldHP.newHp;
+  let newDischargeTimer = shieldHP.newDischargeTimer;
 
   // 4. 타임머신 충전
   const timeMachineSpeedUp = state.isAiPlaytestActive ? 10.0 : 1.0;
@@ -1447,6 +1452,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     newIsPowerOffline,
     newOnlineSatelliteCount,
     newSatelliteBootTimer,
+    dischargeTimer: newDischargeTimer,
     updatedCredits,
     updatedNanocores,
     calculatedMaxEnergy,

@@ -29,6 +29,7 @@ export default function WebCanvas({ zoom, panX, panY }) {
   const counterattackModules = useGameStore(state => state.counterattackModules);
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const satelliteRotation = useGameStore(state => state.satelliteRotation);
+  const dischargeTimer = useGameStore(state => state.dischargeTimer);
   
   const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
   
@@ -125,6 +126,23 @@ export default function WebCanvas({ zoom, panX, panY }) {
           isElectricFieldActive={isElectricFieldActive}
           satelliteRotation={satelliteRotation}
         />
+
+        {dischargeTimer > 0 && counterattackModules?.discharge && (
+          <text
+            x={EARTH_CENTER_X}
+            y={EARTH_CENTER_Y + 55}
+            textAnchor="middle"
+            fill="#00f0ff"
+            fontSize={11}
+            fontWeight="bold"
+            style={{
+              textShadow: '0 0 4px rgba(0, 240, 255, 0.7)',
+              fontFamily: 'monospace'
+            }}
+          >
+            ⚡ 과부하 방전: {dischargeTimer.toFixed(1)}초
+          </text>
+        )}
 
         <WebSatellites 
           earthSatellites={earthSatellites} 
