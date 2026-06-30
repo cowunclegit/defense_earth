@@ -34,8 +34,13 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
     chronoMuteTimer,
     planets,
     isPowerOffline,
-    onlineSatelliteCount
+    onlineSatelliteCount,
+    counterattackModules,
+    overloadEnergy,
+    satelliteRotation
   } = useGameStore();
+
+  const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
 
   const EARTH_CENTER_X = 270;
   const EARTH_CENTER_Y = 270;
@@ -115,6 +120,8 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
             EARTH_CENTER_X={EARTH_CENTER_X} 
             EARTH_CENTER_Y={EARTH_CENTER_Y} 
             SHIELD_RADIUS={SHIELD_RADIUS} 
+            isElectricFieldActive={isElectricFieldActive}
+            satelliteRotation={satelliteRotation}
           />
 
           <SkiaSatellites 

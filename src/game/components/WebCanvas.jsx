@@ -26,6 +26,11 @@ export default function WebCanvas({ zoom, panX, panY }) {
   const chronoMuteTimer = useGameStore(state => state.chronoMuteTimer);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const onlineSatelliteCount = useGameStore(state => state.onlineSatelliteCount);
+  const counterattackModules = useGameStore(state => state.counterattackModules);
+  const overloadEnergy = useGameStore(state => state.overloadEnergy);
+  const satelliteRotation = useGameStore(state => state.satelliteRotation);
+  
+  const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
   
   // Select serialized planets configuration to prevent re-renders when other planet fields change (e.g. population, terraform progress)
   const planetsConfigStr = useGameStore(state => {
@@ -117,6 +122,8 @@ export default function WebCanvas({ zoom, panX, panY }) {
           EARTH_CENTER_X={EARTH_CENTER_X} 
           EARTH_CENTER_Y={EARTH_CENTER_Y} 
           SHIELD_RADIUS={SHIELD_RADIUS} 
+          isElectricFieldActive={isElectricFieldActive}
+          satelliteRotation={satelliteRotation}
         />
 
         <WebSatellites 

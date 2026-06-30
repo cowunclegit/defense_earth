@@ -348,6 +348,16 @@ export const simulateShieldAndHP = (
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist <= 200) { // maxRadius of visual effect is 200
           e.hp -= 200;
+          // Spawn cyan shockwave impact particle on zapped enemy
+          updatedParticles.push({
+            id: Math.random().toString(),
+            x: e.x,
+            y: e.y,
+            radius: 2,
+            maxRadius: 35,
+            alpha: 1.0,
+            color: '#00f0ff'
+          });
         }
       });
       // 처치 및 필터
@@ -382,6 +392,18 @@ export const simulateShieldAndHP = (
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist <= 250) { // Proximity range for electric field
         e.hp -= 80 * actualDelta;
+        // Spawn small electric spark on zapped enemy periodically (15% chance per frame)
+        if (Math.random() < 0.15) {
+          updatedParticles.push({
+            id: Math.random().toString(),
+            x: e.x,
+            y: e.y,
+            radius: 2,
+            maxRadius: 8,
+            alpha: 0.8,
+            color: '#00ffff'
+          });
+        }
       }
     });
     // 처치 및 필터
