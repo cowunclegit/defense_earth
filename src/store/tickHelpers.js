@@ -910,23 +910,6 @@ export const simulateProjectilesAndCollisions = (
   const projectilesToRemove = new Set();
   const enemiesToRemove = new Set();
 
-  const applySplashDamage = (projX, projY, damage, splashRadius = 500) => {
-    updatedEnemies.forEach(e => {
-      if (e.hp > 0) {
-        const dx = e.x - projX;
-        const dy = e.y - projY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= splashRadius) {
-          e.hp -= damage;
-          if (e.hp <= 0) {
-            enemiesToRemove.add(e.id);
-            checkAndLogEnemyKill(e);
-          }
-        }
-      }
-    });
-  };
-
   for (let i = 0; i < updatedProjectiles.length; i++) {
     const proj = updatedProjectiles[i];
 
@@ -950,9 +933,6 @@ export const simulateProjectilesAndCollisions = (
       proj.lifetime -= actualDelta;
       if (proj.lifetime <= 0) {
         proj.isExploded = true;
-        if (proj.bulletType === 'antimatter') {
-          applySplashDamage(proj.x, proj.y, proj.damage);
-        }
         updatedParticles.push({
           id: Math.random().toString(),
           x: proj.x,
@@ -960,7 +940,10 @@ export const simulateProjectilesAndCollisions = (
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
           maxRadius: proj.bulletType === 'antimatter' ? 500 : 12,
           alpha: 1.0,
-          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
+          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00',
+          isDamageRing: proj.bulletType === 'antimatter',
+          damage: proj.bulletType === 'antimatter' ? proj.damage : 0,
+          hitEnemyIds: []
         });
         continue;
       } else {
@@ -1084,7 +1067,11 @@ export const simulateProjectilesAndCollisions = (
 
       if (hitEnemy) {
         if (proj.bulletType === 'antimatter') {
-          applySplashDamage(proj.x, proj.y, proj.damage);
+          hitEnemy.hp -= proj.damage;
+          if (hitEnemy.hp <= 0) {
+            enemiesToRemove.add(hitEnemy.id);
+            checkAndLogEnemyKill(hitEnemy);
+          }
         } else {
           hitEnemy.hp -= proj.damage;
 
@@ -1109,7 +1096,10 @@ export const simulateProjectilesAndCollisions = (
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
           maxRadius: proj.bulletType === 'antimatter' ? 500 : 12,
           alpha: 1.0,
-          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
+          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00',
+          isDamageRing: proj.bulletType === 'antimatter',
+          damage: proj.bulletType === 'antimatter' ? proj.damage : 0,
+          hitEnemyIds: proj.bulletType === 'antimatter' ? [hitEnemy.id] : []
         });
 
         if ((proj.bulletType === 'clusterMissile' || proj.bulletType === 'antimatter') && !proj.isEnemy) {
@@ -1134,18 +1124,45 @@ export const simulateProjectilesAndCollisions = (
   };
 };
 
-// 10. 폭발 파티클 갱신
-export const simulateExplosionParticles = (updatedParticles, actualDelta) => {
+// 10. 폭발 파티클 갱신 및 확장식 광역 스플래시 피해 적용
+export const simulateExplosionParticles = (updatedParticles, updatedEnemies, actualDelta, checkAndLogEnemyKill) => {
   const activeParticles = [];
-  for (let i = 0; i < updatedParticles.length; i++) {
+  const len = updatedParticles.length;
+  for (let i = 0; i < len; i++) {
     const part = updatedParticles[i];
     const expansion = part.maxRadius * 3 * actualDelta;
     part.radius = Math.min(part.maxRadius, part.radius + expansion);
     part.alpha = Math.max(0, part.alpha - 1.8 * actualDelta);
+    
+    // Apply expanding damage ring logic
+    if (part.isDamageRing && part.damage > 0) {
+      updatedEnemies.forEach(e => {
+        if (e.hp > 0) {
+          const dx = e.x - part.x;
+          const dy = e.y - part.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist <= part.radius) {
+            if (!part.hitEnemyIds.includes(e.id)) {
+              part.hitEnemyIds.push(e.id);
+              e.hp -= part.damage;
+              if (e.hp <= 0) {
+                checkAndLogEnemyKill(e);
+              }
+            }
+          }
+        }
+      });
+    }
+
     if (part.alpha > 0) {
       activeParticles.push(part);
     }
   }
+  
+  for (let i = len; i < updatedParticles.length; i++) {
+    activeParticles.push(updatedParticles[i]);
+  }
+
   return activeParticles;
 };
 
@@ -1378,8 +1395,11 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   updatedProjectiles = projSim.updatedProjectiles;
   updatedEnemies = projSim.updatedEnemies;
 
-  // 11. 폭발 파티클 갱신
-  updatedParticles = simulateExplosionParticles(updatedParticles, actualDelta);
+  // 11. 폭발 파티클 갱신 및 확장식 광역 스플래시 피해 적용
+  updatedParticles = simulateExplosionParticles(updatedParticles, updatedEnemies, actualDelta, checkAndLogEnemyKill);
+
+  // Clean up any enemies killed by the damage rings in this frame
+  updatedEnemies = updatedEnemies.filter(enemy => enemy.hp > 0);
 
   // 12. 모든 적선 클리어 및 스폰 완료 시 웨이브 상승
   let nextWave = state.currentWave;
