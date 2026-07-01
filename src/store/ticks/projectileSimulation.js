@@ -185,7 +185,16 @@ export const simulateProjectilesAndCollisions = (
           hitEnemy.hp -= proj.damage;
 
           if (proj.emp) {
-            hitEnemy.stunTimer = 2.0;
+            // EMP Splash Stun: Stun all enemies within 100px radius
+            updatedEnemies.forEach(e => {
+              if (e.hp > 0) {
+                const dx = e.x - proj.x;
+                const dy = e.y - proj.y;
+                if (Math.sqrt(dx * dx + dy * dy) <= 100) {
+                  e.stunTimer = Math.max(e.stunTimer || 0, 2.0);
+                }
+              }
+            });
           }
           if (proj.gravityBomb) {
             hitEnemy.slowTimer = 3.0;
@@ -203,9 +212,9 @@ export const simulateProjectilesAndCollisions = (
           x: proj.x,
           y: proj.y,
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
-          maxRadius: proj.bulletType === 'antimatter' ? 500 : 12,
+          maxRadius: proj.bulletType === 'antimatter' ? 500 : (proj.emp ? 100 : 12),
           alpha: 1.0,
-          color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00',
+          color: proj.bulletType === 'antimatter' ? '#ff0055' : (proj.emp ? '#00f0ff' : '#ffcc00'),
           isDamageRing: proj.bulletType === 'antimatter',
           damage: proj.bulletType === 'antimatter' ? proj.damage : 0,
           hitEnemyIds: proj.bulletType === 'antimatter' ? [hitEnemy.id] : []
