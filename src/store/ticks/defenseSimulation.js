@@ -181,7 +181,6 @@ export const simulatePlanetaryDefenses = (
         p.stationTimers.gigaPlasma = 20.0;
         addBattleLog(`${PLANETARY_DATA[planetId].name} 궤도 기지 기가 플라즈마 주포 발사!`);
         updatedEnemies.forEach(e => {
-          e.hp -= 500;
           e.stunTimer = 5.0;
         });
         updatedParticles.push({
