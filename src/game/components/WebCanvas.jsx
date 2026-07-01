@@ -30,6 +30,7 @@ export default function WebCanvas({ zoom, panX, panY }) {
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const satelliteRotation = useGameStore(state => state.satelliteRotation);
   const dischargeTimer = useGameStore(state => state.dischargeTimer);
+  const floatingTexts = useGameStore(state => state.floatingTexts || []);
   
   const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
   
@@ -143,6 +144,26 @@ export default function WebCanvas({ zoom, panX, panY }) {
             ⚡ 과부하 방전: {dischargeTimer.toFixed(1)}초
           </text>
         )}
+
+        {/* Floating Combat Texts (RPG Damage Popups) */}
+        {floatingTexts.map(ft => (
+          <text
+            key={ft.id}
+            x={ft.x}
+            y={ft.y}
+            fill={ft.color}
+            fontSize={10}
+            fontWeight="bold"
+            opacity={ft.alpha}
+            textAnchor="middle"
+            style={{
+              fontFamily: 'monospace',
+              textShadow: '0 0 3px rgba(0,0,0,0.8)'
+            }}
+          >
+            {ft.text}
+          </text>
+        ))}
 
         <WebSatellites 
           earthSatellites={earthSatellites} 

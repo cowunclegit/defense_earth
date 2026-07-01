@@ -38,7 +38,8 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
     counterattackModules,
     overloadEnergy,
     satelliteRotation,
-    dischargeTimer
+    dischargeTimer,
+    floatingTexts
   } = useGameStore();
 
   const isElectricFieldActive = counterattackModules?.electricField && earthShield > 0 && (overloadEnergy || 0) > 0;
@@ -170,6 +171,29 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
           </Text>
         </View>
       )}
+
+      {(floatingTexts || []).map(ft => {
+        // Map native coordinates to absolute screen positions under scale factor & pan/zoom
+        const x_screen = (ft.x - 270) * zoom + (270 + panX);
+        const y_screen = (ft.y - 270) * zoom + (270 + panY);
+        return (
+          <View
+            key={ft.id}
+            style={[
+              styles.floatingTextContainer,
+              {
+                left: x_screen - 50,
+                top: y_screen,
+                opacity: ft.alpha
+              }
+            ]}
+          >
+            <Text style={[styles.floatingText, { color: ft.color, fontSize: Math.max(6, 9 * zoom) }]}>
+              {ft.text}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -195,5 +219,19 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 240, 255, 0.7)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 4,
+  },
+  floatingTextContainer: {
+    position: 'absolute',
+    width: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none'
+  },
+  floatingText: {
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   }
 });

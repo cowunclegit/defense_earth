@@ -49,10 +49,26 @@ export const earthDamageActions = (set, get) => ({
       if (target) {
         target.hp = Math.max(0, target.hp - reflectedDamage);
         state.addBattleLog(`실드 반사 작동: 적 ${target.spec?.name || target.type}에게 ${Math.floor(reflectedDamage)} 반사 피해!`);
+        
+        const newFloatingText = {
+          id: Math.random().toString(),
+          x: target.x,
+          y: target.y,
+          text: `Reflect -${Math.floor(reflectedDamage)}`,
+          color: '#ffd700',
+          alpha: 1.0,
+          age: 0.0
+        };
+
         if (target.hp <= 0) {
           set((s) => ({
             enemies: s.enemies.filter(e => e.id !== target.id),
-            credits: s.credits + (target.spec?.creditReward || 0)
+            credits: s.credits + (target.spec?.creditReward || 0),
+            floatingTexts: [...(s.floatingTexts || []), newFloatingText]
+          }));
+        } else {
+          set((s) => ({
+            floatingTexts: [...(s.floatingTexts || []), newFloatingText]
           }));
         }
       }

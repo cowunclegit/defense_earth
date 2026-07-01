@@ -226,6 +226,7 @@ export const saveLoadActions = (
         electricField: false
       },
       dischargeTimer: 0,
+      floatingTexts: [],
       currentWave: 1,
       enemiesRemainingToSpawn: 16,
       gameSpeed: 1,

@@ -296,6 +296,7 @@ export const simulateShieldAndHP = (
   updatedPlanets,
   updatedEnemies,
   updatedParticles,
+  updatedFloatingTexts,
   actualDelta,
   calculatedMaxEnergy,
   maxShield,
@@ -361,6 +362,16 @@ export const simulateShieldAndHP = (
             alpha: 1.0,
             color: '#00f0ff'
           });
+          // Push floating combat text
+          updatedFloatingTexts.push({
+            id: Math.random().toString(),
+            x: e.x,
+            y: e.y,
+            text: `⚡ -200`,
+            color: '#00f0ff',
+            alpha: 1.0,
+            age: 0.0
+          });
         }
       });
       // 처치 및 필터
@@ -405,6 +416,15 @@ export const simulateShieldAndHP = (
             maxRadius: 8,
             alpha: 0.8,
             color: '#00ffff'
+          });
+          updatedFloatingTexts.push({
+            id: Math.random().toString(),
+            x: e.x,
+            y: e.y,
+            text: `⚡ -80`,
+            color: '#00ffff',
+            alpha: 1.0,
+            age: 0.0
           });
         }
       }
@@ -890,7 +910,7 @@ export const simulateProjectilesAndCollisions = (
   const projectilesToRemove = new Set();
   const enemiesToRemove = new Set();
 
-  const applySplashDamage = (projX, projY, damage, splashRadius = 150) => {
+  const applySplashDamage = (projX, projY, damage, splashRadius = 500) => {
     updatedEnemies.forEach(e => {
       if (e.hp > 0) {
         const dx = e.x - projX;
@@ -938,7 +958,7 @@ export const simulateProjectilesAndCollisions = (
           x: proj.x,
           y: proj.y,
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
-          maxRadius: proj.bulletType === 'antimatter' ? 150 : 12,
+          maxRadius: proj.bulletType === 'antimatter' ? 500 : 12,
           alpha: 1.0,
           color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
@@ -1087,7 +1107,7 @@ export const simulateProjectilesAndCollisions = (
           x: proj.x,
           y: proj.y,
           radius: proj.bulletType === 'antimatter' ? 3 : 1,
-          maxRadius: proj.bulletType === 'antimatter' ? 150 : 12,
+          maxRadius: proj.bulletType === 'antimatter' ? 500 : 12,
           alpha: 1.0,
           color: proj.bulletType === 'antimatter' ? '#ff0055' : '#ffcc00'
         });
@@ -1181,6 +1201,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
   let updatedProjectiles = [...state.projectiles];
   let updatedParticles = [...state.particles];
   let updatedFleet = [...state.fleet];
+  let updatedFloatingTexts = [...(state.floatingTexts || [])];
 
   // Helper closure for rewards & logging
   const checkAndLogEnemyKill = (enemy) => {
@@ -1240,6 +1261,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     updatedPlanets,
     updatedEnemies,
     updatedParticles,
+    updatedFloatingTexts,
     actualDelta,
     calculatedMaxEnergy,
     maxShield,
@@ -1446,6 +1468,14 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     newSatelliteBootTimer = 2.0;
   }
 
+  // 11.5. 플로팅 텍스트 갱신
+  updatedFloatingTexts = updatedFloatingTexts.map(ft => ({
+    ...ft,
+    y: ft.y - 40 * actualDelta,
+    age: ft.age + actualDelta,
+    alpha: Math.max(0, 1.0 - ft.age * 1.5)
+  })).filter(ft => ft.age < 0.7);
+
   return {
     newOverloadEnergy,
     maxOverloadEnergy,
@@ -1453,6 +1483,7 @@ export const runTickSimulation = (state, actualDelta, addBattleLog, damageEarth)
     newOnlineSatelliteCount,
     newSatelliteBootTimer,
     dischargeTimer: newDischargeTimer,
+    updatedFloatingTexts,
     updatedCredits,
     updatedNanocores,
     calculatedMaxEnergy,

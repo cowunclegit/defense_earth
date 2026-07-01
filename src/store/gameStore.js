@@ -227,6 +227,7 @@ export const useGameStore = create((set, get) => ({
     electricField: false
   },
   dischargeTimer: 0,
+  floatingTexts: [],
   
   currentWave: 1,
   enemiesRemainingToSpawn: 16,
@@ -475,6 +476,7 @@ export const useGameStore = create((set, get) => ({
         enemies: [],
         projectiles: [],
         particles: [],
+        floatingTexts: [],
         shipyardQueue: null,
         chronoMuteTimer: 0,
         waveStartTime: null, // Reset wave statistics timers
@@ -598,7 +600,8 @@ export const useGameStore = create((set, get) => ({
         newIsPowerOffline,
         newOnlineSatelliteCount,
         newSatelliteBootTimer,
-        dischargeTimer: nextDischargeTimer
+        dischargeTimer: nextDischargeTimer,
+        updatedFloatingTexts
       } = runTickSimulation(currentState, subDelta, (msg) => currentState.addBattleLog(msg), (dmg, type) => currentState.damageEarth(dmg, type));
 
       // damageEarth 콜백에 의해 변경된 상태를 동기적으로 불러옴
@@ -638,6 +641,7 @@ export const useGameStore = create((set, get) => ({
         enemies: updatedEnemies,
         projectiles: updatedProjectiles,
         particles: updatedParticles,
+        floatingTexts: updatedFloatingTexts,
         enemySpawnTimer: updatedSpawnTimer,
         chronoMuteTimer: nextMuteTimer,
         planets: finalPlanets,
