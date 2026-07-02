@@ -10,10 +10,9 @@ try {
 } catch (e) {}
 
 import { SATELLITE_SPECS, useGameStore } from '../../../store/gameStore';
-
 export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
-  throw new Error('[Debug] SkiaSatellites is rendering!');
   const satelliteRotation = useGameStore(state => state.satelliteRotation || 0);
+  throw new Error('[Debug] SkiaSatellites is rendering! rotation: ' + satelliteRotation);
   if (!Group || !Rect || !Circle || !Paint) return null;
 
   const currentRotation = satelliteRotation % 360;
