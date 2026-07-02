@@ -5,9 +5,7 @@ try {
   const Skia = require('@shopify/react-native-skia');
   Line = Skia.Line;
 } catch (e) {}
-
 export default function SkiaBackground() {
-  throw new Error('[Debug] SkiaBackground is rendering!');
   if (!Line) return null;
 
   const gridLines = [];

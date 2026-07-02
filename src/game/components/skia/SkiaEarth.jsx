@@ -9,6 +9,7 @@ try {
 } catch (e) {}
 
 export default function SkiaEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH_CENTER_Y, angles }) {
+  throw new Error('[Debug] SkiaEarth is rendering!');
   if (!Circle || !Line || !Group) return null;
   return (
     <>
