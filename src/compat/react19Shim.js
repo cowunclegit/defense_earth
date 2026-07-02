@@ -13,17 +13,42 @@ import { Alert } from 'react-native';
 
 // React 19 renamed __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 // to __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.
-if (!React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED && React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
-  React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
-}
+const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED || React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+if (originalInternals) {
+  // Create a prototype-linked object so we inherit all existing internals,
+  // but can safely define new or mutated properties without being blocked by frozen parent objects.
+  const patchedInternals = Object.create(originalInternals);
+  
+  if (!patchedInternals.ReactCurrentOwner) {
+    Object.defineProperty(patchedInternals, 'ReactCurrentOwner', {
+      value: { current: null },
+      writable: true,
+      configurable: true,
+      enumerable: true
+    });
+  }
 
-const internals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-if (internals && !internals.ReactCurrentOwner) {
-  // Provide a stub { current: null } object. react-reconciler 0.27.x reads
-  // this during module init and later mutates .current to the active fiber.
-  // Since the same object reference is retained throughout, the mutations
-  // still work correctly even with this shim.
-  internals.ReactCurrentOwner = { current: null };
+  // Redefine the internal property getters on the React object to return our patched object.
+  const defineProp = (obj, prop, val) => {
+    try {
+      Object.defineProperty(obj, prop, {
+        value: val,
+        configurable: true,
+        writable: true,
+        enumerable: true
+      });
+    } catch (e) {
+      // If the module object itself is frozen, try direct property mutation
+      try {
+        obj[prop] = val;
+      } catch (err) {
+        console.warn(`[react19Shim] Failed to define property ${prop} on React object:`, err);
+      }
+    }
+  };
+
+  defineProp(React, '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED', patchedInternals);
+  defineProp(React, '__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE', patchedInternals);
 }
 
 // Global Alert.alert polyfill for web environment
