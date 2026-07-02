@@ -156,8 +156,10 @@ if (originalInternals) {
 
   const origUseRef = React.useRef;
   React.useRef = function(initialValue) {
-    console.log('[react19Shim] useRef called! H:', originalInternals.H, 'H.current:', originalInternals.H ? originalInternals.H.current : null);
-    return origUseRef(initialValue);
+    const hExists = originalInternals.H ? 'yes' : 'no';
+    const currentExists = originalInternals.H && originalInternals.H.current ? 'yes' : 'no';
+    const currentKeys = originalInternals.H && originalInternals.H.current ? Object.keys(originalInternals.H.current).join(',') : 'none';
+    throw new Error(`[react19Shim] useRef hook intercepted! H_exists: ${hExists}, current_exists: ${currentExists}, current_keys: ${currentKeys}`);
   };
 }
 
