@@ -153,6 +153,12 @@ if (originalInternals) {
   };
 
   defineProp(React, '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED', patchedInternals);
+
+  const origUseRef = React.useRef;
+  React.useRef = function(initialValue) {
+    console.log('[react19Shim] useRef called! H:', originalInternals.H, 'H.current:', originalInternals.H ? originalInternals.H.current : null);
+    return origUseRef(initialValue);
+  };
 }
 
 // Global Alert.alert polyfill for web environment
