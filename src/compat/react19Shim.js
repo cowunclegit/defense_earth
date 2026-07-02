@@ -15,20 +15,40 @@ import { Alert } from 'react-native';
 // to __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.
 const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED || React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 if (originalInternals) {
-  // Create a prototype-linked object so we inherit all existing internals,
-  // but can safely define new or mutated properties without being blocked by frozen parent objects.
-  const patchedInternals = Object.create(originalInternals);
-  
-  if (!patchedInternals.ReactCurrentOwner) {
-    Object.defineProperty(patchedInternals, 'ReactCurrentOwner', {
-      value: { current: null },
-      writable: true,
-      configurable: true,
-      enumerable: true
-    });
-  }
+  const stubOwner = { current: null };
+  const patchedInternals = new Proxy(originalInternals, {
+    get(target, prop, receiver) {
+      if (prop === 'ReactCurrentOwner') {
+        return stubOwner;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+    has(target, prop) {
+      if (prop === 'ReactCurrentOwner') {
+        return true;
+      }
+      return Reflect.has(target, prop);
+    },
+    ownKeys(target) {
+      const keys = Reflect.ownKeys(target);
+      if (!keys.includes('ReactCurrentOwner')) {
+        keys.push('ReactCurrentOwner');
+      }
+      return keys;
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      if (prop === 'ReactCurrentOwner') {
+        return {
+          value: stubOwner,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        };
+      }
+      return Reflect.getOwnPropertyDescriptor(target, prop);
+    }
+  });
 
-  // Redefine the internal property getters on the React object to return our patched object.
   const defineProp = (obj, prop, val) => {
     try {
       Object.defineProperty(obj, prop, {
@@ -38,7 +58,6 @@ if (originalInternals) {
         enumerable: true
       });
     } catch (e) {
-      // If the module object itself is frozen, try direct property mutation
       try {
         obj[prop] = val;
       } catch (err) {
@@ -48,6 +67,7 @@ if (originalInternals) {
   };
 
   defineProp(React, '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED', patchedInternals);
+  defineProp(React, '__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE', patchedInternals);
 }
 
 // Global Alert.alert polyfill for web environment
