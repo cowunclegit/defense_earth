@@ -17,11 +17,11 @@ const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIR
 if (originalInternals) {
   const stubOwner = { current: null };
   const patchedInternals = new Proxy(originalInternals, {
-    get(target, prop, receiver) {
+    get(target, prop) {
       if (prop === 'ReactCurrentOwner') {
         return stubOwner;
       }
-      return Reflect.get(target, prop, receiver);
+      return target[prop];
     },
     has(target, prop) {
       if (prop === 'ReactCurrentOwner') {
