@@ -101,6 +101,7 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const shieldBorderColor = shieldRatio > 0 ? `rgba(0, 240, 255, ${0.4 + shieldRatio * 0.6})` : 'rgba(255, 0, 0, 0.15)';
 
   if (!Canvas) return null;
+  throw new Error('[Debug] SkiaCanvas canvasSize: ' + canvasSize);
 
   const scaleFactor = canvasSize / 540;
 
