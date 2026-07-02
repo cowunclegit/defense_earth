@@ -5,6 +5,9 @@ import SkiaCanvas from './components/SkiaCanvas';
 import CanvasControls from './components/CanvasControls';
 
 export default function GameCanvas() {
+  const { width: windowWidth } = useWindowDimensions();
+  const canvasSize = windowWidth;
+
   const [zoom, setZoom] = React.useState(1.0);
   const [panX, setPanX] = React.useState(0);
   const [panY, setPanY] = React.useState(0);
