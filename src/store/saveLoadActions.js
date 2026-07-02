@@ -64,7 +64,7 @@ export const saveLoadActions = (
     try {
       await AsyncStorage.setItem('DEFENSE_EARTH_SAVE', JSON.stringify(saveObj));
     } catch (e) {
-      // 에러 로그 무시
+      console.error('[SaveGame] 저장 실패:', e);
     }
   },
 
@@ -165,7 +165,7 @@ export const saveLoadActions = (
         get().addBattleLog('로컬 저장 데이터를 복구했습니다.');
       }
     } catch (e) {
-      // 로드 에러 무시
+      console.error('[LoadGame] 로드 실패:', e);
     }
   },
 

@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, AppState } from 'react-native';
 
 if (Platform.OS === 'web') {
   const originalWarn = console.warn;
@@ -30,8 +30,30 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   const tick = useGameStore((state) => state.tick);
+  const saveGame = useGameStore((state) => state.saveGame);
+  const loadGame = useGameStore((state) => state.loadGame);
+  const appStateRef = useRef(AppState.currentState);
 
-  // 글로벌 시뮬레이션 게임 루프 (매 프레임 갱신)
+  // 앱 시작 시 저장 데이터 로드
+  useEffect(() => {
+    loadGame();
+  }, []);
+
+  // 앱이 백그라운드로 전환될 때 자동 저장
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (
+        appStateRef.current === 'active' &&
+        (nextAppState === 'background' || nextAppState === 'inactive')
+      ) {
+        saveGame();
+      }
+      appStateRef.current = nextAppState;
+    });
+    return () => subscription.remove();
+  }, [saveGame]);
+
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.useGameStore = useGameStore;
