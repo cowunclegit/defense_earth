@@ -38,11 +38,11 @@ if (originalInternals) {
       return originalInternals.H ? originalInternals.H.current : null;
     },
     set current(val) {
-      if (!originalInternals.H) return;
       if (val) {
         if (!idleDispatcher) {
-          idleDispatcher = val; // Capture Oe at init
+          idleDispatcher = val; // Capture Oe at init (runs even if H is null)
         }
+        if (!originalInternals.H) return;
         if (val === idleDispatcher) {
           // Reconciler is resetting to idle state (Oe). Restore React Native dispatcher.
           originalInternals.H.current = savedReact19Dispatcher;
@@ -54,7 +54,9 @@ if (originalInternals) {
           originalInternals.H.current = val;
         }
       } else {
-        originalInternals.H.current = savedReact19Dispatcher;
+        if (originalInternals.H) {
+          originalInternals.H.current = savedReact19Dispatcher;
+        }
       }
     }
   };
