@@ -16,16 +16,39 @@ import { Alert } from 'react-native';
 const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED || React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 if (originalInternals) {
   const stubOwner = { current: null };
+
+  const stubDispatcher = {
+    get current() {
+      return originalInternals.H ? originalInternals.H.current : null;
+    },
+    set current(val) {
+      if (originalInternals.H) {
+        originalInternals.H.current = val;
+      }
+    }
+  };
+
+  const stubBatchConfig = {
+    get transition() {
+      return originalInternals.T ? originalInternals.T.transition : null;
+    },
+    set transition(val) {
+      if (originalInternals.T) {
+        originalInternals.T.transition = val;
+      }
+    }
+  };
+
   const patchedInternals = new Proxy(originalInternals, {
     get(target, prop) {
       if (prop === 'ReactCurrentOwner') {
         return stubOwner;
       }
       if (prop === 'ReactCurrentDispatcher') {
-        return target.H;
+        return stubDispatcher;
       }
       if (prop === 'ReactCurrentBatchConfig') {
-        return target.T;
+        return stubBatchConfig;
       }
       return target[prop];
     },
@@ -65,7 +88,7 @@ if (originalInternals) {
       }
       if (prop === 'ReactCurrentDispatcher') {
         return {
-          value: target.H,
+          value: stubDispatcher,
           writable: true,
           configurable: true,
           enumerable: true
@@ -73,7 +96,7 @@ if (originalInternals) {
       }
       if (prop === 'ReactCurrentBatchConfig') {
         return {
-          value: target.T,
+          value: stubBatchConfig,
           writable: true,
           configurable: true,
           enumerable: true
