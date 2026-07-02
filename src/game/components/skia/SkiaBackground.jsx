@@ -7,6 +7,7 @@ try {
 } catch (e) {}
 
 export default function SkiaBackground() {
+  throw new Error('[Debug] SkiaBackground is rendering!');
   if (!Line) return null;
 
   const gridLines = [];
