@@ -4,8 +4,8 @@ import WebCanvas from './components/WebCanvas';
 import SkiaCanvas from './components/SkiaCanvas';
 import CanvasControls from './components/CanvasControls';
 
-const { height: windowHeight } = Dimensions.get('window');
-const canvasSize = Math.min(320, windowHeight * 0.45);
+const { width: windowWidth } = Dimensions.get('window');
+const canvasSize = windowWidth;
 
 export default function GameCanvas() {
   const [zoom, setZoom] = React.useState(1.0);

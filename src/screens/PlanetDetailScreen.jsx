@@ -1924,7 +1924,11 @@ const styles = StyleSheet.create({
         height: '50%',
         width: '100%',
       },
-      default: {}
+      default: {
+        flex: 0.7,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }
     }),
   },
   topLeftOverlay: {
@@ -2291,7 +2295,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   controlPanel: {
-    flex: 1,
+    ...Platform.select({
+      web: {
+        flex: 1,
+      },
+      default: {
+        flex: 0.3,
+      }
+    }),
     marginTop: 8,
     overflow: 'hidden',
     paddingHorizontal: 15,
