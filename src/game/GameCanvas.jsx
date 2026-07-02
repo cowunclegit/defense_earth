@@ -1,11 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Platform, Dimensions } from 'react-native';
+import { StyleSheet, View, Platform, useWindowDimensions } from 'react-native';
 import WebCanvas from './components/WebCanvas';
 import SkiaCanvas from './components/SkiaCanvas';
 import CanvasControls from './components/CanvasControls';
-
-const { width: windowWidth } = Dimensions.get('window');
-const canvasSize = windowWidth;
 
 export default function GameCanvas() {
   const [zoom, setZoom] = React.useState(1.0);
@@ -54,7 +51,12 @@ export default function GameCanvas() {
   return (
     <View 
       ref={containerRef}
-      style={styles.canvasContainer}
+      style={[
+        styles.canvasContainer,
+        Platform.OS === 'web' 
+          ? { width: '100%', height: '100%' } 
+          : { width: canvasSize, height: canvasSize }
+      ]}
       onStartShouldSetResponder={onStartShouldSetResponder}
       onResponderGrant={onResponderGrant}
       onResponderMove={onResponderMove}
@@ -75,16 +77,6 @@ export default function GameCanvas() {
 
 const styles = StyleSheet.create({
   canvasContainer: {
-    ...Platform.select({
-      web: {
-        width: '100%',
-        height: '100%',
-      },
-      default: {
-        width: canvasSize,
-        height: canvasSize,
-      }
-    }),
     backgroundColor: '#050814',
     overflow: 'hidden',
   }
