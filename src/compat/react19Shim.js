@@ -30,27 +30,8 @@ const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIR
 if (originalInternals) {
   const stubOwner = { current: null };
 
-  const stubDispatcher = {
-    get current() {
-      return originalInternals.H ? originalInternals.H.current : null;
-    },
-    set current(val) {
-      if (originalInternals.H) {
-        originalInternals.H.current = val;
-      }
-    }
-  };
-
-  const stubBatchConfig = {
-    get transition() {
-      return originalInternals.T ? originalInternals.T.transition : null;
-    },
-    set transition(val) {
-      if (originalInternals.T) {
-        originalInternals.T.transition = val;
-      }
-    }
-  };
+  const stubDispatcher = { current: null };
+  const stubBatchConfig = { transition: null };
 
   const patchedInternals = new Proxy(originalInternals, {
     get(target, prop) {
@@ -66,12 +47,8 @@ if (originalInternals) {
       return target[prop];
     },
     set(target, prop, value) {
-      if (prop === 'ReactCurrentDispatcher') {
-        target.H = value;
-        return true;
-      }
-      if (prop === 'ReactCurrentBatchConfig') {
-        target.T = value;
+      if (prop === 'ReactCurrentDispatcher' || prop === 'ReactCurrentBatchConfig') {
+        // Block reconciler from modifying the global React 19 dispatcher properties
         return true;
       }
       target[prop] = value;
