@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 import { useGameStore } from '../../store/gameStore';
 import { getOrderedBuiltSatellites } from '../../store/gameSpecs';
 import SkiaBackground from './skia/SkiaBackground';
@@ -18,7 +18,9 @@ try {
   Canvas = Skia.Canvas;
   Group = Skia.Group;
 } catch (e) {
-  // Silent warning for Web
+  if (Platform.OS !== 'web') {
+    console.error('Failed to load react-native-skia native module:', e);
+  }
 }
 
 export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
