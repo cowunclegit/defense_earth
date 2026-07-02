@@ -1,18 +1,10 @@
 import React from 'react';
-
-let Group, Rect, Circle, Paint;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Group = Skia.Group;
-  Rect = Skia.Rect;
-  Circle = Skia.Circle;
-  Paint = Skia.Paint;
-} catch (e) {}
-
+import { Group, Rect, Circle, Paint } from '@shopify/react-native-skia';
 import { SATELLITE_SPECS, useGameStore } from '../../../store/gameStore';
+
 export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {
   const satelliteRotation = useGameStore(state => state.satelliteRotation || 0);
-  if (!Group || !Rect || !Circle || !Paint) return null;
+
 
   const currentRotation = satelliteRotation % 360;
 

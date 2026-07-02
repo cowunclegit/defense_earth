@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
+import { Canvas, Group } from '@shopify/react-native-skia';
 import { useGameStore } from '../../store/gameStore';
 import { getOrderedBuiltSatellites } from '../../store/gameSpecs';
 import SkiaBackground from './skia/SkiaBackground';
@@ -12,16 +13,6 @@ import SkiaProjectiles from './skia/SkiaProjectiles';
 import SkiaParticles from './skia/SkiaParticles';
 import SkiaChronoOverlay from './skia/SkiaChronoOverlay';
 
-let Canvas, Group;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Canvas = Skia.Canvas;
-  Group = Skia.Group;
-} catch (e) {
-  if (Platform.OS !== 'web') {
-    console.error('Failed to load react-native-skia native module:', e);
-  }
-}
 
 export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const { 
@@ -100,14 +91,12 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const shieldColor = shieldRatio > 0 ? `rgba(0, 240, 255, ${0.1 + shieldRatio * 0.45})` : 'rgba(255, 0, 0, 0.05)';
   const shieldBorderColor = shieldRatio > 0 ? `rgba(0, 240, 255, ${0.4 + shieldRatio * 0.6})` : 'rgba(255, 0, 0, 0.15)';
 
-  if (!Canvas) return null;
-  throw new Error('[Debug] SkiaCanvas canvasSize: ' + canvasSize);
 
   const scaleFactor = canvasSize / 540;
 
   return (
     <View style={[styles.container, { width: canvasSize, height: canvasSize }]}>
-      <Canvas style={[styles.skiaCanvas, { width: canvasSize, height: canvasSize }]}>
+      <Canvas style={[styles.skiaCanvas, { width: canvasSize, height: canvasSize }]} opaque={false}>
       <Group transform={[{ scale: scaleFactor }]}>
         <Group transform={[{ translateX: panX + 270 }, { translateY: panY + 270 }, { scale: zoom }, { translateX: -270 }, { translateY: -270 }]}>
           <SkiaBackground />

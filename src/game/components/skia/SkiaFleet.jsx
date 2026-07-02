@@ -1,13 +1,6 @@
 import React from 'react';
 import { SHIP_TYPES } from '../../../store/gameStore';
-
-let Group, Circle, Paint;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Group = Skia.Group;
-  Circle = Skia.Circle;
-  Paint = Skia.Paint;
-} catch (e) {}
+import { Group, Circle, Paint } from '@shopify/react-native-skia';
 
 const SHIP_VISUALS = {
   [SHIP_TYPES.INTERCEPTOR]: { color: '#00ff8a', size: 4, muteColor: '#8a8a8a' },     // Neon Green
@@ -22,7 +15,7 @@ const SHIP_VISUALS = {
 };
 
 export default function SkiaFleet({ fleet, chronoMuteTimer }) {
-  if (!Group || !Circle || !Paint) return null;
+
   return (
     <>
       {fleet.map((ship) => {

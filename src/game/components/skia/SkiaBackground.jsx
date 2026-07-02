@@ -1,12 +1,7 @@
 import React from 'react';
+import { Line } from '@shopify/react-native-skia';
 
-let Line;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Line = Skia.Line;
-} catch (e) {}
 export default function SkiaBackground() {
-  if (!Line) return null;
 
   const gridLines = [];
   const start = -990;

@@ -1,7 +1,3 @@
-// React 19 compat: MUST be first import — patches ReactSharedInternals before
-// @shopify/react-native-skia's react-reconciler@0.27.x loads.
-import './src/compat/react19Shim';
-
 import { registerRootComponent } from 'expo';
 
 import App from './App';

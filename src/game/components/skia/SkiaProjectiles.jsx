@@ -1,15 +1,8 @@
 import React from 'react';
-
-let Group, Circle, Line;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Group = Skia.Group;
-  Circle = Skia.Circle;
-  Line = Skia.Line;
-} catch (e) {}
+import { Group, Circle, Line } from '@shopify/react-native-skia';
 
 export default function SkiaProjectiles({ projectiles }) {
-  if (!Group || !Circle || !Line) return null;
+
   return (
     <>
       {projectiles.map((proj) => {

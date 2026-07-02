@@ -1,17 +1,8 @@
 import React from 'react';
-
-let Group, Circle, Rect, Line, Paint;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Group = Skia.Group;
-  Circle = Skia.Circle;
-  Rect = Skia.Rect;
-  Line = Skia.Line;
-  Paint = Skia.Paint;
-} catch (e) {}
+import { Group, Circle, Rect, Line, Paint } from '@shopify/react-native-skia';
 
 export default function SkiaEnemies({ enemies }) {
-  if (!Group || !Circle || !Rect || !Line || !Paint) return null;
+
   return (
     <>
       {enemies.map((enemy) => {

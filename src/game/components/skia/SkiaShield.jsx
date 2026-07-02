@@ -1,12 +1,5 @@
 import React from 'react';
-
-let Circle, Paint, Group;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Circle = Skia.Circle;
-  Paint = Skia.Paint;
-  Group = Skia.Group;
-} catch (e) {}
+import { Circle, Paint, Group } from '@shopify/react-native-skia';
 
 export default function SkiaShield({
   shieldColor,
@@ -17,7 +10,6 @@ export default function SkiaShield({
   isElectricFieldActive,
   satelliteRotation
 }) {
-  if (!Circle || !Paint) return null;
 
   const rotationDeg = satelliteRotation || 0;
   const pulseFactor = 1 + 0.03 * Math.sin((rotationDeg * Math.PI) / 90);
@@ -36,15 +28,14 @@ export default function SkiaShield({
       {isElectricFieldActive && (
         <Group>
           {/* Outer pulsing rotated boundary ring */}
-          {Group && (
-            <Group origin={{ x: EARTH_CENTER_X, y: EARTH_CENTER_Y }} transform={[{ rotate: (rotationDeg * Math.PI) / 180 }]}>
+          <Group origin={{ x: EARTH_CENTER_X, y: EARTH_CENTER_Y }} transform={[{ rotate: (rotationDeg * Math.PI) / 180 }]}>
               <Circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={auraRadius} color="rgba(0, 240, 255, 0.02)" />
               <Circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={auraRadius} color="transparent">
                 <Paint style="stroke" strokeWidth={1.5} color="rgba(0, 240, 255, 0.55)" />
               </Circle>
             </Group>
-          )}
           
+
           {/* Inner thicker cyan glow ring */}
           <Circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={auraRadius} color="transparent">
             <Paint style="stroke" strokeWidth={5} color="rgba(0, 240, 255, 0.15)" />

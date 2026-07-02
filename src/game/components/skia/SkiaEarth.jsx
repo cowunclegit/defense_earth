@@ -1,14 +1,8 @@
 import React from 'react';
+import { Circle, Line, Group } from '@shopify/react-native-skia';
 
-let Circle, Line, Group;
-try {
-  const Skia = require('@shopify/react-native-skia');
-  Circle = Skia.Circle;
-  Line = Skia.Line;
-  Group = Skia.Group;
-} catch (e) {}
 export default function SkiaEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH_CENTER_Y, angles }) {
-  if (!Circle || !Line || !Group) return null;
+
   return (
     <>
       <Circle cx={EARTH_CENTER_X} cy={EARTH_CENTER_Y} r={80} color={earthColor} />
