@@ -30,7 +30,6 @@ const originalInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIR
 if (originalInternals) {
   const stubOwner = { current: null };
 
-  let idleDispatcher = null;
   let savedReact19Dispatcher = null;
 
   const stubDispatcher = {
@@ -38,14 +37,19 @@ if (originalInternals) {
       return originalInternals.H ? originalInternals.H.current : null;
     },
     set current(val) {
+      if (!originalInternals.H) return;
       if (val) {
-        if (!idleDispatcher) {
-          idleDispatcher = val; // Capture Oe at init (runs even if H is null)
-        }
-        if (!originalInternals.H) return;
-        if (val === idleDispatcher) {
-          // Reconciler is resetting to idle state (Oe). Restore React Native dispatcher.
-          originalInternals.H.current = savedReact19Dispatcher;
+        // In react-reconciler, the error/idle dispatcher (Oe) uses the same dummy function 
+        // that throws an error for almost all hooks. We can identify it by checking if 
+        // useCallback and useRef point to the exact same function reference.
+        // Active rendering dispatchers (Le and Me) have distinct implementations.
+        const isErrorDispatcher = val.useCallback && val.useRef && (val.useCallback === val.useRef);
+
+        if (isErrorDispatcher) {
+          // Reconciler is resetting to idle/error state (Oe). Restore React Native dispatcher.
+          if (savedReact19Dispatcher) {
+            originalInternals.H.current = savedReact19Dispatcher;
+          }
         } else {
           // Reconciler is setting active dispatcher (Le or Me).
           // Save the current React Native dispatcher and set H.current to Le/Me
@@ -54,7 +58,7 @@ if (originalInternals) {
           originalInternals.H.current = val;
         }
       } else {
-        if (originalInternals.H) {
+        if (savedReact19Dispatcher) {
           originalInternals.H.current = savedReact19Dispatcher;
         }
       }
