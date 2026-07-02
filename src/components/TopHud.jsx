@@ -19,6 +19,8 @@ export default function TopHud({ overlay }) {
     usedEnergy, 
     nanocores, 
     currentWave,
+    enemies,
+    enemiesRemainingToSpawn,
     gameSpeed, 
     setGameSpeed,
     isPaused, 
@@ -30,6 +32,12 @@ export default function TopHud({ overlay }) {
     planets,
     synergies
   } = useGameStore();
+
+  const activeEnemiesCount = enemies ? enemies.length : 0;
+  const remainingEnemies = activeEnemiesCount + (enemiesRemainingToSpawn || 0);
+  const totalEnemies = currentWave % 10 === 0 ? 1 : (3 + currentWave) * 4;
+  const killedEnemies = Math.max(0, totalEnemies - remainingEnemies);
+  const progressPercent = totalEnemies > 0 ? Math.min(100, Math.max(0, (killedEnemies / totalEnemies) * 100)) : 0;
 
   const getCreditRate = () => {
     let totalPopulation = 0;
@@ -182,7 +190,10 @@ export default function TopHud({ overlay }) {
         {/* 하단: 게임 컨트롤 및 웨이브 상태 패널 (자원창 하단에 소형 배치) */}
         <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
           <View style={styles.waveBadge}>
-            <Text style={styles.waveText}>WAVE {currentWave}</Text>
+            <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
+            <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginTop: 2, overflow: 'hidden', minWidth: 60 }}>
+              <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
+            </View>
           </View>
 
           <View style={styles.tpBadge}>
