@@ -105,8 +105,8 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const scaleFactor = canvasSize / 540;
 
   return (
-    <View style={styles.container}>
-      <Canvas style={styles.skiaCanvas}>
+    <View style={[styles.container, { width: canvasSize, height: canvasSize }]}>
+      <Canvas style={[styles.skiaCanvas, { width: canvasSize, height: canvasSize }]}>
       <Group transform={[{ scale: scaleFactor }]}>
         <Group transform={[{ translateX: panX + 270 }, { translateY: panY + 270 }, { scale: zoom }, { translateX: -270 }, { translateY: -270 }]}>
           <SkiaBackground />
