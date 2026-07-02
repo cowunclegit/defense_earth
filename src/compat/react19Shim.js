@@ -8,6 +8,19 @@
  * This shim must be the FIRST import in the entry point (index.js) so it runs
  * before react-reconciler is loaded and reads ReactSharedInternals.
  */
+// React 19 changed Symbol.for('react.element') to Symbol.for('react.transitional.element').
+// To make react-reconciler@0.27.0 (which checks Symbol.for('react.element')) recognize React 19 elements,
+// we override Symbol.for to return the transitional element symbol for 'react.element'.
+if (typeof Symbol === 'function' && typeof Symbol.for === 'function') {
+  const originalSymbolFor = Symbol.for;
+  Symbol.for = function (key) {
+    if (key === 'react.element') {
+      return originalSymbolFor('react.transitional.element');
+    }
+    return originalSymbolFor(key);
+  };
+}
+
 import React from 'react';
 import { Alert } from 'react-native';
 
