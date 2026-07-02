@@ -34,10 +34,11 @@ if (originalInternals) {
 
   const stubDispatcher = {
     get current() {
-      return originalInternals.H ? originalInternals.H.current : null;
+      // In React 19, originalInternals.H IS the active dispatcher object itself (no .current wrapper!).
+      // But react-reconciler (React 18) expects a wrapper object `{ current: dispatcher }`.
+      return originalInternals.H;
     },
     set current(val) {
-      if (!originalInternals.H) return;
       if (val) {
         // In react-reconciler, the error/idle dispatcher (Oe) uses the same dummy function 
         // that throws an error for almost all hooks. We can identify it by checking if 
@@ -47,20 +48,16 @@ if (originalInternals) {
 
         if (isErrorDispatcher) {
           // Reconciler is resetting to idle/error state (Oe). Restore React Native dispatcher.
-          if (savedReact19Dispatcher) {
-            originalInternals.H.current = savedReact19Dispatcher;
-          }
+          originalInternals.H = savedReact19Dispatcher;
         } else {
           // Reconciler is setting active dispatcher (Le or Me).
-          // Save the current React Native dispatcher and set H.current to Le/Me
-          // so that hooks called inside Skia components (e.g. useGameStore) resolve successfully.
-          savedReact19Dispatcher = originalInternals.H.current;
-          originalInternals.H.current = val;
+          // Save the current React Native dispatcher (which is originalInternals.H itself)
+          // and set H to Le/Me so that hooks called inside Skia components resolve successfully.
+          savedReact19Dispatcher = originalInternals.H;
+          originalInternals.H = val;
         }
       } else {
-        if (savedReact19Dispatcher) {
-          originalInternals.H.current = savedReact19Dispatcher;
-        }
+        originalInternals.H = savedReact19Dispatcher;
       }
     }
   };
@@ -154,13 +151,7 @@ if (originalInternals) {
 
   defineProp(React, '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED', patchedInternals);
 
-  const origUseRef = React.useRef;
-  React.useRef = function(initialValue) {
-    const hExists = originalInternals.H ? 'yes' : 'no';
-    const currentExists = originalInternals.H && originalInternals.H.current ? 'yes' : 'no';
-    const currentKeys = originalInternals.H && originalInternals.H.current ? Object.keys(originalInternals.H.current).join(',') : 'none';
-    throw new Error(`[react19Shim] useRef hook intercepted! H_exists: ${hExists}, current_exists: ${currentExists}, current_keys: ${currentKeys}`);
-  };
+
 }
 
 // Global Alert.alert polyfill for web environment
