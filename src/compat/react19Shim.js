@@ -21,25 +21,59 @@ if (originalInternals) {
       if (prop === 'ReactCurrentOwner') {
         return stubOwner;
       }
+      if (prop === 'ReactCurrentDispatcher') {
+        return target.H;
+      }
+      if (prop === 'ReactCurrentBatchConfig') {
+        return target.T;
+      }
       return target[prop];
     },
+    set(target, prop, value) {
+      if (prop === 'ReactCurrentDispatcher') {
+        target.H = value;
+        return true;
+      }
+      if (prop === 'ReactCurrentBatchConfig') {
+        target.T = value;
+        return true;
+      }
+      target[prop] = value;
+      return true;
+    },
     has(target, prop) {
-      if (prop === 'ReactCurrentOwner') {
+      if (prop === 'ReactCurrentOwner' || prop === 'ReactCurrentDispatcher' || prop === 'ReactCurrentBatchConfig') {
         return true;
       }
       return Reflect.has(target, prop);
     },
     ownKeys(target) {
       const keys = Reflect.ownKeys(target);
-      if (!keys.includes('ReactCurrentOwner')) {
-        keys.push('ReactCurrentOwner');
-      }
+      if (!keys.includes('ReactCurrentOwner')) keys.push('ReactCurrentOwner');
+      if (!keys.includes('ReactCurrentDispatcher')) keys.push('ReactCurrentDispatcher');
+      if (!keys.includes('ReactCurrentBatchConfig')) keys.push('ReactCurrentBatchConfig');
       return keys;
     },
     getOwnPropertyDescriptor(target, prop) {
       if (prop === 'ReactCurrentOwner') {
         return {
           value: stubOwner,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        };
+      }
+      if (prop === 'ReactCurrentDispatcher') {
+        return {
+          value: target.H,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        };
+      }
+      if (prop === 'ReactCurrentBatchConfig') {
+        return {
+          value: target.T,
           writable: true,
           configurable: true,
           enumerable: true
