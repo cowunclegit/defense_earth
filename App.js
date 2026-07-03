@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Platform, AppState } from 'react-native';
+import { StyleSheet, View, Platform, AppState, Text } from 'react-native';
 
 if (Platform.OS === 'web') {
   const originalWarn = console.warn;
@@ -26,6 +26,17 @@ import ChronosLabScreen from './src/screens/ChronosLabScreen';
 import AIPlaytestScreen from './src/screens/AIPlaytestScreen';
 import CustomAlert from './src/components/CustomAlert';
 
+// Web에서 Skia (CanvasKit WASM) 초기화
+let skiaWebReady = Platform.OS !== 'web'; // native는 항상 true
+if (Platform.OS === 'web') {
+  import('@shopify/react-native-skia/web').then(({ LoadSkiaWeb }) => {
+    LoadSkiaWeb().then(() => {
+      skiaWebReady = true;
+    });
+  });
+}
+
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -33,6 +44,20 @@ export default function App() {
   const saveGame = useGameStore((state) => state.saveGame);
   const loadGame = useGameStore((state) => state.loadGame);
   const appStateRef = useRef(AppState.currentState);
+  const [skiaReady, setSkiaReady] = useState(skiaWebReady);
+
+  // 웹: Skia WASM 로딩 대기
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (skiaWebReady) { setSkiaReady(true); return; }
+    const interval = setInterval(() => {
+      if (skiaWebReady) {
+        setSkiaReady(true);
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   // 앱 시작 시 저장 데이터 로드
   useEffect(() => {
@@ -87,6 +112,15 @@ export default function App() {
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
   }, [tick]);
+
+  // 웹에서 Skia WASM 로딩 중일 때 로딩 화면 표시
+  if (Platform.OS === 'web' && !skiaReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0a0a1a', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#00f0ff', fontSize: 18 }}>🚀 Defense Earth 로딩 중...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
