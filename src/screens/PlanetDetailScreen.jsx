@@ -211,7 +211,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
             {[
               { id: 'defense_facility', label: '실드&반격', icon: '🛡️', color: '#00f0ff' },
               { id: 'attack_satellite', label: '공격 위성', icon: '🚀', color: '#ff8a00' },
-              { id: 'defense_satellite', label: '방어 위성', icon: '🛰️', color: '#ffd700' },
+              { id: 'defense_satellite', label: '특수 위성', icon: '🛰️', color: '#ffd700' },
               { id: 'shipyard', label: '쉽야드', icon: '🛸', color: '#00ff8a' },
               { id: 'infrastructure', label: '인프라', icon: '🏢', color: '#af52de' },
             ].map((tab) => {
@@ -937,7 +937,7 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
     }
   }
 
-  const attackTypes = Object.keys(SATELLITE_SPECS).filter(t => SATELLITE_SPECS[t].isWeapon);
+  const attackTypes = ['laser', 'plasmaLaser', 'clusterMissile', 'antimatter'];
 
   return (
     <View>
@@ -1188,6 +1188,8 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   const maxEnergy = useGameStore(state => state.maxEnergy);
   const usedEnergy = useGameStore(state => state.usedEnergy);
   const planets = useGameStore(state => state.planets);
+  const satelliteLevels = useGameStore(state => state.satelliteLevels);
+  const upgradeSatellite = useGameStore(state => state.upgradeSatellite);
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const onlineSatelliteCount = useGameStore(state => state.onlineSatelliteCount);
@@ -1214,11 +1216,13 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
     }
   }
 
+  const specialTypes = ['emp', 'gravityBomb', 'sensor', 'forceShield', 'decoy', 'repairDrone'];
+
   return (
     <View>
       {isPowerDischarged && (
         <View style={{ marginBottom: 8, padding: 8, backgroundColor: 'rgba(255,59,48,0.12)', borderRadius: 8, borderWidth: 0.5, borderColor: '#ff3b30' }}>
-          <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전 — 모든 방어/센서 위성 정지</Text>
+          <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전 — 모든 특수 위성 정지</Text>
         </View>
       )}
 
@@ -1236,12 +1240,39 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
         >
           {infoType && (() => {
             const s = SATELLITE_SPECS[infoType];
+            const wl = satelliteLevels?.[infoType] || { damage: 1, speed: 1, range: 1 };
+            const dLvl = wl.damage || 1;
+            const sLvl = wl.speed || 1;
+            const rLvl = wl.range || 1;
+            const curDmg = getScaledDmg(infoType, dLvl);
+            const curCd = getScaledCd(infoType, sLvl).toFixed(1);
+            const curRange = getScaledRange(infoType, rLvl);
+            const dph = parseFloat(curCd) > 0 ? Math.round((curDmg / parseFloat(curCd)) * 3600) : 0;
+
             let descText = '지원/보조 위성';
+            if (infoType === 'emp') descText = `고출력 EMP 펄스를 방사하여 ${curDmg} HP 피해와 함께 2초간 대상을 마비시킵니다.`;
+            if (infoType === 'gravityBomb') descText = `${curDmg} HP 피해 후 적 이동속도를 40% 감소시키는 중력 폭탄.`;
             if (infoType === 'sensor') descText = '적 탐지 반경 +50% 및 적 이동속도 감속';
             if (infoType === 'forceShield') descText = '포스 실드 위성 복구 버프';
             if (infoType === 'decoy') descText = '적 투사체/레이저 요격 흡수 버프';
             if (infoType === 'repairDrone') descText = '아군 궤도 함선 초당 20 HP 지속 회복';
             const count = planetState.orbitalSatellitesList?.[infoType] || 0;
+
+            const modalGrid = [
+              { label: '보유 수량', value: `${count} / ${MAX_SATELLITES_PER_TYPE}`, color: '#ffd700' },
+              { label: '소비 전력', value: `${s.energy} W`, color: '#00f0ff' }
+            ];
+
+            if (s.isWeapon) {
+              modalGrid.push(
+                { label: '공격력', value: `${curDmg} HP  (Lv.${dLvl})`, color: '#ff8a00' },
+                { label: '쿨다운', value: `${curCd}s  (Lv.${sLvl})`, color: '#ff8a00' },
+                { label: '사거리', value: `${curRange}  (Lv.${rLvl})`, color: '#ff8a00' },
+                { label: '시간당 공격량', value: `${dph.toLocaleString()} HP / 시간`, color: '#00ff8a' }
+              );
+            } else {
+              modalGrid.push({ label: '주요 기능', value: descText, color: '#ffd700' });
+            }
 
             return (
               <TouchableOpacity
@@ -1264,11 +1295,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                 <View style={{ height: 1, backgroundColor: 'rgba(255,215,0,0.25)' }} />
 
                 {/* 스탯 그리드 */}
-                {[
-                  { label: '보유 수량', value: `${count} / ${MAX_SATELLITES_PER_TYPE}`, color: '#ffd700' },
-                  { label: '소비 전력', value: `${s.energy} W`, color: '#00f0ff' },
-                  { label: '주요 기능', value: descText, color: '#ffd700' },
-                ].map(({ label, value, color }) => (
+                {modalGrid.map(({ label, value, color }) => (
                   <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={{ color: '#8fa0c4', fontSize: 11 }}>{label}</Text>
                     <Text style={{ color, fontSize: 11, fontWeight: 'bold', textAlign: 'right', flex: 1, marginLeft: 8 }}>{value}</Text>
@@ -1284,15 +1311,30 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
       </Modal>
 
       {/* ── 위성 리스트 ── */}
-      {Object.keys(SATELLITE_SPECS).map((type) => {
+      {specialTypes.map((type) => {
         const spec = SATELLITE_SPECS[type];
-        if (spec.isWeapon) return null;
         const count = planetState.orbitalSatellitesList?.[type] || 0;
+        const weaponLevels = satelliteLevels?.[type] || { damage: 1, speed: 1, range: 1 };
+        const dmgLvl = weaponLevels.damage || 1;
+        const spdLvl = weaponLevels.speed || 1;
+        const rngLvl = weaponLevels.range || 1;
+        const scaledDmg = getScaledDmg(type, dmgLvl);
+        const scaledCd = getScaledCd(type, spdLvl);
+        const scaledRange = getScaledRange(type, rngLvl);
+        const dph = scaledCd > 0 ? Math.round((scaledDmg / scaledCd) * 3600) : 0;
+        
+        // 다음 레벨 예측값
+        const nextDmg = getScaledDmg(type, dmgLvl + 1);
+        const nextCd = getScaledCd(type, spdLvl + 1);
+        const nextRange = getScaledRange(type, rngLvl + 1);
+
         let desc = '지원/보조 위성';
         if (type === 'sensor') desc = '적 탐지 반경 +50% 및 감속';
         if (type === 'forceShield') desc = '포스 실드 위성 복구 버프';
         if (type === 'decoy') desc = '적 공격 요격/흡수 버프';
         if (type === 'repairDrone') desc = '아군 궤도 함선 초당 20 HP 회복';
+        if (type === 'emp') desc = '적 마비 2초 및 감속';
+        if (type === 'gravityBomb') desc = '적 감속 40%';
 
         const isMax = count >= MAX_SATELLITES_PER_TYPE;
         const activeCount = activeSatsMap[planetId]?.[type] || 0;
@@ -1300,6 +1342,9 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
         const isOffline = count > 0 && activeCount === 0;
         const buildCost = getSatelliteCost(type, count);
         const canAffordBuild = credits >= buildCost && (maxEnergy - usedEnergy) >= spec.energy;
+        const dmgUpgradeCost = getSatelliteUpgradeCost(type, 'damage', dmgLvl);
+        const spdUpgradeCost = getSatelliteUpgradeCost(type, 'speed', spdLvl);
+        const rngUpgradeCost = getSatelliteUpgradeCost(type, 'range', rngLvl);
 
         return (
           <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,215,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
@@ -1314,6 +1359,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                     {standbyCount > 0 && <Text style={{ color: '#8fa0c4', fontSize: 8 }}> (대기:{standbyCount})</Text>}
                   </Text>
                   {spec.energy > 0 && <Text style={{ color: '#8fa0c4', fontSize: 9 }}>⚡{spec.energy}W</Text>}
+                  {spec.isWeapon && dph > 0 && <Text style={{ color: '#00ff8a', fontSize: 9 }}>⚔️ {(dph/1000).toFixed(0)}K/hr</Text>}
                   <Text style={{ color: '#8fa0c4', fontSize: 9 }} numberOfLines={1}>{desc}</Text>
                 </View>
               </View>
@@ -1355,6 +1401,51 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                 )}
               </View>
             </View>
+
+            {/* 행 2: 무기형 특수 위성인 경우에만 강화 버튼 3개 배치 */}
+            {spec.isWeapon && (
+              <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }}>
+                {[
+                  {
+                    label: '⬆ 데미지', stat: 'damage', lvl: dmgLvl, cost: dmgUpgradeCost,
+                    curVal: scaledDmg, nextVal: nextDmg, unit: 'HP',
+                  },
+                  {
+                    label: '⬆ 속도', stat: 'speed', lvl: spdLvl, cost: spdUpgradeCost,
+                    curVal: scaledCd.toFixed(1), nextVal: nextCd.toFixed(1), unit: 's',
+                  },
+                  {
+                    label: '⬆ 사거리', stat: 'range', lvl: rngLvl, cost: rngUpgradeCost,
+                    curVal: scaledRange, nextVal: nextRange, unit: '',
+                  },
+                ].map(({ label, stat, lvl, cost, curVal, nextVal, unit }) => {
+                  const canAfford = credits >= cost;
+                  const accent = canAfford ? '#ffd700' : '#8fa0c4';
+                  const dimColor = canAfford ? 'rgba(255,215,0,0.65)' : 'rgba(143,160,196,0.55)';
+                  return (
+                    <TouchableOpacity
+                      key={stat}
+                      style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 4, backgroundColor: canAfford ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: canAfford ? '#ffd700' : 'rgba(143,160,196,0.25)', alignItems: 'center', gap: 2 }}
+                      onPress={() => {
+                        const success = upgradeSatellite(type, stat);
+                        if (success) setTimeout(() => saveGame(), 100);
+                        else Alert.alert('강화 실패', '크레딧 부족');
+                      }}
+                    >
+                      {/* 레이블 + 레벨 */}
+                      <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
+                      {/* 현재 → 다음 수치 */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                        <Text style={{ color: dimColor, fontSize: 8.5 }}>{curVal}{unit}</Text>
+                        <Text style={{ color: '#00ff8a', fontSize: 8.5, fontWeight: 'bold' }}>→{nextVal}{unit}</Text>
+                      </View>
+                      {/* 비용 */}
+                      <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8.5 }}>{cost.toLocaleString()}Cr</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
         );
       })}
