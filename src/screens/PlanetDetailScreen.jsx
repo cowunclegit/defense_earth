@@ -934,7 +934,6 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
   const upgradeSatellite = useGameStore(state => state.upgradeSatellite);
   const buildOrbitalStationDetail = useGameStore(state => state.buildOrbitalStationDetail);
   const saveGame = useGameStore(state => state.saveGame);
-  const [selectedType, setSelectedType] = React.useState(null);
 
   const planetState = planets[planetId];
   if (!planetState) return null;
@@ -954,155 +953,107 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
 
   const attackTypes = Object.keys(SATELLITE_SPECS).filter(t => SATELLITE_SPECS[t].isWeapon);
 
-  const getDetail = (type) => {
-    if (!type) return null;
-    const spec = SATELLITE_SPECS[type];
-    const count = planetState.orbitalSatellitesList?.[type] || 0;
-    const weaponLevels = satelliteLevels?.[type] || { damage: 1, speed: 1, range: 1 };
-    const dmgLvl = weaponLevels.damage || 1;
-    const spdLvl = weaponLevels.speed || 1;
-    const rngLvl = weaponLevels.range || 1;
-    const scaledDmg = getScaledDmg(type, dmgLvl);
-    const scaledCd = getScaledCd(type, spdLvl).toFixed(1);
-    const scaledRange = getScaledRange(type, rngLvl);
-    const dph = (parseFloat(scaledCd) > 0) ? Math.round((scaledDmg / parseFloat(scaledCd)) * 3600) : 0;
-    const isMax = count >= MAX_SATELLITES_PER_TYPE;
-    const activeCount = activeSatsMap[planetId]?.[type] || 0;
-    const standbyCount = count - activeCount;
-    const isCardOffline = count > 0 && activeCount === 0;
-    const buildCost = getSatelliteCost(type, count);
-    const canAffordBuild = credits >= buildCost && (maxEnergy - usedEnergy) >= spec.energy;
-    const dmgUpgradeCost = getSatelliteUpgradeCost(type, 'damage', dmgLvl);
-    const spdUpgradeCost = getSatelliteUpgradeCost(type, 'speed', spdLvl);
-    const rngUpgradeCost = getSatelliteUpgradeCost(type, 'range', rngLvl);
-    let desc = `공격: ${scaledDmg} HP, 쿨다운: ${scaledCd}초, 사거리: ${scaledRange}`;
-    if (type === 'emp') desc = `고출력 EMP 펄스. 공격: ${scaledDmg} HP (2초 스턴), 사거리: ${scaledRange}`;
-    if (type === 'gravityBomb') desc = `공격력: ${scaledDmg} HP, 이동속도 -40% 디버프, 사거리: ${scaledRange}`;
-    return { spec, count, dmgLvl, spdLvl, rngLvl, dph, isMax, activeCount, standbyCount, isCardOffline, buildCost, canAffordBuild, dmgUpgradeCost, spdUpgradeCost, rngUpgradeCost, desc };
-  };
-
-  const detail = getDetail(selectedType);
-
   return (
     <View>
       {isPowerDischarged && (
-        <View style={{ marginBottom: 8, padding: 8, backgroundColor: 'rgba(255, 59, 48, 0.15)', borderRadius: 8, borderWidth: 0.5, borderColor: '#ff3b30' }}>
-          <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 공격 위성 정지 — 전력 충전 필요</Text>
+        <View style={{ marginBottom: 8, padding: 8, backgroundColor: 'rgba(255,59,48,0.12)', borderRadius: 8, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+          <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전 — 모든 공격 위성 정지</Text>
         </View>
       )}
 
-      {/* 콤팩트 선택 그리드 */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-        {attackTypes.map((type) => {
-          const spec = SATELLITE_SPECS[type];
-          const count = planetState.orbitalSatellitesList?.[type] || 0;
-          const weaponLevels = satelliteLevels?.[type] || { damage: 1, speed: 1, range: 1 };
-          const dmgLvl = weaponLevels.damage || 1;
-          const spdLvl = weaponLevels.speed || 1;
-          const scaledDmg = getScaledDmg(type, dmgLvl);
-          const scaledCd = getScaledCd(type, spdLvl);
-          const dph = scaledCd > 0 ? Math.round((scaledDmg / scaledCd) * 3600) : 0;
-          const activeCount = activeSatsMap[planetId]?.[type] || 0;
-          const isOffline = count > 0 && activeCount === 0;
-          const isSelected = selectedType === type;
-          const isMax = count >= MAX_SATELLITES_PER_TYPE;
-          return (
-            <TouchableOpacity
-              key={type}
-              onPress={() => setSelectedType(isSelected ? null : type)}
-              style={{ width: '30.5%', backgroundColor: isSelected ? 'rgba(255,138,0,0.18)' : 'rgba(10,20,45,0.8)', borderWidth: isSelected ? 2 : 1, borderColor: isSelected ? '#ff8a00' : (isOffline ? '#555' : 'rgba(255,138,0,0.35)'), borderRadius: 10, padding: 10, alignItems: 'center', opacity: isOffline ? 0.65 : 1 }}
-            >
-              <View style={{ width: '100%', height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 6 }}>
-                <View style={{ height: 3, borderRadius: 2, backgroundColor: isMax ? '#ffd700' : '#ff8a00', width: `${Math.min(100, (count / MAX_SATELLITES_PER_TYPE) * 100)}%` }} />
-              </View>
-              <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold', textAlign: 'center', lineHeight: 14 }} numberOfLines={2}>{spec.name}</Text>
-              <Text style={{ color: isMax ? '#ffd700' : '#ff8a00', fontSize: 11, fontWeight: 'bold', marginTop: 4 }}>
-                {count}<Text style={{ color: '#8fa0c4', fontSize: 9 }}>/{MAX_SATELLITES_PER_TYPE}</Text>
-              </Text>
-              {dph > 0 && <Text style={{ color: '#00ff8a', fontSize: 8, marginTop: 2 }}>{(dph / 1000).toFixed(0)}K DPS</Text>}
-              {isSelected && <View style={{ width: 0, height: 0, borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 6, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#ff8a00', marginTop: 4 }} />}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* ── 위성 리스트 ── */}
+      {attackTypes.map((type) => {
+        const spec = SATELLITE_SPECS[type];
+        const count = planetState.orbitalSatellitesList?.[type] || 0;
+        const weaponLevels = satelliteLevels?.[type] || { damage: 1, speed: 1, range: 1 };
+        const dmgLvl = weaponLevels.damage || 1;
+        const spdLvl = weaponLevels.speed || 1;
+        const rngLvl = weaponLevels.range || 1;
+        const scaledDmg = getScaledDmg(type, dmgLvl);
+        const scaledCd = getScaledCd(type, spdLvl);
+        const dph = scaledCd > 0 ? Math.round((scaledDmg / scaledCd) * 3600) : 0;
+        const isMax = count >= MAX_SATELLITES_PER_TYPE;
+        const activeCount = activeSatsMap[planetId]?.[type] || 0;
+        const isOffline = count > 0 && activeCount === 0;
+        const buildCost = getSatelliteCost(type, count);
+        const canAffordBuild = credits >= buildCost && (maxEnergy - usedEnergy) >= spec.energy;
+        const dmgUpgradeCost = getSatelliteUpgradeCost(type, 'damage', dmgLvl);
+        const spdUpgradeCost = getSatelliteUpgradeCost(type, 'speed', spdLvl);
+        const rngUpgradeCost = getSatelliteUpgradeCost(type, 'range', rngLvl);
 
-      {/* 하단 상세 패널 */}
-      {detail ? (
-        <View style={{ backgroundColor: 'rgba(10,20,45,0.95)', borderWidth: 1.5, borderColor: '#ff8a00', borderRadius: 14, padding: 14, marginBottom: 10 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ color: '#ff8a00', fontSize: 14, fontWeight: 'bold' }}>{detail.spec.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ color: detail.isCardOffline ? '#8fa0c4' : '#fff', fontSize: 13, fontWeight: 'bold' }}>
-                {detail.count}/{MAX_SATELLITES_PER_TYPE}
-                {detail.standbyCount > 0 && <Text style={{ color: '#8fa0c4', fontSize: 10 }}> (대기 {detail.standbyCount})</Text>}
-              </Text>
-              <TouchableOpacity onPress={() => setSelectedType(null)} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
-                <Text style={{ color: '#8fa0c4', fontSize: 12 }}>✕</Text>
-              </TouchableOpacity>
+        return (
+          <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,138,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
+            {/* 행 1: 이름 + 보유량 + 건설 버튼 */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* 왼쪽: 이름 & 보유/DPS */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                  <Text style={{ color: isMax ? '#ffd700' : '#ff8a00', fontSize: 11, fontWeight: 'bold' }}>
+                    {count}<Text style={{ color: '#8fa0c4', fontSize: 9 }}>/{MAX_SATELLITES_PER_TYPE}</Text>
+                  </Text>
+                  {dph > 0 && <Text style={{ color: '#00ff8a', fontSize: 9 }}>⚔️ {(dph/1000).toFixed(0)}K/hr</Text>}
+                  {spec.energy > 0 && <Text style={{ color: '#8fa0c4', fontSize: 9 }}>⚡{spec.energy}W</Text>}
+                </View>
+              </View>
+
+              {/* 오른쪽: 건설 버튼 */}
+              {isMax ? (
+                <View style={{ paddingHorizontal: 10, paddingVertical: 7, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
+                  <Text style={{ color: '#ffd700', fontSize: 10, fontWeight: 'bold' }}>MAX</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAffordBuild ? '#ff8a00' : 'rgba(255,138,0,0.2)', borderRadius: 8, borderWidth: canAffordBuild ? 0 : 1, borderColor: '#ff8a00' }}
+                  onPress={() => {
+                    let ok = 0;
+                    for (let i = 0; i < purchaseMultiplier; i++) {
+                      if (buildOrbitalSatelliteDetail(planetId, type)) ok++;
+                      else break;
+                    }
+                    if (ok > 0) setTimeout(() => saveGame(), 100);
+                    else {
+                      const st = useGameStore.getState();
+                      if (count >= MAX_SATELLITES_PER_TYPE) Alert.alert('건설 실패', `한도(${MAX_SATELLITES_PER_TYPE}개) 초과`);
+                      else if (st.credits < buildCost) Alert.alert('건설 실패', '크레딧 부족');
+                      else Alert.alert('건설 실패', '전력 또는 자원 부족');
+                    }
+                  }}
+                >
+                  <Text style={{ color: canAffordBuild ? '#050814' : '#ff8a00', fontSize: 11, fontWeight: 'bold' }}>
+                    +건설 {buildCost.toLocaleString()}Cr{purchaseMultiplier > 1 ? `×${purchaseMultiplier}` : ''}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* 행 2: 강화 버튼 3개 */}
+            <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }}>
+              {[
+                { label: '⬆데미지', stat: 'damage', lvl: dmgLvl, cost: dmgUpgradeCost },
+                { label: '⬆속도', stat: 'speed', lvl: spdLvl, cost: spdUpgradeCost },
+                { label: '⬆사거리', stat: 'range', lvl: rngLvl, cost: rngUpgradeCost },
+              ].map(({ label, stat, lvl, cost }) => {
+                const canAfford = credits >= cost;
+                return (
+                  <TouchableOpacity
+                    key={stat}
+                    style={{ flex: 1, paddingVertical: 8, backgroundColor: canAfford ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: 7, borderWidth: 1, borderColor: canAfford ? '#00f0ff' : 'rgba(143,160,196,0.3)', alignItems: 'center' }}
+                    onPress={() => {
+                      const success = upgradeSatellite(type, stat);
+                      if (success) setTimeout(() => saveGame(), 100);
+                      else Alert.alert('강화 실패', '크레딧 부족');
+                    }}
+                  >
+                    <Text style={{ color: canAfford ? '#00f0ff' : '#8fa0c4', fontSize: 9.5, fontWeight: 'bold' }}>{label} Lv.{lvl}</Text>
+                    <Text style={{ color: canAfford ? '#00f0ff' : '#8fa0c4', fontSize: 9, marginTop: 1 }}>{cost.toLocaleString()}Cr</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
-          <Text style={{ color: '#8fa0c4', fontSize: 11, lineHeight: 16, marginBottom: 4 }}>{detail.desc} | 전력: {detail.spec.energy}W</Text>
-          <Text style={{ color: '#00ff8a', fontSize: 11, fontWeight: 'bold', marginBottom: 12 }}>⚔️ 시간당 공격량: {detail.dph.toLocaleString()} HP/시간</Text>
-
-          {detail.isMax ? (
-            <View style={{ backgroundColor: 'rgba(255,215,0,0.1)', borderWidth: 1, borderColor: '#ffd700', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 12 }}>
-              <Text style={{ color: '#ffd700', fontSize: 13, fontWeight: 'bold' }}>✦ 최대 보유 달성</Text>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={{ backgroundColor: detail.canAffordBuild ? '#ff8a00' : 'rgba(255,138,0,0.2)', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginBottom: 12, borderWidth: detail.canAffordBuild ? 0 : 1, borderColor: '#ff8a00' }}
-              onPress={() => {
-                let successCount = 0;
-                for (let i = 0; i < purchaseMultiplier; i++) {
-                  const success = buildOrbitalSatelliteDetail(planetId, selectedType);
-                  if (success) successCount++;
-                  else break;
-                }
-                if (successCount > 0) setTimeout(() => saveGame(), 100);
-                else {
-                  const st = useGameStore.getState();
-                  if (detail.count >= MAX_SATELLITES_PER_TYPE) Alert.alert('건설 실패', `한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
-                  else if (st.credits < detail.buildCost) Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                  else if ((st.maxEnergy - st.usedEnergy) < detail.spec.energy) Alert.alert('건설 실패', '전력 공급 한도 부족.');
-                  else Alert.alert('건설 실패', '자원이 부족합니다.');
-                }
-              }}
-            >
-              <Text style={{ color: detail.canAffordBuild ? '#050814' : '#ff8a00', fontSize: 14, fontWeight: 'bold' }}>
-                🚀 건설 — {detail.buildCost.toLocaleString()} Cr{purchaseMultiplier > 1 ? ` ×${purchaseMultiplier}` : ''}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold', marginBottom: 8 }}>⚡ 능력치 강화</Text>
-          {[
-            { label: '데미지', stat: 'damage', lvl: detail.dmgLvl, cost: detail.dmgUpgradeCost },
-            { label: '공격속도', stat: 'speed', lvl: detail.spdLvl, cost: detail.spdUpgradeCost },
-            { label: '사거리', stat: 'range', lvl: detail.rngLvl, cost: detail.rngUpgradeCost },
-          ].map(({ label, stat, lvl, cost }) => (
-            <View key={stat} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>{label}</Text>
-                <Text style={{ color: '#00f0ff', fontSize: 10 }}>Lv.{lvl}</Text>
-              </View>
-              <TouchableOpacity
-                style={{ backgroundColor: credits >= cost ? '#00f0ff' : 'rgba(0,240,255,0.15)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: credits >= cost ? 0 : 1, borderColor: '#00f0ff', minWidth: 130, alignItems: 'center' }}
-                onPress={() => {
-                  const success = upgradeSatellite(selectedType, stat);
-                  if (success) setTimeout(() => saveGame(), 100);
-                  else Alert.alert('업그레이드 실패', '크레딧이 부족합니다.');
-                }}
-              >
-                <Text style={{ color: credits >= cost ? '#050814' : '#00f0ff', fontSize: 12, fontWeight: 'bold' }}>강화 {cost.toLocaleString()} Cr</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <View style={{ padding: 14, alignItems: 'center', opacity: 0.5, marginBottom: 4 }}>
-          <Text style={{ color: '#8fa0c4', fontSize: 12 }}>👆 위성을 탭하면 상세 정보와 건설/강화 버튼이 표시됩니다</Text>
-        </View>
-      )}
+        );
+      })}
 
       {/* 공격형 궤도 방어 기지 */}
       <Text style={[styles.subTitleText, { marginTop: 8 }]}>공격형 궤도 방어 기지: {planetState.orbitalStations} / 3</Text>
@@ -1118,7 +1069,7 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                 <Text style={styles.gridCardName}>{spec.name}</Text>
                 <Text style={[styles.gridCardCount, { color: '#ff8a00' }]}>{count}/1개</Text>
               </View>
-              <Text style={styles.gridCardDesc}>발사 시 광역 마비 5초 + 500 HP 피해 (20초 재장전) | 전력: {spec.energy}W</Text>
+              <Text style={styles.gridCardDesc}>발사 시 광역 마비 5초 + 500 HP (20초 재장전) | 전력: {spec.energy}W</Text>
               {count > 0 ? (
                 <View style={[styles.gridCompleteBadgeMini, { borderColor: '#ff8a00' }]}>
                   <Text style={[styles.gridCompleteTextMini, { color: '#ff8a00' }]}>가동 중</Text>
@@ -1131,7 +1082,7 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                   onPress={() => {
                     const success = buildOrbitalStationDetail(planetId, type);
                     if (success) setTimeout(() => saveGame(), 100);
-                    else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 발전소 전력 공급 한도가 부족합니다.');
+                    else Alert.alert('건설 실패', '크레딧, 나노코어, 또는 전력 부족');
                   }}
                 >
                   <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>건설 ({spec.cost} Cr, {spec.nanocores} Nano)</Text>
@@ -1144,7 +1095,6 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
     </View>
   );
 }
-
 // ==========================================
 // Subcomponent: DefenseSatelliteTab
 // ==========================================
