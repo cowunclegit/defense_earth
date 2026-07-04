@@ -1688,6 +1688,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       effect: `효과: 인구 한도 +20% (${Math.floor(data.maxPopulation * 0.2).toLocaleString()}명), 증가율 +0.1%/s`,
       cost: Math.floor(100 * Math.pow(1.5, infra.housing || 0)),
       level: infra.housing || 0,
+      curVal: `${(infra.housing || 0) * 20}%`,
+      nextVal: `${((infra.housing || 0) + 1) * 20}%`,
       borderColor: '#af52de',
       buttonColor: '#af52de'
     },
@@ -1698,6 +1700,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       effect: `효과: 초당 +15 크레딧, 전체 세금 효율 +3%`,
       cost: Math.floor(150 * Math.pow(1.5, infra.factory || 0)),
       level: infra.factory || 0,
+      curVal: `+${(infra.factory || 0) * 15}Cr`,
+      nextVal: `+${((infra.factory || 0) + 1) * 15}Cr`,
       borderColor: '#ff2d55',
       buttonColor: '#ff2d55'
     },
@@ -1708,6 +1712,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       effect: `효과: 최대 공급 전력 +20 W (기본 100W)`,
       cost: Math.floor(250 * Math.pow(1.6, infra.powerPlant || 0)),
       level: infra.powerPlant || 0,
+      curVal: `${(infra.powerPlant || 0) * 20}W`,
+      nextVal: `${((infra.powerPlant || 0) + 1) * 20}W`,
       borderColor: '#ffd700',
       buttonColor: '#ffd700'
     },
@@ -1718,6 +1724,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       effect: `효과: 지구 최대 체력(Max HP) +20`,
       cost: Math.floor(400 * Math.pow(1.7, infra.bunker || 0)),
       level: infra.bunker || 0,
+      curVal: `+${(infra.bunker || 0) * 20}HP`,
+      nextVal: `+${((infra.bunker || 0) + 1) * 20}HP`,
       borderColor: '#007aff',
       buttonColor: '#007aff'
     }
@@ -1829,7 +1837,7 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAfford ? spec.buttonColor : 'rgba(255,255,255,0.05)', borderRadius: 8, borderWidth: canAfford ? 0 : 1, borderColor: spec.borderColor }} 
+                    style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: canAfford ? spec.buttonColor : 'rgba(255,255,255,0.05)', borderRadius: 8, borderWidth: canAfford ? 0 : 1, borderColor: spec.borderColor, alignItems: 'center', gap: 1 }} 
                     disabled={!canAfford}
                     onPress={() => {
                       const success = buildInfrastructure(planetId, spec.key);
@@ -1840,8 +1848,14 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
                       }
                     }}
                   >
-                    <Text style={{ color: canAfford ? '#ffffff' : '#8fa0c4', fontSize: 11, fontWeight: 'bold' }}>
-                      건설 {spec.cost.toLocaleString()}Cr
+                    <Text style={{ color: canAfford ? '#ffffff' : '#8fa0c4', fontSize: 9, fontWeight: 'bold' }}>
+                      건설 Lv.{spec.level + 1}
+                    </Text>
+                    <Text style={{ color: canAfford ? '#00ff8a' : '#8fa0c4', fontSize: 8 }}>
+                      {spec.curVal}→{spec.nextVal}
+                    </Text>
+                    <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8 }}>
+                      {spec.cost.toLocaleString()}Cr
                     </Text>
                   </TouchableOpacity>
                 </View>
