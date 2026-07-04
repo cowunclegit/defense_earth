@@ -1057,16 +1057,16 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                 </View>
               </View>
 
-              {/* 오른쪽: ⓘ + 건설 버튼 (세로 배치) */}
-              <View style={{ alignItems: 'flex-end', gap: 5 }}>
+              {/* 오른쪽: ⓘ + 건설 버튼 (가로 배치) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <TouchableOpacity
                   onPress={() => setInfoType(type)}
-                  style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: '#00f0ff', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#00f0ff', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Text style={{ color: '#00f0ff', fontSize: 11, fontWeight: 'bold' }}>i</Text>
                 </TouchableOpacity>
                 {isMax ? (
-                  <View style={{ paddingHorizontal: 10, paddingVertical: 7, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
+                  <View style={{ paddingHorizontal: 10, paddingVertical: 8, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
                     <Text style={{ color: '#ffd700', fontSize: 10, fontWeight: 'bold' }}>MAX</Text>
                   </View>
               ) : (
