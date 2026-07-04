@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Modal, Platform, useWindowDimensions } from 'react-native';
 import { 
   useGameStore, 
   SHIP_TYPES, 
@@ -918,6 +918,7 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
   const upgradeSatellite = useGameStore(state => state.upgradeSatellite);
   const buildOrbitalStationDetail = useGameStore(state => state.buildOrbitalStationDetail);
   const saveGame = useGameStore(state => state.saveGame);
+  const [infoType, setInfoType] = React.useState(null);
 
   const planetState = planets[planetId];
   if (!planetState) return null;
@@ -944,6 +945,76 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
           <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전 — 모든 공격 위성 정지</Text>
         </View>
       )}
+
+      {/* ⓘ 상세 정보 모달 */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
+          activeOpacity={1}
+          onPress={() => setInfoType(null)}
+        >
+          {infoType && (() => {
+            const s = SATELLITE_SPECS[infoType];
+            const wl = satelliteLevels?.[infoType] || { damage: 1, speed: 1, range: 1 };
+            const dLvl = wl.damage || 1;
+            const sLvl = wl.speed || 1;
+            const rLvl = wl.range || 1;
+            const curDmg = getScaledDmg(infoType, dLvl);
+            const curCd = getScaledCd(infoType, sLvl).toFixed(1);
+            const curRange = getScaledRange(infoType, rLvl);
+            const dph = parseFloat(curCd) > 0 ? Math.round((curDmg / parseFloat(curCd)) * 3600) : 0;
+            let descText = `공격 위성. 쿨다운마다 사거리 내 적에게 ${curDmg} HP 피해.`;
+            if (infoType === 'emp') descText = `고출력 EMP 펄스를 방사하여 ${curDmg} HP 피해와 함께 2초간 대상을 마비시킵니다.`;
+            if (infoType === 'gravityBomb') descText = `${curDmg} HP 피해 후 적 이동속도를 40% 감소시키는 중력 폭탄.`;
+            const count = planetState.orbitalSatellitesList?.[infoType] || 0;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}}
+                style={{ width: '85%', backgroundColor: '#050f1e', borderRadius: 16, borderWidth: 1.5, borderColor: '#ff8a00', padding: 18, gap: 10 }}
+              >
+                {/* 헤더 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#ff8a00', fontSize: 15, fontWeight: 'bold' }}>{s.name}</Text>
+                    <Text style={{ color: '#8fa0c4', fontSize: 10, marginTop: 3, lineHeight: 15 }}>{descText}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setInfoType(null)} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginLeft: 8 }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 13 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 구분선 */}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,138,0,0.25)' }} />
+
+                {/* 스탯 그리드 */}
+                {[
+                  { label: '보유 수량', value: `${count} / ${MAX_SATELLITES_PER_TYPE}`, color: '#ffd700' },
+                  { label: '공격력', value: `${curDmg} HP  (기본: ${s.dmg} HP, Lv.${dLvl})`, color: '#ff8a00' },
+                  { label: '쿨다운', value: `${curCd}s  (기본: ${s.cd}s, Lv.${sLvl})`, color: '#ff8a00' },
+                  { label: '사거리', value: `${curRange}  (기본: ${s.range ?? '∞'}, Lv.${rLvl})`, color: '#ff8a00' },
+                  { label: '소비 전력', value: `${s.energy} W`, color: '#00f0ff' },
+                  { label: '시간당 공격량', value: `${dph.toLocaleString()} HP / 시간`, color: '#00ff8a' },
+                ].map(({ label, value, color }) => (
+                  <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 11 }}>{label}</Text>
+                    <Text style={{ color, fontSize: 11, fontWeight: 'bold', textAlign: 'right', flex: 1, marginLeft: 8 }}>{value}</Text>
+                  </View>
+                ))}
+
+                <View style={{ height: 1, backgroundColor: 'rgba(255,138,0,0.15)' }} />
+                <Text style={{ color: '#8fa0c4', fontSize: 9, textAlign: 'center' }}>화면을 탭하면 닫힙니다</Text>
+              </TouchableOpacity>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
 
       {/* ── 위성 리스트 ── */}
       {attackTypes.map((type) => {
@@ -972,11 +1043,19 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
 
         return (
           <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,138,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
-            {/* 행 1: 이름 + 보유량 + 건설 버튼 */}
+            {/* 행 1: 이름(+ⓘ) + 보유량 + 건설 버튼 */}
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {/* 왼쪽: 이름 & 보유/DPS */}
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', flex: 1 }} numberOfLines={1}>{spec.name}</Text>
+                  <TouchableOpacity
+                    onPress={() => setInfoType(type)}
+                    style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: '#00f0ff', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ color: '#00f0ff', fontSize: 10, fontWeight: 'bold', lineHeight: 12 }}>i</Text>
+                  </TouchableOpacity>
+                </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
                   <Text style={{ color: isMax ? '#ffd700' : '#ff8a00', fontSize: 11, fontWeight: 'bold' }}>
                     {count}<Text style={{ color: '#8fa0c4', fontSize: 9 }}>/{MAX_SATELLITES_PER_TYPE}</Text>
