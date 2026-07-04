@@ -1819,7 +1819,7 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
             <View key={spec.key} style={{ backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: spec.borderColor, padding: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 {/* 왼쪽: 인프라 정보 */}
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
                     <Text style={{ color: spec.borderColor, fontSize: 11, fontWeight: 'bold' }}>Lv.{spec.level}</Text>
@@ -1828,7 +1828,7 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
                 </View>
 
                 {/* 오른쪽: ⓘ + 건설 버튼 */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   <TouchableOpacity
                     onPress={() => setInfoType(spec.key)}
                     style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: spec.borderColor, alignItems: 'center', justifyContent: 'center' }}
@@ -1837,7 +1837,19 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: canAfford ? spec.buttonColor : 'rgba(255,255,255,0.05)', borderRadius: 8, borderWidth: canAfford ? 0 : 1, borderColor: spec.borderColor, alignItems: 'center', gap: 1 }} 
+                    style={{ 
+                      minWidth: 95, 
+                      paddingHorizontal: 10, 
+                      paddingVertical: 7, 
+                      backgroundColor: canAfford ? spec.buttonColor : 'rgba(255,255,255,0.05)', 
+                      borderRadius: 8, 
+                      borderWidth: canAfford ? 0 : 1, 
+                      borderColor: spec.borderColor, 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      gap: 1,
+                      flexShrink: 0 
+                    }} 
                     disabled={!canAfford}
                     onPress={() => {
                       const success = buildInfrastructure(planetId, spec.key);
