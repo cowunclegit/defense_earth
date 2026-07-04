@@ -1,4 +1,5 @@
 import { PLANETS, PLANETARY_DATA } from '../../constants/planetaryData';
+import { getFactoryIncome } from '../gameSpecs';
 
 export const harvestResources = (state, updatedPlanets, actualDelta) => {
   let totalPopulation = 0;
@@ -31,9 +32,9 @@ export const harvestResources = (state, updatedPlanets, actualDelta) => {
 
         totalPopulation += p.population;
         
-        // 3. Accumulate factory contribution
+        // 3. Accumulate factory contribution (exponential income)
         const factoryLvl = infra.factory || 0;
-        totalFactoryContribution += factoryLvl * 15;
+        totalFactoryContribution += getFactoryIncome(factoryLvl);
         totalTaxBonus += factoryLvl * 0.03;
       }
     }

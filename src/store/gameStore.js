@@ -131,7 +131,8 @@ import {
   isSystemOnline,
   getInfrastructureCost,
   INFRASTRUCTURE_SPECS,
-  SHIP_LEVEL_REQUIREMENTS
+  SHIP_LEVEL_REQUIREMENTS,
+  getFactoryIncome
 } from './gameSpecs';
 
 export {
@@ -160,7 +161,8 @@ export {
   isSystemOnline,
   getInfrastructureCost,
   INFRASTRUCTURE_SPECS,
-  SHIP_LEVEL_REQUIREMENTS
+  SHIP_LEVEL_REQUIREMENTS,
+  getFactoryIncome
 };
 
 export const useGameStore = create((set, get) => ({

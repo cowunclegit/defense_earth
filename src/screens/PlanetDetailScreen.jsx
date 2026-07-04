@@ -20,7 +20,8 @@ import {
   getOrderedBuiltSatellites,
   getInfrastructureCost,
   INFRASTRUCTURE_SPECS,
-  SHIP_LEVEL_REQUIREMENTS
+  SHIP_LEVEL_REQUIREMENTS,
+  getFactoryIncome
 } from '../store/gameStore';
 import { PLANETARY_DATA, PLANETS } from '../constants/planetaryData';
 import TopHud from '../components/TopHud';
@@ -1697,11 +1698,11 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       key: 'factory',
       name: '종합 생산 공장 (Industrial Factory)',
       desc: `크레딧의 직접 생산량과 세금 효율을 향상시킵니다.`,
-      effect: `효과: 초당 +15 크레딧, 전체 세금 효율 +3%`,
+      effect: `효과: 초당 +${getFactoryIncome(infra.factory || 0)} 크레딧, 전체 세금 효율 +${((infra.factory || 0) * 3)}%`,
       cost: Math.floor(150 * Math.pow(1.5, infra.factory || 0)),
       level: infra.factory || 0,
-      curVal: `+${(infra.factory || 0) * 15}Cr`,
-      nextVal: `+${((infra.factory || 0) + 1) * 15}Cr`,
+      curVal: `+${getFactoryIncome(infra.factory || 0)}Cr`,
+      nextVal: `+${getFactoryIncome((infra.factory || 0) + 1)}Cr`,
       borderColor: '#af52de',
       buttonColor: '#af52de'
     },

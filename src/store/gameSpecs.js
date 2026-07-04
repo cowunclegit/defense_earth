@@ -440,3 +440,8 @@ export const getInfrastructureCost = (type, currentLevel) => {
 
 export const DEFAULT_ALIEN_SPECS = JSON.parse(JSON.stringify(ALIEN_SPECS));
 export const DEFAULT_SATELLITE_SPECS = JSON.parse(JSON.stringify(SATELLITE_SPECS));
+
+export const getFactoryIncome = (level) => {
+  if (level <= 0) return 0;
+  return Math.round(15 * Math.pow(1.3, level - 1));
+};

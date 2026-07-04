@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform, useWindowDimensions } from 'react-native';
 import { useGameStore } from '../store/gameStore';
 import { PLANETARY_DATA } from '../constants/planetaryData';
+import { getFactoryIncome } from '../store/gameSpecs';
 
 export default function TopHud({ overlay }) {
   const { width: screenWidth } = useWindowDimensions();
@@ -53,7 +54,7 @@ export default function TopHud({ overlay }) {
           totalPopulation += p.population || 0;
           
           const factoryLvl = infra.factory || 0;
-          totalFactoryContribution += factoryLvl * 15;
+          totalFactoryContribution += getFactoryIncome(factoryLvl);
           totalTaxBonus += factoryLvl * 0.03;
         }
       }
