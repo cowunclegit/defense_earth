@@ -1,5 +1,5 @@
 import React from 'react';
-import { Circle, Line, Group } from '@shopify/react-native-skia';
+let Circle, Line, Group; try { const S = require('@shopify/react-native-skia'); Circle = S.Circle; Line = S.Line; Group = S.Group; } catch(e) {}
 
 export default function SkiaEarth({ earthColor, earthBases, EARTH_CENTER_X, EARTH_CENTER_Y, angles }) {
 

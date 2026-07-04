@@ -1,6 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import { Canvas, Group } from '@shopify/react-native-skia';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 import { useGameStore } from '../../store/gameStore';
 import { getOrderedBuiltSatellites } from '../../store/gameSpecs';
 import SkiaBackground from './skia/SkiaBackground';
@@ -12,6 +11,18 @@ import SkiaEnemies from './skia/SkiaEnemies';
 import SkiaProjectiles from './skia/SkiaProjectiles';
 import SkiaParticles from './skia/SkiaParticles';
 import SkiaChronoOverlay from './skia/SkiaChronoOverlay';
+
+// 웹에서는 canvaskit-wasm fs 에러 방지를 위해 동적 require 사용
+let Canvas, Group;
+try {
+  const Skia = require('@shopify/react-native-skia');
+  Canvas = Skia.Canvas;
+  Group = Skia.Group;
+} catch (e) {
+  if (Platform.OS !== 'web') {
+    console.error('Skia load failed:', e);
+  }
+}
 
 
 export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
@@ -91,6 +102,13 @@ export default function SkiaCanvas({ canvasSize, zoom, panX, panY }) {
   const shieldColor = shieldRatio > 0 ? `rgba(0, 240, 255, ${0.1 + shieldRatio * 0.45})` : 'rgba(255, 0, 0, 0.05)';
   const shieldBorderColor = shieldRatio > 0 ? `rgba(0, 240, 255, ${0.4 + shieldRatio * 0.6})` : 'rgba(255, 0, 0, 0.15)';
 
+
+  // 웹에서 Skia Canvas 미지원 시 빈 배경만 표시
+  if (!Canvas) {
+    return (
+      <View style={[styles.container, { width: canvasSize, height: canvasSize, backgroundColor: '#0a0a1a' }]} />
+    );
+  }
 
   const scaleFactor = canvasSize / 540;
 

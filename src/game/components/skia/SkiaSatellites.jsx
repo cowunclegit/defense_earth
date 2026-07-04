@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Rect, Circle, Paint } from '@shopify/react-native-skia';
+let Group, Rect, Circle, Paint; try { const S = require('@shopify/react-native-skia'); Group = S.Group; Rect = S.Rect; Circle = S.Circle; Paint = S.Paint; } catch(e) {}
 import { SATELLITE_SPECS, useGameStore } from '../../../store/gameStore';
 
 export default function SkiaSatellites({ earthSatellites, EARTH_CENTER_X, EARTH_CENTER_Y }) {

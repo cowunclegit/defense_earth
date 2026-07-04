@@ -1,6 +1,6 @@
 import React from 'react';
 import { SHIP_TYPES } from '../../../store/gameStore';
-import { Group, Circle, Paint } from '@shopify/react-native-skia';
+let Group, Circle, Paint; try { const S = require('@shopify/react-native-skia'); Group = S.Group; Circle = S.Circle; Paint = S.Paint; } catch(e) {}
 
 const SHIP_VISUALS = {
   [SHIP_TYPES.INTERCEPTOR]: { color: '#00ff8a', size: 4, muteColor: '#8a8a8a' },     // Neon Green

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Line } from '@shopify/react-native-skia';
+let Line; try { const S = require('@shopify/react-native-skia'); Line = S.Line; } catch(e) {}
 
 export default function SkiaBackground() {
 

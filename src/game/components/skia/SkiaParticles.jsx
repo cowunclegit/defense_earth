@@ -1,5 +1,5 @@
 import React from 'react';
-import { Circle } from '@shopify/react-native-skia';
+let Circle; try { const S = require('@shopify/react-native-skia'); Circle = S.Circle; } catch(e) {}
 
 export default function SkiaParticles({ particles }) {
 

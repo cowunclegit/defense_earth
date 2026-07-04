@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Circle, Rect, Line, Paint } from '@shopify/react-native-skia';
+let Group, Circle, Rect, Line, Paint; try { const S = require('@shopify/react-native-skia'); Group = S.Group; Circle = S.Circle; Rect = S.Rect; Line = S.Line; Paint = S.Paint; } catch(e) {}
 
 export default function SkiaEnemies({ enemies }) {
 

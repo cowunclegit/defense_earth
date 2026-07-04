@@ -1,5 +1,5 @@
 import React from 'react';
-import { Rect } from '@shopify/react-native-skia';
+let Rect; try { const S = require('@shopify/react-native-skia'); Rect = S.Rect; } catch(e) {}
 
 
 export default function SkiaChronoOverlay({ chronoMuteTimer }) {
