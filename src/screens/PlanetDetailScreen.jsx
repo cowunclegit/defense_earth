@@ -1043,19 +1043,11 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
 
         return (
           <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,138,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
-            {/* 행 1: 이름(+ⓘ) + 보유량 + 건설 버튼 */}
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* 행 1: 이름 + 보유량(왼쪽) / ⓘ+건설버튼(오른쪽) */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {/* 왼쪽: 이름 & 보유/DPS */}
               <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', flex: 1 }} numberOfLines={1}>{spec.name}</Text>
-                  <TouchableOpacity
-                    onPress={() => setInfoType(type)}
-                    style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: '#00f0ff', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text style={{ color: '#00f0ff', fontSize: 10, fontWeight: 'bold', lineHeight: 12 }}>i</Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
                   <Text style={{ color: isMax ? '#ffd700' : '#ff8a00', fontSize: 11, fontWeight: 'bold' }}>
                     {count}<Text style={{ color: '#8fa0c4', fontSize: 9 }}>/{MAX_SATELLITES_PER_TYPE}</Text>
@@ -1065,11 +1057,18 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                 </View>
               </View>
 
-              {/* 오른쪽: 건설 버튼 */}
-              {isMax ? (
-                <View style={{ paddingHorizontal: 10, paddingVertical: 7, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
-                  <Text style={{ color: '#ffd700', fontSize: 10, fontWeight: 'bold' }}>MAX</Text>
-                </View>
+              {/* 오른쪽: ⓘ + 건설 버튼 (세로 배치) */}
+              <View style={{ alignItems: 'flex-end', gap: 5 }}>
+                <TouchableOpacity
+                  onPress={() => setInfoType(type)}
+                  style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: '#00f0ff', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#00f0ff', fontSize: 11, fontWeight: 'bold' }}>i</Text>
+                </TouchableOpacity>
+                {isMax ? (
+                  <View style={{ paddingHorizontal: 10, paddingVertical: 7, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
+                    <Text style={{ color: '#ffd700', fontSize: 10, fontWeight: 'bold' }}>MAX</Text>
+                  </View>
               ) : (
                 <TouchableOpacity
                   style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAffordBuild ? '#ff8a00' : 'rgba(255,138,0,0.2)', borderRadius: 8, borderWidth: canAffordBuild ? 0 : 1, borderColor: '#ff8a00' }}
@@ -1093,7 +1092,8 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+              </View>{/* 오른쪽 컬럼 닫기 */}
+            </View>{/* 행1 row 닫기 */}
 
             {/* 행 2: 강화 버튼 3개 — 현재 수치 & 다음 레벨 예측 포함 */}
             <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }}>
