@@ -1702,8 +1702,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       level: infra.factory || 0,
       curVal: `+${(infra.factory || 0) * 15}Cr`,
       nextVal: `+${((infra.factory || 0) + 1) * 15}Cr`,
-      borderColor: '#ff2d55',
-      buttonColor: '#ff2d55'
+      borderColor: '#af52de',
+      buttonColor: '#af52de'
     },
     {
       key: 'powerPlant',
@@ -1714,8 +1714,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       level: infra.powerPlant || 0,
       curVal: `${(infra.powerPlant || 0) * 20}W`,
       nextVal: `${((infra.powerPlant || 0) + 1) * 20}W`,
-      borderColor: '#ffd700',
-      buttonColor: '#ffd700'
+      borderColor: '#af52de',
+      buttonColor: '#af52de'
     },
     {
       key: 'bunker',
@@ -1726,8 +1726,8 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
       level: infra.bunker || 0,
       curVal: `+${(infra.bunker || 0) * 20}HP`,
       nextVal: `+${((infra.bunker || 0) + 1) * 20}HP`,
-      borderColor: '#007aff',
-      buttonColor: '#007aff'
+      borderColor: '#af52de',
+      buttonColor: '#af52de'
     }
   ];
 
