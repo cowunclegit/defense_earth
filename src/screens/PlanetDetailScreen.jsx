@@ -1045,14 +1045,13 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                       else Alert.alert('강화 실패', '크레딧 부족');
                     }}
                   >
-                    {/* 레이블+레벨 + 현재→다음 수치 (한 줄) */}
-                    <Text style={{ color: accent, fontSize: 9, fontWeight: 'bold' }} numberOfLines={1}>
-                      {label} <Text style={{ fontSize: 8 }}>Lv.{lvl}</Text>{'  '}
-                      <Text style={{ color: dimColor }}>{curVal}{unit}</Text>
-                      <Text style={{ color: '#00ff8a', fontWeight: 'bold' }}>→{nextVal}{unit}</Text>
-                    </Text>
-                    {/* 비용 */}
-                    <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 9 }}>{cost.toLocaleString()}Cr</Text>
+                    {/* 1줄: 레이블 + 레벨 */}
+                    <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
+                    {/* 2줄: 수치 + 비용 */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={{ color: dimColor, fontSize: 8.5 }}>{curVal}{unit}<Text style={{ color: '#00ff8a', fontWeight: 'bold' }}>→{nextVal}{unit}</Text></Text>
+                      <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8.5 }}>{cost.toLocaleString()}Cr</Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
