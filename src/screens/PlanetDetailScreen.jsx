@@ -179,25 +179,17 @@ export default function PlanetDetailScreen({ route, navigation }) {
         {/* 하단: 업그레이드 및 기지 건설 제어 영역 */}
         <View style={styles.controlPanel} pointerEvents="auto">
 
-          {/* Upgrades Section Header & Multiplier */}
-          <View style={styles.gridHeaderRow}>
-            <Text style={styles.gridHeaderTitle}>
-              {activeTab === 'defense_facility' && '🛡️ 실드 및 반격 제어'}
-              {activeTab === 'attack_satellite' && '🚀 궤도 공격 체계'}
-              {activeTab === 'defense_satellite' && '🛰️ 궤도 방어 및 센서 체계'}
-              {activeTab === 'shipyard' && '🛸 기동 함대 쉽야드'}
-              {activeTab === 'infrastructure' && '🏢 행성 인프라 개발 체계'}
-              {activeTab === 'dev_balance' && '🔧 실시간 밸런스 조절기'}
-            </Text>
-            {activeTab !== 'dev_balance' && (
-              <TouchableOpacity 
-                style={styles.multiplierBtn} 
+          {/* 배수 버튼만 남긴 미니 헤더 */}
+          {activeTab !== 'dev_balance' && (
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
+              <TouchableOpacity
+                style={styles.multiplierBtn}
                 onPress={() => setPurchaseMultiplier(purchaseMultiplier === 1 ? 5 : 1)}
               >
                 <Text style={styles.multiplierBtnText}>x{purchaseMultiplier}</Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          )}
 
           {/* 탭 본문 영역 (60FPS 격리) */}
           <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
