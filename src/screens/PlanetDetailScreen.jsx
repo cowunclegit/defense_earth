@@ -1190,10 +1190,10 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const onlineSatelliteCount = useGameStore(state => state.onlineSatelliteCount);
-
   const buildOrbitalSatelliteDetail = useGameStore(state => state.buildOrbitalSatelliteDetail);
   const buildOrbitalStationDetail = useGameStore(state => state.buildOrbitalStationDetail);
   const saveGame = useGameStore(state => state.saveGame);
+  const [infoType, setInfoType] = React.useState(null);
 
   const planetState = planets[planetId];
   if (!planetState) return null;
@@ -1213,88 +1213,153 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
     }
   }
 
-  const getCategorySatelliteCount = (list, category) => {
-    if (!list) return 0;
-    return Object.keys(list).reduce((sum, type) => {
-      const spec = SATELLITE_SPECS[type];
-      if (spec && ((category === 'attack' && spec.isWeapon) || (category === 'defense' && !spec.isWeapon))) {
-        return sum + (list[type] || 0);
-      }
-      return sum;
-    }, 0);
-  };
-
   return (
     <View>
       {isPowerDischarged && (
-        <View style={{ marginHorizontal: 10, marginBottom: 10, padding: 8, backgroundColor: 'rgba(255, 59, 48, 0.15)', borderRadius: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
-          <Text style={{ fontSize: 9.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전: 모든 방어/센서 위성이 정지되었습니다! (가용 전력 충전 필요) ⚠️</Text>
+        <View style={{ marginBottom: 8, padding: 8, backgroundColor: 'rgba(255,59,48,0.12)', borderRadius: 8, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+          <Text style={{ fontSize: 10, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 방전 — 모든 방어/센서 위성 정지</Text>
         </View>
       )}
-      <View style={styles.gridContainer}>
-        {Object.keys(SATELLITE_SPECS).map((type) => {
-          const spec = SATELLITE_SPECS[type];
-          if (spec.isWeapon) return null;
-          const count = planetState.orbitalSatellitesList?.[type] || 0;
-          let desc = '지원/보조 위성';
-          if (type === 'sensor') desc = '적 탐지 반경 +50% 및 적 이동속도 감속';
-          if (type === 'forceShield') desc = '포스 실드 위성 복구 버프';
-          if (type === 'decoy') desc = '적 투사체/레이저 요격 흡수 버프';
-          if (type === 'repairDrone') desc = '아군 궤도 함선 초당 20 HP 지속 회복';
-          
-          const isMax = count >= MAX_SATELLITES_PER_TYPE;
-          const activeCount = activeSatsMap[planetId]?.[type] || 0;
-          const standbyCount = count - activeCount;
-          const isCardOffline = count > 0 && activeCount === 0;
 
-          return (
-            <View key={type} style={[styles.gridCard, { borderColor: '#ffd700' }, isCardOffline && { opacity: 0.6, borderColor: '#8fa0c4' }]}>
-              <View style={styles.gridCardHeader}>
-                <Text style={styles.gridCardName}>{spec.name}</Text>
-                <Text style={[styles.gridCardCount, { color: isCardOffline ? '#8fa0c4' : '#ffd700' }]}>
-                  {count}/{MAX_SATELLITES_PER_TYPE} {standbyCount > 0 && `(대기: ${standbyCount})`}
-                </Text>
-              </View>
-              <Text style={styles.gridCardDesc}>{desc} | 전력: {spec.energy}W</Text>
-              {isMax ? (
-                <View style={styles.gridMaxBadge}>
-                  <Text style={styles.gridMaxBadgeText}>최대</Text>
+      {/* ⓘ 상세 정보 모달 */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
+          activeOpacity={1}
+          onPress={() => setInfoType(null)}
+        >
+          {infoType && (() => {
+            const s = SATELLITE_SPECS[infoType];
+            let descText = '지원/보조 위성';
+            if (infoType === 'sensor') descText = '적 탐지 반경 +50% 및 적 이동속도 감속';
+            if (infoType === 'forceShield') descText = '포스 실드 위성 복구 버프';
+            if (infoType === 'decoy') descText = '적 투사체/레이저 요격 흡수 버프';
+            if (infoType === 'repairDrone') descText = '아군 궤도 함선 초당 20 HP 지속 회복';
+            const count = planetState.orbitalSatellitesList?.[infoType] || 0;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}}
+                style={{ width: '85%', backgroundColor: '#050f1e', borderRadius: 16, borderWidth: 1.5, borderColor: '#ffd700', padding: 18, gap: 10 }}
+              >
+                {/* 헤더 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#ffd700', fontSize: 15, fontWeight: 'bold' }}>{s.name}</Text>
+                    <Text style={{ color: '#8fa0c4', fontSize: 10, marginTop: 3, lineHeight: 15 }}>{descText}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setInfoType(null)} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginLeft: 8 }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 13 }}>✕</Text>
+                  </TouchableOpacity>
                 </View>
-              ) : (
-                <TouchableOpacity 
-                  style={[styles.gridBuildBtn, { backgroundColor: '#ffd700' }]} 
-                  onPress={() => {
-                    let successCount = 0;
-                    for (let i = 0; i < purchaseMultiplier; i++) {
-                      const success = buildOrbitalSatelliteDetail(planetId, type);
-                      if (success) successCount++;
-                      else break;
-                    }
-                    if (successCount > 0) setTimeout(() => saveGame(), 100);
-                    else {
-                      if (count >= MAX_SATELLITES_PER_TYPE) {
-                        Alert.alert('건설 실패', `해당 위성의 건설 한도(${MAX_SATELLITES_PER_TYPE}개)에 도달했습니다.`);
-                      } else if (useGameStore.getState().credits < getSatelliteCost(type, count)) {
-                        Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                      } else if ((useGameStore.getState().maxEnergy - useGameStore.getState().usedEnergy) < spec.energy) {
-                        Alert.alert('건설 실패', '발전소 전력 공급 한도가 부족합니다.');
-                      } else {
-                        Alert.alert('건설 실패', '자원이 부족합니다.');
-                      }
-                    }
-                  }}
-                >
-                  <Text style={[styles.gridBuildBtnText, { color: '#050814' }]}>
-                    건설 ({getSatelliteCost(type, count)} Cr)
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          );
-        })}
-      </View>
 
-      <Text style={[styles.subTitleText, { marginTop: 15 }]}>방어형 궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
+                {/* 구분선 */}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,215,0,0.25)' }} />
+
+                {/* 스탯 그리드 */}
+                {[
+                  { label: '보유 수량', value: `${count} / ${MAX_SATELLITES_PER_TYPE}`, color: '#ffd700' },
+                  { label: '소비 전력', value: `${s.energy} W`, color: '#00f0ff' },
+                  { label: '주요 기능', value: descText, color: '#ffd700' },
+                ].map(({ label, value, color }) => (
+                  <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 11 }}>{label}</Text>
+                    <Text style={{ color, fontSize: 11, fontWeight: 'bold', textAlign: 'right', flex: 1, marginLeft: 8 }}>{value}</Text>
+                  </View>
+                ))}
+
+                <View style={{ height: 1, backgroundColor: 'rgba(255,215,0,0.15)' }} />
+                <Text style={{ color: '#8fa0c4', fontSize: 9, textAlign: 'center' }}>화면을 탭하면 닫힙니다</Text>
+              </TouchableOpacity>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── 위성 리스트 ── */}
+      {Object.keys(SATELLITE_SPECS).map((type) => {
+        const spec = SATELLITE_SPECS[type];
+        if (spec.isWeapon) return null;
+        const count = planetState.orbitalSatellitesList?.[type] || 0;
+        let desc = '지원/보조 위성';
+        if (type === 'sensor') desc = '적 탐지 반경 +50% 및 감속';
+        if (type === 'forceShield') desc = '포스 실드 위성 복구 버프';
+        if (type === 'decoy') desc = '적 공격 요격/흡수 버프';
+        if (type === 'repairDrone') desc = '아군 궤도 함선 초당 20 HP 회복';
+
+        const isMax = count >= MAX_SATELLITES_PER_TYPE;
+        const activeCount = activeSatsMap[planetId]?.[type] || 0;
+        const standbyCount = count - activeCount;
+        const isOffline = count > 0 && activeCount === 0;
+        const buildCost = getSatelliteCost(type, count);
+        const canAffordBuild = credits >= buildCost && (maxEnergy - usedEnergy) >= spec.energy;
+
+        return (
+          <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,215,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
+            {/* 행 1: 이름 + 보유량 + ⓘ + 건설 버튼 */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* 왼쪽: 이름 & 보유/전력 */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                  <Text style={{ color: isMax ? '#ffd700' : '#ffd700', fontSize: 11, fontWeight: 'bold' }}>
+                    {count}<Text style={{ color: '#8fa0c4', fontSize: 9 }}>/{MAX_SATELLITES_PER_TYPE}</Text>
+                    {standbyCount > 0 && <Text style={{ color: '#8fa0c4', fontSize: 8 }}> (대기:{standbyCount})</Text>}
+                  </Text>
+                  {spec.energy > 0 && <Text style={{ color: '#8fa0c4', fontSize: 9 }}>⚡{spec.energy}W</Text>}
+                  <Text style={{ color: '#8fa0c4', fontSize: 9 }} numberOfLines={1}>{desc}</Text>
+                </View>
+              </View>
+
+              {/* 오른쪽: ⓘ + 건설 버튼 (가로 배치) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity
+                  onPress={() => setInfoType(type)}
+                  style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#ffd700', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#ffd700', fontSize: 11, fontWeight: 'bold' }}>i</Text>
+                </TouchableOpacity>
+                {isMax ? (
+                  <View style={{ paddingHorizontal: 10, paddingVertical: 8, backgroundColor: 'rgba(255,215,0,0.1)', borderRadius: 7, borderWidth: 1, borderColor: '#ffd700' }}>
+                    <Text style={{ color: '#ffd700', fontSize: 10, fontWeight: 'bold' }}>MAX</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAffordBuild ? '#ffd700' : 'rgba(255,215,0,0.2)', borderRadius: 8, borderWidth: canAffordBuild ? 0 : 1, borderColor: '#ffd700' }}
+                    onPress={() => {
+                      let ok = 0;
+                      for (let i = 0; i < purchaseMultiplier; i++) {
+                        if (buildOrbitalSatelliteDetail(planetId, type)) ok++;
+                        else break;
+                      }
+                      if (ok > 0) setTimeout(() => saveGame(), 100);
+                      else {
+                        const st = useGameStore.getState();
+                        if (count >= MAX_SATELLITES_PER_TYPE) Alert.alert('건설 실패', `한도(${MAX_SATELLITES_PER_TYPE}개) 초과`);
+                        else if (st.credits < buildCost) Alert.alert('건설 실패', '크레딧 부족');
+                        else Alert.alert('건설 실패', '전력 또는 자원 부족');
+                      }
+                    }}
+                  >
+                    <Text style={{ color: canAffordBuild ? '#050814' : '#ffd700', fontSize: 11, fontWeight: 'bold' }}>
+                      +건설 {buildCost.toLocaleString()}Cr{purchaseMultiplier > 1 ? `×${purchaseMultiplier}` : ''}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        );
+      })}
+
+      {/* 방어형 궤도 방어 기지 */}
+      <Text style={[styles.subTitleText, { marginTop: 8 }]}>방어형 궤도 방어 기지 수량: {planetState.orbitalStations} / 3</Text>
       <View style={styles.gridContainer}>
         {Object.keys(STATION_SPECS).map((type) => {
           if (type === 'gigaPlasma') return null;
@@ -1342,6 +1407,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   );
 }
 
+
 // ==========================================
 // Subcomponent: ShipyardTab
 // ==========================================
@@ -1357,6 +1423,7 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
   const upgradeShipyard = useGameStore(state => state.upgradeShipyard);
   const setFleetReservation = useGameStore(state => state.setFleetReservation);
   const saveGame = useGameStore(state => state.saveGame);
+  const [infoType, setInfoType] = React.useState(null);
 
   const planetState = planets[planetId];
   if (!planetState) return null;
@@ -1375,6 +1442,67 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
 
   return (
     <View>
+      {/* ⓘ 상세 정보 모달 */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
+          activeOpacity={1}
+          onPress={() => setInfoType(null)}
+        >
+          {infoType && (() => {
+            const s = SHIP_SPECS[infoType];
+            let descText = s.damage > 0 ? `공격용 함선. 공격력: ${s.damage} HP, 사거리: ${s.range}.` : '보조 지원용 함선.';
+            if (infoType === 'shieldCarrier') descText = '아군 함대 실드 최대량 +30% 및 기동 보호막을 생성합니다.';
+            if (infoType === 'repairShip') descText = '아군 함선을 초당 50 HP 지속 수리합니다.';
+            if (infoType === 'barrierShip') descText = '광역 배리어를 전개하여 아군 함대가 받는 피해를 10% 감소시킵니다.';
+            const reserved = fleetSlots[infoType] || 0;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}}
+                style={{ width: '85%', backgroundColor: '#050f1e', borderRadius: 16, borderWidth: 1.5, borderColor: '#00ff8a', padding: 18, gap: 10 }}
+              >
+                {/* 헤더 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#00ff8a', fontSize: 15, fontWeight: 'bold' }}>{s.name}</Text>
+                    <Text style={{ color: '#8fa0c4', fontSize: 10, marginTop: 3, lineHeight: 15 }}>{descText}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setInfoType(null)} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginLeft: 8 }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 13 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 구분선 */}
+                <View style={{ height: 1, backgroundColor: 'rgba(0,255,138,0.25)' }} />
+
+                {/* 스탯 그리드 */}
+                {[
+                  { label: '예약 대수', value: `${reserved} 대`, color: '#00ff8a' },
+                  { label: '요구 자원', value: `${s.baseCost} Cr, ${s.baseNanocore} Nano`, color: '#ffd700' },
+                  { label: '생산 시간', value: `${s.baseBuildTime} 초`, color: '#00f0ff' },
+                  { label: '기본 내구도', value: `${s.hp ?? 100} HP`, color: '#ff3b30' },
+                ].map(({ label, value, color }) => (
+                  <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 11 }}>{label}</Text>
+                    <Text style={{ color, fontSize: 11, fontWeight: 'bold', textAlign: 'right', flex: 1, marginLeft: 8 }}>{value}</Text>
+                  </View>
+                ))}
+
+                <View style={{ height: 1, backgroundColor: 'rgba(0,255,138,0.15)' }} />
+                <Text style={{ color: '#8fa0c4', fontSize: 9, textAlign: 'center' }}>화면을 탭하면 닫힙니다</Text>
+              </TouchableOpacity>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
+
       {!planetState.shipyard ? (
         <View style={styles.shipyardBuildBox}>
           <Text style={styles.itemDesc}>능동적인 궤도 방어 함대를 운용하려면 쉽야드가 필수적입니다.</Text>
@@ -1391,7 +1519,7 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
         </View>
       ) : (
         <View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 6, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 6, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
             <Text style={{ color: '#00ff8a', fontSize: 10, fontWeight: 'bold' }}>🛸 쉽야드 상태: Level {planetState.shipyard}</Text>
             {planetState.shipyard < 3 && (
               <TouchableOpacity
@@ -1410,13 +1538,13 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
                 }}
               >
                 <Text style={{ color: '#050814', fontSize: 8.5, fontWeight: 'bold' }}>
-                  Lv.${planetState.shipyard + 1} 업그레이드 ({planetState.shipyard === 1 ? '15,000 Cr, 15 Nano' : '50,000 Cr, 35 Nano'}, 10W)
+                  Lv.{planetState.shipyard + 1} 업그레이드 ({planetState.shipyard === 1 ? '15,000 Cr, 15 Nano' : '50,000 Cr, 35 Nano'}, 10W)
                 </Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <View style={{ marginBottom: 15, padding: 10, backgroundColor: 'rgba(0, 255, 138, 0.05)', borderRadius: 8, borderWidth: 0.8, borderColor: 'rgba(0, 255, 138, 0.15)' }}>
+          <View style={{ marginBottom: 8, padding: 10, backgroundColor: 'rgba(0, 255, 138, 0.05)', borderRadius: 8, borderWidth: 0.8, borderColor: 'rgba(0, 255, 138, 0.15)' }}>
             <Text style={{ fontSize: 10, color: '#00ff8a', fontWeight: 'bold', marginBottom: 6 }}>🛸 현재 운용 중인 기동 함대 ({fleetLength}대)</Text>
             {shipyardQueue && (
               <View style={{ marginBottom: 8, padding: 6, backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 4, borderWidth: 0.5, borderColor: '#ffd700' }}>
@@ -1461,42 +1589,64 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
             )}
           </View>
 
-          <Text style={styles.subTitleText}>기동 함대 슬롯 예약 (자동 보충 및 배치)</Text>
-          <View style={styles.gridContainer}>
+          <Text style={[styles.subTitleText, { marginTop: 4, marginBottom: 4 }]}>기동 함대 슬롯 예약 (자동 보충 및 배치)</Text>
+          <View style={{ gap: 4 }}>
             {Object.keys(SHIP_SPECS).map((type) => {
               const reserved = fleetSlots[type] || 0;
               const spec = SHIP_SPECS[type];
               const reqLvl = SHIP_LEVEL_REQUIREMENTS[type] || 1;
               const isLocked = (planetState.shipyard || 0) < reqLvl;
 
-              let role = spec.damage > 0 ? `공격: ${spec.damage} HP, 사거리: ${spec.range}` : '보조/방어 지원';
-              if (type === 'shieldCarrier') role = '아군 함대 실드 +30% 및 기동 보호막';
-              if (type === 'repairShip') role = '아군 함선 초당 50 HP 지속 수리';
-              if (type === 'barrierShip') role = '광역 배리어 전개, 함대 받는 피해 10% 감소';
+              let role = spec.damage > 0 ? `공격: ${spec.damage} HP` : '보조/방어 지원';
+              if (type === 'shieldCarrier') role = '함대 실드 +30%';
+              if (type === 'repairShip') role = '초당 50 HP 수리';
+              if (type === 'barrierShip') role = '함대 피해 10% 감소';
+
               return (
-                <View key={type} style={[styles.gridCard, { borderColor: isLocked ? '#8fa0c4' : '#00ff8a', minHeight: 125 }, isLocked && { opacity: 0.5 }]}>
-                  <View style={styles.gridCardHeader}>
-                    <Text style={styles.gridCardName}>{spec.name}</Text>
-                    <Text style={[styles.gridCardCount, { color: isLocked ? '#8fa0c4' : '#00ff8a' }]}>{reserved}대</Text>
+                <View key={type} style={{ backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isLocked ? 'rgba(143,160,196,0.3)' : 'rgba(0,255,138,0.3)', opacity: isLocked ? 0.6 : 1, padding: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {/* 왼쪽: 함선 정보 */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                        <Text style={{ color: '#00ff8a', fontSize: 11, fontWeight: 'bold' }}>{reserved}대 예약됨</Text>
+                        <Text style={{ color: '#8fa0c4', fontSize: 9 }}>{spec.baseCost}Cr / {spec.baseNanocore}Nano</Text>
+                        <Text style={{ color: '#8fa0c4', fontSize: 9 }}>({role})</Text>
+                      </View>
+                    </View>
+
+                    {/* 오른쪽: 조작 */}
+                    {isLocked ? (
+                      <View style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                        <Text style={{ fontSize: 9, color: '#ff3b30', fontWeight: 'bold' }}>🔒 Lv.{reqLvl} 필요</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <TouchableOpacity
+                          onPress={() => setInfoType(type)}
+                          style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#00ff8a', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Text style={{ color: '#00ff8a', fontSize: 11, fontWeight: 'bold' }}>i</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flexDirection: 'row', backgroundColor: '#0a1026', borderRadius: 6, borderWidth: 1, borderColor: '#00ff8a', alignItems: 'center', padding: 2 }}>
+                          <TouchableOpacity 
+                            style={{ paddingHorizontal: 8, paddingVertical: 4 }} 
+                            onPress={() => handleRemoveShip(type)}
+                          >
+                            <Text style={{ color: '#00ff8a', fontSize: 12, fontWeight: 'bold' }}>-</Text>
+                          </TouchableOpacity>
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold', minWidth: 20, textAlign: 'center' }}>{reserved}</Text>
+                          <TouchableOpacity 
+                            style={{ paddingHorizontal: 8, paddingVertical: 4 }} 
+                            onPress={() => handleAddShip(type)}
+                          >
+                            <Text style={{ color: '#00ff8a', fontSize: 12, fontWeight: 'bold' }}>+</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
                   </View>
-                  <Text style={styles.gridCardDesc}>
-                    {role} | 비용: {spec.baseCost} Cr, {spec.baseNanocore} Nano | 빌드: {spec.baseBuildTime}s
-                  </Text>
-                  {isLocked ? (
-                    <View style={{ marginTop: 6, backgroundColor: 'rgba(255,59,48,0.1)', paddingVertical: 4, paddingHorizontal: 6, borderRadius: 4, borderWidth: 0.5, borderColor: '#ff3b30' }}>
-                      <Text style={{ fontSize: 8.5, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>🔒 쉽야드 Lv.{reqLvl} 필요</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.gridCounterRow}>
-                      <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleRemoveShip(type)}>
-                        <Text style={styles.gridCounterBtnText}>-</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.gridCounterVal}>{reserved}</Text>
-                      <TouchableOpacity style={styles.gridCounterBtn} onPress={() => handleAddShip(type)}>
-                        <Text style={styles.gridCounterBtnText}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
                 </View>
               );
             })}
@@ -1513,9 +1663,9 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
 function InfrastructureTab({ planetId, purchaseMultiplier }) {
   const credits = useGameStore(state => state.credits);
   const planets = useGameStore(state => state.planets);
-
   const buildInfrastructure = useGameStore(state => state.buildInfrastructure);
   const saveGame = useGameStore(state => state.saveGame);
+  const [infoType, setInfoType] = React.useState(null);
 
   const planetState = planets[planetId];
   if (!planetState) return null;
@@ -1530,9 +1680,108 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
   const popRatio = maxPop > 0 ? (planetState.population || 0) / maxPop : 0;
   const displayPopRatio = Math.min(100, Math.floor(popRatio * 100));
 
+  const infraSpecs = [
+    {
+      key: 'housing',
+      name: '주거 지원 지구 (Habitation Block)',
+      desc: `행성의 인구 수용량 및 성장 속도를 증가시킵니다.`,
+      effect: `효과: 인구 한도 +20% (${Math.floor(data.maxPopulation * 0.2).toLocaleString()}명), 증가율 +0.1%/s`,
+      cost: Math.floor(100 * Math.pow(1.5, infra.housing || 0)),
+      level: infra.housing || 0,
+      borderColor: '#af52de',
+      buttonColor: '#af52de'
+    },
+    {
+      key: 'factory',
+      name: '종합 생산 공장 (Industrial Factory)',
+      desc: `크레딧의 직접 생산량과 세금 효율을 향상시킵니다.`,
+      effect: `효과: 초당 +15 크레딧, 전체 세금 효율 +3%`,
+      cost: Math.floor(150 * Math.pow(1.5, infra.factory || 0)),
+      level: infra.factory || 0,
+      borderColor: '#ff2d55',
+      buttonColor: '#ff2d55'
+    },
+    {
+      key: 'powerPlant',
+      name: '핵융합/태양광 발전소 (Power Plant)',
+      desc: `행성의 최대 발전 전력 한도를 늘립니다. (궤도 위성 추가 가동 가능)`,
+      effect: `효과: 최대 공급 전력 +20 W (기본 100W)`,
+      cost: Math.floor(250 * Math.pow(1.6, infra.powerPlant || 0)),
+      level: infra.powerPlant || 0,
+      borderColor: '#ffd700',
+      buttonColor: '#ffd700'
+    },
+    {
+      key: 'bunker',
+      name: '지하 대피 방공호 (Deep Bunker)',
+      desc: `지하 네트워크를 연결하여 지구의 총 선체 체력을 강화합니다.`,
+      effect: `효과: 지구 최대 체력(Max HP) +20`,
+      cost: Math.floor(400 * Math.pow(1.7, infra.bunker || 0)),
+      level: infra.bunker || 0,
+      borderColor: '#007aff',
+      buttonColor: '#007aff'
+    }
+  ];
+
   return (
     <View>
-      <View style={[styles.gridCard, { borderColor: '#af52de', backgroundColor: 'rgba(175, 82, 222, 0.05)', marginBottom: 15, width: '100%', minHeight: 100 }]}>
+      {/* ⓘ 상세 정보 모달 */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
+          activeOpacity={1}
+          onPress={() => setInfoType(null)}
+        >
+          {infoType && (() => {
+            const spec = infraSpecs.find(i => i.key === infoType);
+            if (!spec) return null;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}}
+                style={{ width: '85%', backgroundColor: '#050f1e', borderRadius: 16, borderWidth: 1.5, borderColor: spec.borderColor, padding: 18, gap: 10 }}
+              >
+                {/* 헤더 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: spec.borderColor, fontSize: 15, fontWeight: 'bold' }}>{spec.name}</Text>
+                    <Text style={{ color: '#8fa0c4', fontSize: 10, marginTop: 3, lineHeight: 15 }}>{spec.desc}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setInfoType(null)} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginLeft: 8 }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 13 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 구분선 */}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+
+                {/* 스탯 그리드 */}
+                {[
+                  { label: '현재 시설 등급', value: `Level ${spec.level}`, color: spec.borderColor },
+                  { label: '시설 업그레이드 비용', value: `${spec.cost.toLocaleString()} Cr`, color: '#ffd700' },
+                  { label: '시설 적용 효과', value: spec.effect, color: '#00ff8a' },
+                ].map(({ label, value, color }) => (
+                  <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#8fa0c4', fontSize: 11 }}>{label}</Text>
+                    <Text style={{ color, fontSize: 11, fontWeight: 'bold', textAlign: 'right', flex: 1, marginLeft: 8 }}>{value}</Text>
+                  </View>
+                ))}
+
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+                <Text style={{ color: '#8fa0c4', fontSize: 9, textAlign: 'center' }}>화면을 탭하면 닫힙니다</Text>
+              </TouchableOpacity>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
+
+      <View style={[styles.gridCard, { borderColor: '#af52de', backgroundColor: 'rgba(175, 82, 222, 0.05)', marginBottom: 8, width: '100%', minHeight: 90 }]}>
         <Text style={[styles.subTitleText, { marginTop: 0, color: '#af52de' }]}>👥 행성 거주 인구 현황</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
           <Text style={styles.itemDesc}>현재 인구수:</Text>
@@ -1546,7 +1795,7 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
             {Math.floor(maxPop).toLocaleString()}명
           </Text>
         </View>
-        <View style={[styles.detailMiniBar, { marginTop: 8, height: 8 }]}>
+        <View style={[styles.detailMiniBar, { marginTop: 8, height: 6 }]}>
           <View style={[styles.detailMiniBarFill, { width: `${displayPopRatio}%`, backgroundColor: '#af52de' }]} />
         </View>
         <Text style={[styles.itemDesc, { textAlign: 'right', marginTop: 4, fontSize: 10, color: '#af52de' }]}>
@@ -1554,70 +1803,49 @@ function InfrastructureTab({ planetId, purchaseMultiplier }) {
         </Text>
       </View>
 
-      <Text style={styles.subTitleText}>행성 인프라 시설 목록</Text>
-      <View style={styles.gridContainer}>
-        {[
-          {
-            key: 'housing',
-            name: '주거 지원 지구 (Habitation Block)',
-            desc: `행성의 인구 수용량 및 성장 속도를 증가시킵니다.\n효과: 한도 +20% (${Math.floor(data.maxPopulation * 0.2).toLocaleString()}명), 증가율 +0.1%/s`,
-            cost: Math.floor(100 * Math.pow(1.5, infra.housing || 0)),
-            level: infra.housing || 0,
-            borderColor: '#af52de',
-            buttonColor: '#af52de'
-          },
-          {
-            key: 'factory',
-            name: '종합 생산 공장 (Industrial Factory)',
-            desc: `크레딧의 직접 생산량과 세금 효율을 향상시킵니다.\n효과: 초당 +15 크레딧, 전체 세금 효율 +3%`,
-            cost: Math.floor(150 * Math.pow(1.5, infra.factory || 0)),
-            level: infra.factory || 0,
-            borderColor: '#ff2d55',
-            buttonColor: '#ff2d55'
-          },
-          {
-            key: 'powerPlant',
-            name: '핵융합/태양광 발전소 (Power Plant)',
-            desc: `행성의 최대 발전 전력 한도를 늘립니다. (궤도 위성 추가 가동 가능)\n효과: 최대 공급 전력 +20 W (기본 100W)`,
-            cost: Math.floor(250 * Math.pow(1.6, infra.powerPlant || 0)),
-            level: infra.powerPlant || 0,
-            borderColor: '#ffd700',
-            buttonColor: '#ffd700'
-          },
-          {
-            key: 'bunker',
-            name: '지하 대피 방공호 (Deep Bunker)',
-            desc: `지하 네트워크를 연결하여 지구의 총 선체 체력을 강화합니다.\n효과: 지구 최대 체력(Max HP) +20`,
-            cost: Math.floor(400 * Math.pow(1.7, infra.bunker || 0)),
-            level: infra.bunker || 0,
-            borderColor: '#007aff',
-            buttonColor: '#007aff'
-          }
-        ].map((spec) => {
+      <Text style={[styles.subTitleText, { marginTop: 4, marginBottom: 4 }]}>행성 인프라 시설 목록</Text>
+      <View style={{ gap: 4 }}>
+        {infraSpecs.map((spec) => {
           const canAfford = credits >= spec.cost;
           return (
-            <View key={spec.key} style={[styles.gridCard, { borderColor: spec.borderColor, minHeight: 185 }]}>
-              <View style={styles.gridCardHeader}>
-                <Text style={styles.gridCardName}>{spec.name}</Text>
-                <Text style={[styles.gridCardCount, { color: spec.borderColor }]}>Lv.{spec.level}</Text>
+            <View key={spec.key} style={{ backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: spec.borderColor, padding: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                {/* 왼쪽: 인프라 정보 */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }} numberOfLines={1}>{spec.name}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                    <Text style={{ color: spec.borderColor, fontSize: 11, fontWeight: 'bold' }}>Lv.{spec.level}</Text>
+                    <Text style={{ color: '#8fa0c4', fontSize: 9 }}>{spec.effect.split('효과: ')[1]}</Text>
+                  </View>
+                </View>
+
+                {/* 오른쪽: ⓘ + 건설 버튼 */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <TouchableOpacity
+                    onPress={() => setInfoType(spec.key)}
+                    style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: spec.borderColor, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ color: spec.borderColor, fontSize: 11, fontWeight: 'bold' }}>i</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAfford ? spec.buttonColor : 'rgba(255,255,255,0.05)', borderRadius: 8, borderWidth: canAfford ? 0 : 1, borderColor: spec.borderColor }} 
+                    disabled={!canAfford}
+                    onPress={() => {
+                      const success = buildInfrastructure(planetId, spec.key);
+                      if (success) {
+                        setTimeout(() => saveGame(), 100);
+                      } else {
+                        Alert.alert('건설 실패', '크레딧이 부족합니다.');
+                      }
+                    }}
+                  >
+                    <Text style={{ color: canAfford ? '#ffffff' : '#8fa0c4', fontSize: 11, fontWeight: 'bold' }}>
+                      건설 {spec.cost.toLocaleString()}Cr
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <Text style={styles.gridCardDesc}>{spec.desc}</Text>
-              <TouchableOpacity 
-                style={[styles.gridBuildBtn, { backgroundColor: canAfford ? spec.buttonColor : '#555555' }]} 
-                disabled={!canAfford}
-                onPress={() => {
-                  const success = buildInfrastructure(planetId, spec.key);
-                  if (success) {
-                    setTimeout(() => saveGame(), 100);
-                  } else {
-                    Alert.alert('건설 실패', '크레딧이 부족합니다.');
-                  }
-                }}
-              >
-                <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
-                  건설 ({spec.cost} Cr)
-                </Text>
-              </TouchableOpacity>
             </View>
           );
         })}
