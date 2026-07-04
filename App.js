@@ -29,11 +29,15 @@ import CustomAlert from './src/components/CustomAlert';
 // Web에서 Skia (CanvasKit WASM) 초기화
 let skiaWebReady = Platform.OS !== 'web'; // native는 항상 true
 if (Platform.OS === 'web') {
-  import('@shopify/react-native-skia/web').then(({ LoadSkiaWeb }) => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { LoadSkiaWeb } = require('@shopify/react-native-skia/lib/commonjs/web/LoadSkiaWeb');
     LoadSkiaWeb().then(() => {
       skiaWebReady = true;
-    });
-  });
+    }).catch(() => { skiaWebReady = true; });
+  } catch (e) {
+    skiaWebReady = true;
+  }
 }
 
 
