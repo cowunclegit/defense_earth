@@ -4,7 +4,7 @@ import WebCanvas from './components/WebCanvas';
 import SkiaCanvas from './components/SkiaCanvas';
 import CanvasControls from './components/CanvasControls';
 
-export default function GameCanvas() {
+export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
   const { width: windowWidth } = useWindowDimensions();
   const canvasSize = windowWidth;
 
@@ -72,7 +72,9 @@ export default function GameCanvas() {
       <CanvasControls 
         zoom={zoom} 
         setZoom={setZoom} 
-        resetZoomPan={resetZoomPan} 
+        resetZoomPan={resetZoomPan}
+        purchaseMultiplier={purchaseMultiplier}
+        onToggleMultiplier={onToggleMultiplier}
       />
     </View>
   );

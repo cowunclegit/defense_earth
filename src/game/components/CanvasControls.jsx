@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
-export default function CanvasControls({ zoom, setZoom, resetZoomPan }) {
+export default function CanvasControls({ zoom, setZoom, resetZoomPan, purchaseMultiplier, onToggleMultiplier }) {
   return (
     <View style={styles.hudContainer}>
       <Text style={styles.hudZoomText}>{Math.round(zoom * 100)}%</Text>
@@ -14,6 +14,14 @@ export default function CanvasControls({ zoom, setZoom, resetZoomPan }) {
       <TouchableOpacity style={styles.hudBtn} onPress={resetZoomPan}>
         <Text style={styles.hudText}>🔄</Text>
       </TouchableOpacity>
+      {onToggleMultiplier && (
+        <TouchableOpacity
+          style={[styles.hudBtn, { backgroundColor: purchaseMultiplier > 1 ? '#ff8a00' : '#0a1026', borderColor: '#ff8a00', minWidth: 34 }]}
+          onPress={onToggleMultiplier}
+        >
+          <Text style={[styles.hudText, { color: purchaseMultiplier > 1 ? '#050814' : '#ff8a00', fontSize: 11 }]}>x{purchaseMultiplier}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

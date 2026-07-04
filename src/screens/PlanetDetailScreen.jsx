@@ -116,7 +116,10 @@ export default function PlanetDetailScreen({ route, navigation }) {
       <View style={styles.fixedContentContainer}>
         {/* 상단: 2D 전투 캔버스 영역 */}
         <View style={styles.battleCanvasContainer}>
-          <GameCanvas />
+          <GameCanvas
+            purchaseMultiplier={purchaseMultiplier}
+            onToggleMultiplier={() => setPurchaseMultiplier(purchaseMultiplier === 1 ? 5 : 1)}
+          />
           <TopHud overlay={true} />
           
           {/* 오버레이: 좌상단 행성 이름 */}
@@ -179,17 +182,6 @@ export default function PlanetDetailScreen({ route, navigation }) {
         {/* 하단: 업그레이드 및 기지 건설 제어 영역 */}
         <View style={styles.controlPanel} pointerEvents="auto">
 
-          {/* 배수 버튼만 남긴 미니 헤더 */}
-          {activeTab !== 'dev_balance' && (
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
-              <TouchableOpacity
-                style={styles.multiplierBtn}
-                onPress={() => setPurchaseMultiplier(purchaseMultiplier === 1 ? 5 : 1)}
-              >
-                <Text style={styles.multiplierBtnText}>x{purchaseMultiplier}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* 탭 본문 영역 (60FPS 격리) */}
           <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
