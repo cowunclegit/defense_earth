@@ -1038,22 +1038,21 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                 return (
                   <TouchableOpacity
                     key={stat}
-                    style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 4, backgroundColor: canAfford ? 'rgba(0,240,255,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: canAfford ? '#00f0ff' : 'rgba(143,160,196,0.25)', alignItems: 'center', gap: 2 }}
+                    style={{ flex: 1, paddingVertical: 6, paddingHorizontal: 4, backgroundColor: canAfford ? 'rgba(0,240,255,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: canAfford ? '#00f0ff' : 'rgba(143,160,196,0.25)', alignItems: 'center', gap: 3 }}
                     onPress={() => {
                       const success = upgradeSatellite(type, stat);
                       if (success) setTimeout(() => saveGame(), 100);
                       else Alert.alert('강화 실패', '크레딧 부족');
                     }}
                   >
-                    {/* 레이블 + 레벨 */}
-                    <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
-                    {/* 현재 → 다음 수치 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                      <Text style={{ color: dimColor, fontSize: 9 }}>{curVal}{unit}</Text>
-                      <Text style={{ color: '#00ff8a', fontSize: 9, fontWeight: 'bold' }}>→{nextVal}{unit}</Text>
-                    </View>
+                    {/* 레이블+레벨 + 현재→다음 수치 (한 줄) */}
+                    <Text style={{ color: accent, fontSize: 9, fontWeight: 'bold' }} numberOfLines={1}>
+                      {label} <Text style={{ fontSize: 8 }}>Lv.{lvl}</Text>{'  '}
+                      <Text style={{ color: dimColor }}>{curVal}{unit}</Text>
+                      <Text style={{ color: '#00ff8a', fontWeight: 'bold' }}>→{nextVal}{unit}</Text>
+                    </Text>
                     {/* 비용 */}
-                    <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 9, marginTop: 1 }}>{cost.toLocaleString()}Cr</Text>
+                    <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 9 }}>{cost.toLocaleString()}Cr</Text>
                   </TouchableOpacity>
                 );
               })}
