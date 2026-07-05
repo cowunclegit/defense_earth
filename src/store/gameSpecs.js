@@ -388,16 +388,18 @@ export const recalculateUsedEnergyState = (state) => {
 };
 
 export const SATELLITE_BOOT_ORDER = [
-  'decoy',
+  // 공격 위성 (최우선 복구)
   'laser',
-  'sensor',
   'emp',
-  'repairDrone',
   'plasmaLaser',
-  'forceShield',
   'gravityBomb',
   'clusterMissile',
-  'antimatter'
+  'antimatter',
+  // 특수/지원 위성
+  'decoy',
+  'sensor',
+  'forceShield',
+  'repairDrone'
 ];
 
 export const getOrderedBuiltSatellites = (planets) => {
