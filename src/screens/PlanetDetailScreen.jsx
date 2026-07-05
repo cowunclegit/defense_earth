@@ -407,6 +407,27 @@ function BottomStatusOverlay({ planetId }) {
         {!isPremium && <Text>🔒 PASS 전용</Text>}
       </View>
 
+      {/* Sleek, permanent neon overload energy gauge bar */}
+      <View style={{ marginBottom: 6, padding: 5, backgroundColor: 'rgba(255, 215, 0, 0.03)', borderRadius: 6, borderWidth: 0.8, borderColor: 'rgba(255, 215, 0, 0.15)' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+          <Text style={{ fontSize: 9, color: '#ffd700', fontWeight: 'bold' }}>⚡ 지구 실드 가용 전력</Text>
+          <Text style={{ fontSize: 9, color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace' }}>
+            {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))} / ${Math.floor(overloadMaxEnergy || 100)} TW`}
+          </Text>
+        </View>
+        <View style={[styles.detailMiniBar, { height: 6, backgroundColor: '#101726', width: '100%' }]}>
+          <View 
+            style={[
+              styles.detailMiniBarFill, 
+              { 
+                width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, 
+                backgroundColor: isPowerDischarged ? '#ff3b30' : '#ffd700' 
+              }
+            ]} 
+          />
+        </View>
+      </View>
+
       <View style={styles.statusChipRow}>
         <TouchableOpacity
           style={[styles.statusChip, { borderColor: '#ff5c5c' }, activeDetail === 'hp' && styles.statusChipActive]}
