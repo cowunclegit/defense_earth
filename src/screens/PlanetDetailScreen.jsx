@@ -124,7 +124,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
           <TopHud overlay={true} />
           
           {/* 오버레이: 좌상단 행성 이름 */}
-          <View style={[styles.topLeftOverlay, { top: 130 }]}>
+          <View style={styles.topLeftOverlay}>
             <Text style={styles.titleText}>{planetData.name}</Text>
             <Text style={styles.synergyText}>
               시너지: {terraformProgress >= 80 ? '활성' : '대기'}
@@ -315,37 +315,38 @@ function BottomStatusOverlay({ planetId }) {
     }
   }
 
-  const renderPowerGraph = () => {
-    let baseProdRate = 15;
-    Object.keys(planets || {}).forEach((pId) => {
-      const p = planets[pId];
-      if (p && p.unlocked) {
-        const infra = p.infrastructure || {};
-        baseProdRate += (infra.powerPlant || 0) * 20;
+  // Calculate power values
+  let baseProdRate = 15;
+  Object.keys(planets || {}).forEach((pId) => {
+    const p = planets[pId];
+    if (p && p.unlocked) {
+      const infra = p.infrastructure || {};
+      baseProdRate += (infra.powerPlant || 0) * 20;
+    }
+  });
+  const productionPower = Math.floor(baseProdRate * (synergies?.energyProductionMultiplier || 1.0));
+  const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
+  
+  let counterattackConsumption = 0;
+  if (counterattackModules?.reflector) counterattackConsumption += 10;
+  if (counterattackModules?.discharge) counterattackConsumption += 10;
+  if (counterattackModules?.electricField) counterattackConsumption += 15;
+  
+  let satelliteConsumption = 0;
+  Object.keys(activeSatsMap || {}).forEach((pId) => {
+    Object.keys(activeSatsMap[pId] || {}).forEach((satType) => {
+      const count = activeSatsMap[pId][satType] || 0;
+      const satSpec = SATELLITE_SPECS[satType];
+      if (satSpec && count > 0) {
+        satelliteConsumption += count * satSpec.energy;
       }
     });
-    const productionPower = Math.floor(baseProdRate * (synergies?.energyProductionMultiplier || 1.0));
-    const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
-    
-    let counterattackConsumption = 0;
-    if (counterattackModules?.reflector) counterattackConsumption += 10;
-    if (counterattackModules?.discharge) counterattackConsumption += 10;
-    if (counterattackModules?.electricField) counterattackConsumption += 15;
-    
-    let satelliteConsumption = 0;
-    Object.keys(activeSatsMap || {}).forEach((pId) => {
-      Object.keys(activeSatsMap[pId] || {}).forEach((satType) => {
-        const count = activeSatsMap[pId][satType] || 0;
-        const satSpec = SATELLITE_SPECS[satType];
-        if (satSpec && count > 0) {
-          satelliteConsumption += count * satSpec.energy;
-        }
-      });
-    });
-    
-    const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
-    const netPower = productionPower - totalConsumption;
-    
+  });
+  
+  const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
+  const netPower = productionPower - totalConsumption;
+
+  const renderPowerGraph = () => {
     const maxScale = Math.max(30, productionPower, totalConsumption);
     const prodWidthPercent = `${Math.min(100, (productionPower / maxScale) * 100)}%`;
     const consWidthPercent = `${Math.min(100, (totalConsumption / maxScale) * 100)}%`;
@@ -405,27 +406,6 @@ function BottomStatusOverlay({ planetId }) {
         <Text>키네틱 요격 타워: {kineticDefenseTowers}개</Text>
         <Text>현재 수용 인구: {planetState.population?.toLocaleString()}명 / {planetData.maxPopulation?.toLocaleString()}명</Text>
         {!isPremium && <Text>🔒 PASS 전용</Text>}
-      </View>
-
-      {/* Sleek, permanent neon overload energy gauge bar */}
-      <View style={{ marginBottom: 6, padding: 5, backgroundColor: 'rgba(255, 215, 0, 0.03)', borderRadius: 6, borderWidth: 0.8, borderColor: 'rgba(255, 215, 0, 0.15)' }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-          <Text style={{ fontSize: 9, color: '#ffd700', fontWeight: 'bold' }}>⚡ 지구 실드 가용 전력</Text>
-          <Text style={{ fontSize: 9, color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace' }}>
-            {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))} / ${Math.floor(overloadMaxEnergy || 100)} TW`}
-          </Text>
-        </View>
-        <View style={[styles.detailMiniBar, { height: 6, backgroundColor: '#101726', width: '100%' }]}>
-          <View 
-            style={[
-              styles.detailMiniBarFill, 
-              { 
-                width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, 
-                backgroundColor: isPowerDischarged ? '#ff3b30' : '#ffd700' 
-              }
-            ]} 
-          />
-        </View>
       </View>
 
       <View style={styles.statusChipRow}>
@@ -2202,7 +2182,14 @@ const styles = StyleSheet.create({
   },
   topLeftOverlay: {
     position: 'absolute',
-    top: 10,
+    ...Platform.select({
+      ios: {
+        top: 185,
+      },
+      default: {
+        top: 155,
+      }
+    }),
     left: 15,
     zIndex: 10,
   },
@@ -2774,8 +2761,16 @@ const styles = StyleSheet.create({
   },
   bottomStatusOverlay: {
     position: 'absolute',
-    bottom: 8,
+    ...Platform.select({
+      ios: {
+        top: 105,
+      },
+      default: {
+        top: 75,
+      }
+    }),
     left: 8,
+    right: 8,
     backgroundColor: 'rgba(5, 8, 20, 0.88)',
     borderWidth: 1.2,
     borderColor: '#00f0ff',
@@ -2929,7 +2924,14 @@ const styles = StyleSheet.create({
   /* ── 네온 숏컷 제어 바 스타일 ── */
   neonShortcutBar: {
     position: 'absolute',
-    top: 130,
+    ...Platform.select({
+      ios: {
+        top: 185,
+      },
+      default: {
+        top: 155,
+      }
+    }),
     right: 15,
     zIndex: 100,
     flexDirection: 'column',
