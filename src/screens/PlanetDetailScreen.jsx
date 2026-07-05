@@ -847,8 +847,6 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
     </View>
   );
 }
-  );
-}
 
 // ==========================================
 // Subcomponent: AttackSatelliteTab
