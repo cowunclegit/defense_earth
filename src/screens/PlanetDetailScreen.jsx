@@ -1538,16 +1538,27 @@ function ShipyardTab({ planetId, purchaseMultiplier }) {
 
           <View style={{ marginBottom: 8, padding: 10, backgroundColor: 'rgba(0, 255, 138, 0.05)', borderRadius: 8, borderWidth: 0.8, borderColor: 'rgba(0, 255, 138, 0.15)' }}>
             <Text style={{ fontSize: 10, color: '#00ff8a', fontWeight: 'bold', marginBottom: 6 }}>🛸 현재 운용 중인 기동 함대 ({fleetLength}대)</Text>
-            {shipyardQueue && (
-              <View style={{ marginBottom: 8, padding: 6, backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 4, borderWidth: 0.5, borderColor: '#ffd700' }}>
-                <Text style={{ fontSize: 8.5, color: '#ffd700', fontWeight: 'bold' }}>
-                  🏗️ 생산 중: {SHIP_SPECS[shipyardQueue.type]?.name} ({Math.min(100, Math.floor((shipyardQueue.progress / shipyardQueue.totalTime) * 100))}% 완료)
-                </Text>
-                <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
-                  <View style={{ width: `${Math.min(100, (shipyardQueue.progress / shipyardQueue.totalTime) * 100)}%`, height: '100%', backgroundColor: '#ffd700' }} />
-                </View>
-              </View>
-            )}
+            <View style={{ marginBottom: 8, padding: 6, backgroundColor: shipyardQueue ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 255, 255, 0.02)', borderRadius: 4, borderWidth: 0.5, borderColor: shipyardQueue ? '#ffd700' : 'rgba(255, 255, 255, 0.1)' }}>
+              {shipyardQueue ? (
+                <>
+                  <Text style={{ fontSize: 8.5, color: '#ffd700', fontWeight: 'bold' }}>
+                    🏗️ 생산 중: {SHIP_SPECS[shipyardQueue.type]?.name} ({Math.min(100, Math.floor((shipyardQueue.progress / shipyardQueue.totalTime) * 100))}% 완료)
+                  </Text>
+                  <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
+                    <View style={{ width: `${Math.min(100, (shipyardQueue.progress / shipyardQueue.totalTime) * 100)}%`, height: '100%', backgroundColor: '#ffd700' }} />
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 8.5, color: '#8fa0c4', fontWeight: 'bold' }}>
+                    💤 대기 중 (IDLE)
+                  </Text>
+                  <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
+                    <View style={{ width: '0%', height: '100%', backgroundColor: '#8fa0c4' }} />
+                  </View>
+                </>
+              )}
+            </View>
             {(!fleet || fleet.length === 0) ? (
               <Text style={{ fontSize: 8.5, color: '#8fa0c4', fontStyle: 'italic' }}>운용 중인 함선이 없습니다. 아래 슬롯을 예약하여 생산을 시작하세요.</Text>
             ) : (
