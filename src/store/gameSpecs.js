@@ -218,10 +218,10 @@ export const STATION_SPECS = {
 export const SHIELD_MODULE_SPECS = {
   basic: { name: '기본 포스필드', capacityBonus: 500, regenBonus: 10, energyCost: 5, cost: 0 },
   plasma: { name: '강화 플라즈마 실드', capacityBonus: 1500, regenBonus: 25, energyCost: 15, cost: 50000 },
-  dual: { name: '이중 레이어 배리어', capacityBonus: 3000, regenBonus: 40, energyCost: 30, cost: 250000 },
+  repair: { name: '나노 수리 실드', capacityBonus: 1000, regenBonus: 15, energyCost: 10, cost: 120000 },
   reflect: { name: '반사 에너지 실드', capacityBonus: 2000, regenBonus: 20, energyCost: 25, cost: 180000 },
-  phase: { name: '위상 실드 (Phase)', capacityBonus: 4000, regenBonus: 50, energyCost: 50, cost: 450000 },
-  repair: { name: '나노 수리 실드', capacityBonus: 1000, regenBonus: 15, energyCost: 10, cost: 120000 }
+  dual: { name: '이중 레이어 배리어', capacityBonus: 3000, regenBonus: 40, energyCost: 30, cost: 250000 },
+  phase: { name: '위상 실드 (Phase)', capacityBonus: 4000, regenBonus: 50, energyCost: 50, cost: 450000 }
 };
 
 export const COUNTERATTACK_MODULE_SPECS = {

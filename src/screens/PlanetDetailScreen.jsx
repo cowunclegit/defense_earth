@@ -209,7 +209,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
           {/* Glowing Neon Bottom Tab Bar */}
           <View style={styles.neonTabBar}>
             {[
-              { id: 'defense_facility', label: '실드&반격', icon: '🛡️', color: '#00f0ff' },
+              { id: 'defense_facility', label: '지구 실드', icon: '🛡️', color: '#00f0ff' },
               { id: 'attack_satellite', label: '공격 위성', icon: '🚀', color: '#ff8a00' },
               { id: 'defense_satellite', label: '특수 위성', icon: '🛰️', color: '#ffd700' },
               { id: 'shipyard', label: '쉽야드', icon: '🛸', color: '#00ff8a' },
@@ -637,8 +637,6 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
   const earthHpRegenLevel = useGameStore(state => state.earthHpRegenLevel);
   const earthShieldRegenLevel = useGameStore(state => state.earthShieldRegenLevel);
   const shieldModule = useGameStore(state => state.shieldModule);
-  const counterattackModules = useGameStore(state => state.counterattackModules);
-  const unlockedCounterattacks = useGameStore(state => state.unlockedCounterattacks);
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const overloadMaxEnergy = useGameStore(state => state.overloadMaxEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
@@ -648,13 +646,11 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
   const upgradeEarthHpRegen = useGameStore(state => state.upgradeEarthHpRegen);
   const upgradeEarthShieldRegen = useGameStore(state => state.upgradeEarthShieldRegen);
   const changeShieldModule = useGameStore(state => state.changeShieldModule);
-  const toggleCounterattackModule = useGameStore(state => state.toggleCounterattackModule);
   const saveGame = useGameStore(state => state.saveGame);
 
   const isPowerDischarged = (overloadEnergy || 0) <= 0;
   const isShieldOnline = isSystemOnline('shield', null, overloadEnergy, isPowerOffline);
 
-  // Power graph calculation duplicate for local Tab use
   const builtSats = getOrderedBuiltSatellites(planets);
   const activeLimit = isPowerOffline ? (useGameStore.getState().onlineSatelliteCount || 0) : builtSats.length;
   const activeSatsMap = {};
@@ -679,11 +675,6 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
     const productionPower = Math.floor(baseProdRate * (synergies?.energyProductionMultiplier || 1.0));
     const shieldConsumption = SHIELD_MODULE_SPECS[shieldModule || 'basic']?.energyCost || 0;
     
-    let counterattackConsumption = 0;
-    if (counterattackModules?.reflector) counterattackConsumption += 10;
-    if (counterattackModules?.discharge) counterattackConsumption += 10;
-    if (counterattackModules?.electricField) counterattackConsumption += 15;
-    
     let satelliteConsumption = 0;
     Object.keys(activeSatsMap || {}).forEach((pId) => {
       Object.keys(activeSatsMap[pId] || {}).forEach((satType) => {
@@ -695,7 +686,7 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
       });
     });
     
-    const totalConsumption = shieldConsumption + counterattackConsumption + satelliteConsumption;
+    const totalConsumption = shieldConsumption + satelliteConsumption;
     const netPower = productionPower - totalConsumption;
     
     const maxScale = Math.max(30, productionPower, totalConsumption);
@@ -720,7 +711,6 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 4, borderTopWidth: 0.5, borderTopColor: 'rgba(255, 255, 255, 0.05)' }}>
           <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>🛡️ 실드: -{shieldConsumption} TW</Text>
           <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>🛰️ 위성: -{satelliteConsumption} TW</Text>
-          <Text style={{ fontSize: 7.5, color: '#8fa0c4' }}>⚡ 반격: -{counterattackConsumption} TW</Text>
         </View>
         <Text style={{ fontSize: 8, color: netPower >= 0 ? '#00ff8a' : '#ff3b30', alignSelf: 'flex-end', marginTop: 6, fontWeight: 'bold' }}>
           {netPower >= 0 ? `순전력: +${netPower.toFixed(1)} TW/초 (충전 중)` : `순전력: -${Math.abs(netPower).toFixed(1)} TW/초 (방전 중)`}
@@ -836,8 +826,6 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
         })}
       </View>
 
-      <Text style={[styles.subTitleText, { marginTop: 15 }]}>실드 반격/과부하 부가 모듈</Text>
-      
       {/* 가용 전력 상태 */}
       <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 15, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -856,50 +844,9 @@ function DefenseFacilityTab({ planetId, purchaseMultiplier }) {
         )}
         {renderPowerGraph()}
       </View>
-
-      <View style={styles.gridContainer}>
-        {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
-          const spec = COUNTERATTACK_MODULE_SPECS[type];
-          const isActive = counterattackModules?.[type];
-          const isCounterattackOnline = isSystemOnline('counterattack', null, overloadEnergy, isPowerOffline);
-          const isStandby = isActive && !isCounterattackOnline;
-          const isDepleted = isActive && isCounterattackOnline && overloadEnergy <= 0;
-          let desc = '';
-          if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 TW 소모';
-          if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 TW 소모';
-          if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 에너지: 초당 15 TW 소모';
-          
-          return (
-            <View key={type} style={[styles.gridCard, { borderColor: '#ff3b30' }]}>
-              <View style={styles.gridCardHeader}>
-                <Text style={styles.gridCardName}>{spec.name}</Text>
-                {isActive && (
-                  <Text style={[styles.gridCardCount, { color: (isStandby || isDepleted) ? '#8fa0c4' : '#ff3b30' }]}>
-                    {isStandby ? '전력 대기' : (isDepleted ? '에너지 고갈' : 'ON')}
-                  </Text>
-                )}
-              </View>
-              <Text style={styles.gridCardDesc}>{desc}</Text>
-              <TouchableOpacity 
-                style={[
-                  styles.gridBuildBtn, 
-                  { backgroundColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ff3b30') : '#16223f', borderWidth: 0.5, borderColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ff3b30') : 'rgba(255, 255, 255, 0.2)' }
-                ]} 
-                onPress={() => {
-                  const success = toggleCounterattackModule(type);
-                  if (success) setTimeout(() => saveGame(), 100);
-                  else Alert.alert('작동 실패', '자원이 부족합니다.');
-                }}
-              >
-                <Text style={[styles.gridBuildBtnText, { color: '#ffffff' }]}>
-                  {isActive ? 'ON' : 'OFF'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </View>
     </View>
+  );
+}
   );
 }
 
@@ -1151,8 +1098,10 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const onlineSatelliteCount = useGameStore(state => state.onlineSatelliteCount);
+  const counterattackModules = useGameStore(state => state.counterattackModules);
   const buildOrbitalSatelliteDetail = useGameStore(state => state.buildOrbitalSatelliteDetail);
   const buildOrbitalStationDetail = useGameStore(state => state.buildOrbitalStationDetail);
+  const toggleCounterattackModule = useGameStore(state => state.toggleCounterattackModule);
   const saveGame = useGameStore(state => state.saveGame);
   const [infoType, setInfoType] = React.useState(null);
 
@@ -1367,6 +1316,50 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                   </Text>
                 </TouchableOpacity>
               )}
+            </View>
+          );
+        })}
+      </View>
+
+      <Text style={[styles.subTitleText, { marginTop: 15, color: '#ffd700' }]}>실드 반격/과부하 부가 모듈</Text>
+      <View style={styles.gridContainer}>
+        {Object.keys(COUNTERATTACK_MODULE_SPECS).map((type) => {
+          const spec = COUNTERATTACK_MODULE_SPECS[type];
+          const isActive = counterattackModules?.[type];
+          const isCounterattackOnline = isSystemOnline('counterattack', null, overloadEnergy, isPowerOffline);
+          const isStandby = isActive && !isCounterattackOnline;
+          const isDepleted = isActive && isCounterattackOnline && overloadEnergy <= 0;
+          let desc = '';
+          if (type === 'reflector') desc = '받는 모든 피해의 30%를 적에게 무작위 반사 | 에너지: 초당 10 TW 소모';
+          if (type === 'discharge') desc = '실드 완전 붕괴 직전, 적 전체에 200 광역 피해 방전 | 에너지: 초당 10 TW 소모';
+          if (type === 'electricField') desc = '실드가 켜져 있는 동안, 주변 적에게 초당 80 지속 피해 | 에너지: 초당 15 TW 소모';
+          
+          return (
+            <View key={type} style={[styles.gridCard, { borderColor: isActive ? '#ffd700' : 'rgba(255, 215, 0, 0.2)' }]}>
+              <View style={styles.gridCardHeader}>
+                <Text style={styles.gridCardName}>{spec.name}</Text>
+                {isActive && (
+                  <Text style={[styles.gridCardCount, { color: (isStandby || isDepleted) ? '#8fa0c4' : '#ffd700' }]}>
+                    {isStandby ? '전력 대기' : (isDepleted ? '에너지 고갈' : 'ON')}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.gridCardDesc}>{desc}</Text>
+              <TouchableOpacity 
+                style={[
+                  styles.gridBuildBtn, 
+                  { backgroundColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ffd700') : 'rgba(255, 215, 0, 0.1)', borderWidth: 0.5, borderColor: isActive ? ((isStandby || isDepleted) ? '#6b7280' : '#ffd700') : 'rgba(255, 215, 0, 0.3)' }
+                ]} 
+                onPress={() => {
+                  const success = toggleCounterattackModule(type);
+                  if (success) setTimeout(() => saveGame(), 100);
+                  else Alert.alert('작동 실패', '자원이 부족합니다.');
+                }}
+              >
+                <Text style={[styles.gridBuildBtnText, { color: isActive ? '#050814' : '#ffd700' }]}>
+                  {isActive ? 'ON' : 'OFF'}
+                </Text>
+              </TouchableOpacity>
             </View>
           );
         })}

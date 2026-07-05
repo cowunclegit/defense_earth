@@ -267,28 +267,28 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
 
   test('행성 실드 모듈 및 반격 모듈 교체/활성화 테스트', () => {
     const store = useGameStore.getState();
-    useGameStore.setState({ credits: 10000, maxEnergy: 1000 });
+    useGameStore.setState({ credits: 500000, maxEnergy: 1000 });
     
     // tick을 돌려 기본 실드 모듈의 에너지 소모(5W)를 usedEnergy에 반영시킵니다.
     store.tick(0.1);
     const creditsAfterTick = useGameStore.getState().credits;
 
-    // Change module to plasma (cost 1000, capacity bonus +1500, regen 25/s, energy 15W)
+    // Change module to plasma (cost 50000, capacity bonus +1500, regen 25/s, energy 15W)
     const successModule = store.changeShieldModule('plasma');
     expect(successModule).toBe(true);
     expect(useGameStore.getState().shieldModule).toBe('plasma');
-    // 틱 후 증가한 크레딧에서 plasma 비용(1000Cr) 차감 확인
-    expect(useGameStore.getState().credits).toBeCloseTo(creditsAfterTick - 1000, 0);
+    // 틱 후 증가한 크레딧에서 plasma 비용(50000Cr) 차감 확인
+    expect(useGameStore.getState().credits).toBeCloseTo(creditsAfterTick - 50000, 0);
     expect(useGameStore.getState().usedEnergy).toBe(30);
     expect(store.getShieldCapacity()).toBe(1600); // 100 base + 1500 plasma = 1600
 
-    // Toggle discharge counterattack module (cost 2000, energy 10W)
+    // Toggle discharge counterattack module (cost 150000, energy 10W)
     const creditsBeforeDischarge = useGameStore.getState().credits;
     const successCounter = store.toggleCounterattackModule('discharge');
     expect(successCounter).toBe(true);
     expect(useGameStore.getState().counterattackModules.discharge).toBe(true);
     expect(useGameStore.getState().unlockedCounterattacks.discharge).toBe(true);
-    expect(useGameStore.getState().credits).toBeCloseTo(creditsBeforeDischarge - 2000, 0);
+    expect(useGameStore.getState().credits).toBeCloseTo(creditsBeforeDischarge - 150000, 0);
     expect(useGameStore.getState().usedEnergy).toBe(30);
 
     // Toggle OFF: should not change credits, should mark active as false, and keep unlocked status
@@ -306,7 +306,7 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(useGameStore.getState().counterattackModules.discharge).toBe(true);
     expect(useGameStore.getState().credits).toBe(0);
 
-    // Try to toggle a locked module (reflector, cost 2000) when credits are 0: should fail
+    // Try to toggle a locked module (reflector, cost 150000) when credits are 0: should fail
     const successReflectorFail = store.toggleCounterattackModule('reflector');
     expect(successReflectorFail).toBe(false);
     expect(useGameStore.getState().counterattackModules.reflector).toBe(false);
