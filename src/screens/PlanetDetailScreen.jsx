@@ -493,139 +493,171 @@ function BottomStatusOverlay({ planetId }) {
         </TouchableOpacity>
       </View>
 
-      {activeDetail === 'hp' && (() => {
-        const baseHpRegen = earthHpRegenLevel * 2;
-        const hasRepairShield = shieldModule === 'repair' && earthShield > 0;
-        const totalHpRegen = baseHpRegen + (hasRepairShield ? 5 : 0);
-        return (
-          <View style={styles.detailPopup} pointerEvents="none">
-            <Text style={styles.detailPopupTitle}>❤️ 지구 HP</Text>
-            <Text style={styles.detailPopupValue}>{Math.floor(earthHp)} / {earthMaxHp}</Text>
-            <View style={[styles.detailMiniBar, { width: '100%' }]}>
-              <View style={[styles.detailMiniBarFill, { width: `${(earthHp / earthMaxHp) * 100}%`, backgroundColor: '#ff5c5c' }]} />
-            </View>
-            <Text style={[styles.detailPopupSub, { color: '#ff5c5c', marginTop: 4 }]}>
-              자동 선체 회복속도: +{totalHpRegen} HP/초
-              {hasRepairShield && " (나노 수리 실드 포함)"}
-            </Text>
-          </View>
-        );
-      })()}
-
-      {activeDetail === 'shield' && (() => {
-        const activeModuleSpec = SHIELD_MODULE_SPECS[shieldModule || 'basic'];
-        const baseRegen = (activeModuleSpec ? activeModuleSpec.regenBonus : 5) + (earthShieldRegenLevel - 1) * 3;
-        let totalSatellites = 0;
-        Object.values(planets).forEach(p => {
-          if (p.unlocked) {
-            totalSatellites += (p.orbitalSatellites || 0);
-          }
-        });
-        const satelliteBonus = 1 + totalSatellites * 0.1;
-        const finalShieldRegen = (baseRegen * (synergies?.shieldRegenMultiplier || 1.0) * satelliteBonus).toFixed(1);
-        return (
-          <View style={styles.detailPopup} pointerEvents="none">
-            <Text style={styles.detailPopupTitle}>🛡️ 에너지 실드</Text>
-            <Text style={styles.detailPopupValue}>{Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
-            <View style={styles.detailMiniBar}>
-              <View style={[styles.detailMiniBarFill, { width: `${(earthShield / earthMaxShield) * 100}%`, backgroundColor: '#00f0ff' }]} />
-            </View>
-            <Text style={[styles.detailPopupSub, { color: '#00f0ff', marginTop: 4 }]}>
-              실드 자동 충전속도: +{finalShieldRegen} 실드/초
-            </Text>
-          </View>
-        );
-      })()}
-
-      {activeDetail === 'ep' && (
-        <View style={styles.detailPopup} pointerEvents="none">
-          <Text style={styles.detailPopupTitle}>⚡ 가용 전력</Text>
-          <Text style={styles.detailPopupValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW</Text>
-          <View style={styles.detailMiniBar}>
-            <View style={[styles.detailMiniBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: '#ffd700' }]} />
-          </View>
-          {isPowerDischarged && (
-            <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 6, borderRadius: 4, marginTop: 6, borderWidth: 0.5, borderColor: '#ff3b30' }}>
-              <Text style={{ fontSize: 9, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 완전히 방전됨! 실드 및 위성 작동 중지 ⚠️</Text>
-            </View>
-          )}
-          {renderPowerGraph()}
-        </View>
-      )}
-
-      {activeDetail === 'tower' && (
-        <View style={styles.detailPopup} pointerEvents="none">
-          <Text style={styles.detailPopupTitle}>🛰️ 키네틱 요격 위성</Text>
-          <Text style={styles.detailPopupValue}>{kineticDefenseTowers}개 가동 중</Text>
-          <Text style={styles.detailPopupSub}>적 키네틱 격추율 +{kineticDefenseTowers * 8}%</Text>
-        </View>
-      )}
-
-      {activeDetail === 'terraform' && (
-        <View style={styles.detailPopup}>
-          <Text style={styles.detailPopupTitle}>🌱 테라포밍 현황</Text>
-          <View style={styles.detailMiniBar}>
-            <View style={[styles.detailMiniBarFill, { width: `${planetState.terraformProgress}%`, backgroundColor: '#00ff8a' }]} />
-          </View>
-          <Text style={styles.detailPopupValue}>{planetState.terraformProgress}% 완료</Text>
-          {planetState.terraformProgress < 100 ? (
-            <TouchableOpacity 
-              style={[styles.upgradeBtn, { marginTop: 8, backgroundColor: '#00ff8a' }]} 
-              onPress={handleUpgrade}
-            >
-              <Text style={[styles.upgradeBtnText, { color: '#050814' }]}>
-                테라포밍 강화 ({Math.floor(planetData.terraformCredit * 0.1)} Cr)
+      {/* Detail Popup Modal */}
+      <Modal
+        visible={activeDetail !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setActiveDetail(null)}
+      >
+        <TouchableOpacity 
+          style={styles.modalBackdrop} 
+          activeOpacity={1} 
+          onPress={() => setActiveDetail(null)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {activeDetail === 'hp' && '❤️ 지구 HP'}
+                {activeDetail === 'shield' && '🛡️ 에너지 실드'}
+                {activeDetail === 'ep' && '⚡ 가용 전력'}
+                {activeDetail === 'tower' && '🛰️ 키네틱 요격 위성'}
+                {activeDetail === 'terraform' && '🌱 행성 개척도'}
+                {activeDetail === 'pop' && '👥 개척지 인구'}
+                {activeDetail === 'auto' && '⚙️ 행성 자동화 상태'}
+                {activeDetail === 'fleet' && '🛸 아군 함대'}
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={[styles.gridCompleteBadgeMini, { marginTop: 8 }]}>
-              <Text style={styles.gridCompleteTextMini}>테라포밍 완료</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {activeDetail === 'pop' && (
-        <View style={styles.detailPopup} pointerEvents="none">
-          <Text style={styles.detailPopupTitle}>👥 개척지 인구</Text>
-          <Text style={styles.detailPopupValue}>{Math.floor(planetState.population || 0).toLocaleString()}명</Text>
-          <Text style={styles.detailPopupSub}>크레딧 세금 생산 기초 부양 인구</Text>
-        </View>
-      )}
-
-      {activeDetail === 'auto' && (
-        <View style={styles.detailPopup}>
-          <Text style={styles.detailPopupTitle}>⚙️ 행성 자동화 상태</Text>
-          <View style={{ gap: 6, width: '100%', marginTop: 4 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.detailPopupSub}>자동 테라포밍 시스템</Text>
-              <TouchableOpacity onPress={() => {
-                if (!isPremium) {
-                  Alert.alert('프리미엄 전용', '프리미엄 패스가 필요합니다.');
-                  return;
-                }
-                toggleAutoTerraform();
-                setTimeout(() => saveGame(), 100);
-              }} style={{ padding: 4, backgroundColor: autoTerraform ? '#00ff8a' : '#1e305e', borderRadius: 4 }}>
-                <Text style={{ fontSize: 8, color: '#ffffff', fontWeight: 'bold' }}>{autoTerraform ? 'ON' : 'OFF'}</Text>
+              <TouchableOpacity onPress={() => setActiveDetail(null)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.detailPopupSub}>자동 요격 위성 재건</Text>
-              <TouchableOpacity onPress={() => {
-                if (!isPremium) {
-                  Alert.alert('프리미엄 전용', '프리미엄 패스가 필요합니다.');
-                  return;
-                }
-                toggleAutoBuildTowers();
-                setTimeout(() => saveGame(), 100);
-              }} style={{ padding: 4, backgroundColor: autoBuildTowers ? '#00ff8a' : '#1e305e', borderRadius: 4 }}>
-                <Text style={{ fontSize: 8, color: '#ffffff', fontWeight: 'bold' }}>{autoBuildTowers ? 'ON' : 'OFF'}</Text>
-              </TouchableOpacity>
+
+            <View style={styles.modalBody}>
+              {activeDetail === 'hp' && (() => {
+                const baseHpRegen = earthHpRegenLevel * 2;
+                const hasRepairShield = shieldModule === 'repair' && earthShield > 0;
+                const totalHpRegen = baseHpRegen + (hasRepairShield ? 5 : 0);
+                return (
+                  <View style={{ gap: 8 }}>
+                    <Text style={styles.modalValue}>{Math.floor(earthHp)} / {earthMaxHp}</Text>
+                    <View style={styles.modalProgressBar}>
+                      <View style={[styles.modalProgressBarFill, { width: `${(earthHp / earthMaxHp) * 100}%`, backgroundColor: '#ff5c5c' }]} />
+                    </View>
+                    <Text style={[styles.modalSubText, { color: '#ff5c5c', marginTop: 4 }]}>
+                      자동 선체 회복속도: +{totalHpRegen} HP/초
+                      {hasRepairShield && " (나노 수리 실드 포함)"}
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {activeDetail === 'shield' && (() => {
+                const activeModuleSpec = SHIELD_MODULE_SPECS[shieldModule || 'basic'];
+                const baseRegen = (activeModuleSpec ? activeModuleSpec.regenBonus : 5) + (earthShieldRegenLevel - 1) * 3;
+                let totalSatellites = 0;
+                Object.values(planets).forEach(p => {
+                  if (p.unlocked) {
+                    totalSatellites += (p.orbitalSatellites || 0);
+                  }
+                });
+                const satelliteBonus = 1 + totalSatellites * 0.1;
+                const finalShieldRegen = (baseRegen * (synergies?.shieldRegenMultiplier || 1.0) * satelliteBonus).toFixed(1);
+                return (
+                  <View style={{ gap: 8 }}>
+                    <Text style={styles.modalValue}>{Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
+                    <View style={styles.modalProgressBar}>
+                      <View style={[styles.modalProgressBarFill, { width: `${(earthShield / earthMaxShield) * 100}%`, backgroundColor: '#00f0ff' }]} />
+                    </View>
+                    <Text style={[styles.modalSubText, { color: '#00f0ff', marginTop: 4 }]}>
+                      실드 자동 충전속도: +{finalShieldRegen} 실드/초
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {activeDetail === 'ep' && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.modalValue}>{Math.max(0, Math.floor(overloadEnergy))} / {Math.floor(overloadMaxEnergy || 100)} TW</Text>
+                  <View style={styles.modalProgressBar}>
+                    <View style={[styles.modalProgressBarFill, { width: `${Math.min(100, Math.max(0, (overloadEnergy / (overloadMaxEnergy || 100)) * 100))}%`, backgroundColor: '#ffd700' }]} />
+                  </View>
+                  {isPowerDischarged && (
+                    <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 6, borderRadius: 4, marginTop: 4, borderWidth: 0.5, borderColor: '#ff3b30' }}>
+                      <Text style={{ fontSize: 9, color: '#ff3b30', fontWeight: 'bold', textAlign: 'center' }}>⚠️ 전력 완전히 방전됨! 실드 및 위성 작동 중지 ⚠️</Text>
+                    </View>
+                  )}
+                  {renderPowerGraph()}
+                </View>
+              )}
+
+              {activeDetail === 'tower' && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.modalValue}>{kineticDefenseTowers}개 가동 중</Text>
+                  <Text style={styles.modalSubText}>적 키네틱 격추율 +{kineticDefenseTowers * 8}%</Text>
+                </View>
+              )}
+
+              {activeDetail === 'terraform' && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.modalValue}>{planetState.terraformProgress}% 완료</Text>
+                  <View style={styles.modalProgressBar}>
+                    <View style={[styles.modalProgressBarFill, { width: `${planetState.terraformProgress}%`, backgroundColor: '#00ff8a' }]} />
+                  </View>
+                  {planetState.terraformProgress < 100 ? (
+                    <TouchableOpacity 
+                      style={[styles.modalActionBtn, { marginTop: 8 }]} 
+                      onPress={handleUpgrade}
+                    >
+                      <Text style={styles.modalActionBtnText}>
+                        테라포밍 강화 ({Math.floor(planetData.terraformCredit * 0.1).toLocaleString()} Cr)
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={[styles.gridCompleteBadgeMini, { marginTop: 8 }]}>
+                      <Text style={styles.gridCompleteTextMini}>테라포밍 완료</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {activeDetail === 'pop' && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.modalValue}>{Math.floor(planetState.population || 0).toLocaleString()}명</Text>
+                  <Text style={styles.modalSubText}>크레딧 세금 생산 기초 부양 인구 (최대 {planetData.maxPopulation?.toLocaleString()}명)</Text>
+                </View>
+              )}
+
+              {activeDetail === 'auto' && (
+                <View style={{ gap: 8 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 6 }}>
+                    <Text style={styles.modalSubText}>자동 테라포밍 시스템</Text>
+                    <TouchableOpacity onPress={() => {
+                      if (!isPremium) {
+                        Alert.alert('프리미엄 전용', '프리미엄 패스가 필요합니다.');
+                        return;
+                      }
+                      toggleAutoTerraform();
+                      setTimeout(() => saveGame(), 100);
+                    }} style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: autoTerraform ? '#00ff8a' : '#1e305e', borderRadius: 4 }}>
+                      <Text style={{ fontSize: 9, color: autoTerraform ? '#050814' : '#ffffff', fontWeight: 'bold' }}>{autoTerraform ? 'ON' : 'OFF'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 6 }}>
+                    <Text style={styles.modalSubText}>자동 요격 위성 재건</Text>
+                    <TouchableOpacity onPress={() => {
+                      if (!isPremium) {
+                        Alert.alert('프리미엄 전용', '프리미엄 패스가 필요합니다.');
+                        return;
+                      }
+                      toggleAutoBuildTowers();
+                      setTimeout(() => saveGame(), 100);
+                    }} style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: autoBuildTowers ? '#00ff8a' : '#1e305e', borderRadius: 4 }}>
+                      <Text style={{ fontSize: 9, color: autoBuildTowers ? '#050814' : '#ffffff', fontWeight: 'bold' }}>{autoBuildTowers ? 'ON' : 'OFF'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {activeDetail === 'fleet' && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.modalValue}>아군 함대: {fleetLength}대 작전 중</Text>
+                  <Text style={styles.modalSubText}>우주 전역 요격 및 방어 대형 유지</Text>
+                </View>
+              )}
             </View>
           </View>
-        </View>
-      )}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -2772,8 +2804,6 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     backgroundColor: 'rgba(5, 8, 20, 0.88)',
-    borderWidth: 1.2,
-    borderColor: '#00f0ff',
     borderRadius: 8,
     padding: 6,
     zIndex: 99,
@@ -2959,6 +2989,96 @@ const styles = StyleSheet.create({
   },
   shortcutBtnText: {
     fontSize: 9.5,
+    fontWeight: 'bold',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(3, 5, 12, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 320,
+    backgroundColor: '#0a0f24',
+    borderWidth: 1.5,
+    borderColor: '#00f0ff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#00f0ff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 240, 255, 0.25)',
+    paddingBottom: 8,
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 14,
+    color: '#00f0ff',
+    fontWeight: 'bold',
+  },
+  modalCloseBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    color: '#8fa0c4',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    gap: 8,
+  },
+  modalValue: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    textAlign: 'center',
+    marginVertical: 4,
+  },
+  modalSubText: {
+    fontSize: 10.5,
+    color: '#8fa0c4',
+    lineHeight: 14,
+  },
+  modalProgressBar: {
+    height: 8,
+    backgroundColor: '#101726',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  modalProgressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  modalActionBtn: {
+    marginTop: 8,
+    paddingVertical: 8,
+    backgroundColor: '#00ff8a',
+    borderRadius: 6,
+    alignItems: 'center',
+    shadowColor: '#00ff8a',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  modalActionBtnText: {
+    color: '#050814',
+    fontSize: 11,
     fontWeight: 'bold',
   },
 });
