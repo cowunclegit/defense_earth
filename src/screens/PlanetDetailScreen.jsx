@@ -1093,54 +1093,54 @@ function AttackSatelliteTab({ planetId, purchaseMultiplier }) {
                   </Text>
                 </TouchableOpacity>
               )}
-              </View>{/* 오른쪽 컬럼 닫기 */}
-            </View>{/* 행1 row 닫기 */}
+            </View>{/* 오른쪽 컬럼 닫기 */}
+          </View>{/* 행1 row 닫기 */}
 
-            {/* 행 2: 강화 버튼 3개 — 현재 수치 & 다음 레벨 예측 포함 */}
-            <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }}>
-              {[
-                {
-                  label: '⬆ 데미지', stat: 'damage', lvl: dmgLvl, cost: dmgUpgradeCost,
-                  curVal: scaledDmg, nextVal: nextDmg, unit: 'HP', arrow: '↑',
-                },
-                {
-                  label: '⬆ 속도', stat: 'speed', lvl: spdLvl, cost: spdUpgradeCost,
-                  curVal: scaledCd.toFixed(1), nextVal: nextCd.toFixed(1), unit: 's', arrow: '↓',
-                },
-                {
-                  label: '⬆ 사거리', stat: 'range', lvl: rngLvl, cost: rngUpgradeCost,
-                  curVal: scaledRange, nextVal: nextRange, unit: '', arrow: '↑',
-                },
-              ].map(({ label, stat, lvl, cost, curVal, nextVal, unit, arrow }) => {
-                const canAfford = credits >= cost;
-                const accent = canAfford ? '#00f0ff' : '#8fa0c4';
-                const dimColor = canAfford ? 'rgba(0,240,255,0.65)' : 'rgba(143,160,196,0.55)';
-                return (
-                  <TouchableOpacity
-                    key={stat}
-                    style={{ flex: 1, paddingVertical: 6, paddingHorizontal: 4, backgroundColor: canAfford ? 'rgba(0,240,255,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: canAfford ? '#00f0ff' : 'rgba(143,160,196,0.25)', alignItems: 'center', gap: 3 }}
-                    onPress={() => {
-                      const success = upgradeSatellite(type, stat);
-                      if (success) setTimeout(() => saveGame(), 100);
-                      else Alert.alert('강화 실패', '크레딧 부족');
-                    }}
-                  >
-                    {/* 1줄: 레이블 + 레벨 */}
-                    <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
-                    {/* 2줄: 수치 + 비용 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={{ color: dimColor, fontSize: 8.5 }}>{curVal}{unit}<Text style={{ color: '#00ff8a', fontWeight: 'bold' }}>→{nextVal}{unit}</Text></Text>
-                      <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8.5 }}>{cost.toLocaleString()}Cr</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+          {/* 행 2: 강화 버튼 3개 — 현재 수치 & 다음 레벨 예측 포함 */}
+          <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }}>
+            {[
+              {
+                label: '⬆ 데미지', stat: 'damage', lvl: dmgLvl, cost: dmgUpgradeCost,
+                curVal: scaledDmg, nextVal: nextDmg, unit: 'HP', arrow: '↑',
+              },
+              {
+                label: '⬆ 속도', stat: 'speed', lvl: spdLvl, cost: spdUpgradeCost,
+                curVal: scaledCd.toFixed(1), nextVal: nextCd.toFixed(1), unit: 's', arrow: '↓',
+              },
+              {
+                label: '⬆ 사거리', stat: 'range', lvl: rngLvl, cost: rngUpgradeCost,
+                curVal: scaledRange, nextVal: nextRange, unit: '', arrow: '↑',
+              },
+            ].map(({ label, stat, lvl, cost, curVal, nextVal, unit, arrow }) => {
+              const canAfford = credits >= cost;
+              const accent = canAfford ? '#00f0ff' : '#8fa0c4';
+              const dimColor = canAfford ? 'rgba(0,240,255,0.65)' : 'rgba(143,160,196,0.55)';
+              return (
+                <TouchableOpacity
+                  key={stat}
+                  style={{ flex: 1, paddingVertical: 6, paddingHorizontal: 4, backgroundColor: canAfford ? 'rgba(0,240,255,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: canAfford ? '#00f0ff' : 'rgba(143,160,196,0.25)', alignItems: 'center', gap: 3 }}
+                  onPress={() => {
+                    const success = upgradeSatellite(type, stat);
+                    if (success) setTimeout(() => saveGame(), 100);
+                    else Alert.alert('강화 실패', '크레딧 부족');
+                  }}
+                >
+                  {/* 1줄: 레이블 + 레벨 */}
+                  <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
+                  {/* 2줄: 수치 + 비용 */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ color: dimColor, fontSize: 8.5 }}>{curVal}{unit}<Text style={{ color: '#00ff8a', fontWeight: 'bold' }}>→{nextVal}{unit}</Text></Text>
+                    <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8.5 }}>{cost.toLocaleString()}Cr</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        );
-      })}
-    </View>
-  );
+        </View>
+      );
+    })}
+  </View>
+);
 }
 
 function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
@@ -1148,8 +1148,6 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   const maxEnergy = useGameStore(state => state.maxEnergy);
   const usedEnergy = useGameStore(state => state.usedEnergy);
   const planets = useGameStore(state => state.planets);
-  const satelliteLevels = useGameStore(state => state.satelliteLevels);
-  const upgradeSatellite = useGameStore(state => state.upgradeSatellite);
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const onlineSatelliteCount = useGameStore(state => state.onlineSatelliteCount);
@@ -1162,7 +1160,6 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
   if (!planetState) return null;
 
   const isPowerDischarged = (overloadEnergy || 0) <= 0;
-
   const builtSats = getOrderedBuiltSatellites(planets);
   const activeLimit = isPowerOffline ? (onlineSatelliteCount || 0) : builtSats.length;
   const activeSatsMap = {};
@@ -1185,6 +1182,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
         </View>
       )}
 
+      {/* ⓘ 상세 정보 모달 */}
       <Modal
         visible={infoType !== null}
         transparent
@@ -1243,6 +1241,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
         </TouchableOpacity>
       </Modal>
 
+      {/* ── 위성 리스트 ── */}
       {specialTypes.map((type) => {
         const spec = SATELLITE_SPECS[type];
         const count = planetState.orbitalSatellitesList?.[type] || 0;
@@ -1311,20 +1310,6 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                 )}
               </View>
             </View>
-                      {/* 레이블 + 레벨 */}
-                      <Text style={{ color: accent, fontSize: 9.5, fontWeight: 'bold' }}>{label} <Text style={{ fontSize: 8.5 }}>Lv.{lvl}</Text></Text>
-                      {/* 현재 → 다음 수치 */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                        <Text style={{ color: dimColor, fontSize: 8.5 }}>{curVal}{unit}</Text>
-                        <Text style={{ color: '#00ff8a', fontSize: 8.5, fontWeight: 'bold' }}>→{nextVal}{unit}</Text>
-                      </View>
-                      {/* 비용 */}
-                      <Text style={{ color: canAfford ? '#ffd700' : '#8fa0c4', fontSize: 8.5 }}>{cost.toLocaleString()}Cr</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
           </View>
         );
       })}
