@@ -1259,6 +1259,17 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
         const buildCost = getSatelliteCost(type, count);
         const canAffordBuild = credits >= buildCost && (maxEnergy - usedEnergy) >= spec.energy;
 
+        let effectPreview = '';
+        if (type === 'sensor') {
+          effectPreview = `\n(감속: ${count * 5}% → ${Math.min(25, (count + 1) * 5)}%)`;
+        } else if (type === 'forceShield') {
+          effectPreview = `\n(재생: +${count * 10}% → +${(count + 1) * 10}%)`;
+        } else if (type === 'decoy') {
+          effectPreview = `\n(요격: ${count * 5}% → ${(count + 1) * 5}%)`;
+        } else if (type === 'repairDrone') {
+          effectPreview = `\n(수리: ${count * 20}HP → ${(count + 1) * 20}HP)`;
+        }
+
         return (
           <View key={type} style={{ marginBottom: 6, backgroundColor: 'rgba(10,20,45,0.8)', borderRadius: 10, borderWidth: 1, borderColor: isOffline ? 'rgba(143,160,196,0.3)' : 'rgba(255,215,0,0.3)', opacity: isOffline ? 0.7 : 1, padding: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -1287,7 +1298,7 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                   </View>
                 ) : (
                   <TouchableOpacity
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: canAffordBuild ? '#ffd700' : 'rgba(255,215,0,0.2)', borderRadius: 8, borderWidth: canAffordBuild ? 0 : 1, borderColor: '#ffd700' }}
+                    style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: canAffordBuild ? '#ffd700' : 'rgba(255,215,0,0.2)', borderRadius: 8, borderWidth: canAffordBuild ? 0 : 1, borderColor: '#ffd700', alignItems: 'center' }}
                     onPress={() => {
                       let ok = 0;
                       for (let i = 0; i < purchaseMultiplier; i++) {
@@ -1303,8 +1314,9 @@ function DefenseSatelliteTab({ planetId, purchaseMultiplier }) {
                       }
                     }}
                   >
-                    <Text style={{ color: canAffordBuild ? '#050814' : '#ffd700', fontSize: 11, fontWeight: 'bold' }}>
+                    <Text style={{ color: canAffordBuild ? '#050814' : '#ffd700', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>
                       +건설 {buildCost.toLocaleString()}Cr{purchaseMultiplier > 1 ? `×${purchaseMultiplier}` : ''}
+                      <Text style={{ fontSize: 9, color: canAffordBuild ? '#444' : '#8fa0c4', fontWeight: 'normal' }}>{effectPreview}</Text>
                     </Text>
                   </TouchableOpacity>
                 )}
