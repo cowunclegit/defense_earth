@@ -34,6 +34,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
   const [editorCategory, setEditorCategory] = React.useState('alien');
   const [editorSelectedType, setEditorSelectedType] = React.useState('scout');
   const [purchaseMultiplier, setPurchaseMultiplier] = React.useState(1);
+  const [activeDetail, setActiveDetail] = React.useState(null);
 
   // Minimal stable selectors to prevent 60FPS re-renders
   const isPremium = useGameStore(state => state.isPremium);
@@ -121,7 +122,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
             purchaseMultiplier={purchaseMultiplier}
             onToggleMultiplier={() => setPurchaseMultiplier(purchaseMultiplier === 1 ? 5 : 1)}
           />
-          <TopHud overlay={true} />
+          <TopHud 
+            overlay={true} 
+            planetId={planetId}
+            onPressHp={() => setActiveDetail('hp')}
+            onPressShield={() => setActiveDetail('shield')}
+          />
           
           {/* 오버레이: 좌상단 행성 이름 */}
           <View style={styles.topLeftOverlay}>
@@ -177,7 +183,11 @@ export default function PlanetDetailScreen({ route, navigation }) {
           </View>
 
           {/* 오버레이: 하단 상태 아이콘 바 (60FPS 격리) */}
-          <BottomStatusOverlay planetId={planetId} />
+          <BottomStatusOverlay 
+            planetId={planetId} 
+            activeDetail={activeDetail}
+            setActiveDetail={setActiveDetail}
+          />
         </View>
 
         {/* 하단: 업그레이드 및 기지 건설 제어 영역 */}
@@ -249,7 +259,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
 // ==========================================
 // Subcomponent: BottomStatusOverlay (60FPS)
 // ==========================================
-function BottomStatusOverlay({ planetId }) {
+function BottomStatusOverlay({ planetId, activeDetail, setActiveDetail }) {
   const earthHp = useGameStore(state => state.earthHp);
   const earthMaxHp = useGameStore(state => state.earthMaxHp);
   const earthShield = useGameStore(state => state.earthShield);
@@ -276,7 +286,6 @@ function BottomStatusOverlay({ planetId }) {
   const buyPremium = useGameStore(state => state.buyPremium);
   const saveGame = useGameStore(state => state.saveGame);
 
-  const [activeDetail, setActiveDetail] = React.useState(null);
   const [blinkVisible, setBlinkVisible] = React.useState(true);
 
   const isPowerDischarged = (overloadEnergy || 0) <= 0;
@@ -409,28 +418,6 @@ function BottomStatusOverlay({ planetId }) {
       </View>
 
       <View style={styles.statusChipRow}>
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#ff5c5c' }, activeDetail === 'hp' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'hp' ? null : 'hp')}
-        >
-          <Text style={styles.statusChipIcon}>❤️</Text>
-          <Text style={[styles.statusChipVal, { color: '#ff5c5c' }]}>{Math.floor(earthHp)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.statusChip,
-            { borderColor: '#00f0ff' },
-            activeDetail === 'shield' && styles.statusChipActive,
-            !isShieldOnline && { borderColor: '#8fa0c4', opacity: 0.6 }
-          ]}
-          onPress={() => setActiveDetail(activeDetail === 'shield' ? null : 'shield')}
-        >
-          <Text style={styles.statusChipIcon}>🛡️</Text>
-          <Text style={[styles.statusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
-            {!isShieldOnline ? 'OFF' : Math.floor(earthShield)}
-          </Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={[

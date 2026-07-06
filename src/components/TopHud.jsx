@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform, useWindowDimensions } from 'react-native';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, isSystemOnline } from '../store/gameStore';
 import { PLANETARY_DATA } from '../constants/planetaryData';
 import { getFactoryIncome } from '../store/gameSpecs';
 
-export default function TopHud({ overlay }) {
+export default function TopHud({ overlay, planetId, onPressHp, onPressShield }) {
   const { width: screenWidth } = useWindowDimensions();
   // 화면 비율 기반 자원칸 너비 (고정 픽셀 대신 화면 크기 비례)
   const colW = {
@@ -33,6 +33,11 @@ export default function TopHud({ overlay }) {
     planets,
     synergies
   } = useGameStore();
+
+  const planetState = planetId ? planets[planetId] : null;
+  const overloadEnergy = useGameStore(state => state.overloadEnergy);
+  const isPowerOffline = useGameStore(state => state.isPowerOffline);
+  const isShieldOnline = planetId ? isSystemOnline('shield', null, overloadEnergy, isPowerOffline) : false;
 
   const activeEnemiesCount = enemies ? enemies.length : 0;
   const remainingEnemies = activeEnemiesCount + (enemiesRemainingToSpawn || 0);
@@ -191,10 +196,28 @@ export default function TopHud({ overlay }) {
         {/* 하단: 게임 컨트롤 및 웨이브 상태 패널 (자원창 하단에 소형 배치) */}
         <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
           <View style={styles.waveBadge}>
-            <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
-            <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginTop: 2, overflow: 'hidden', minWidth: 60 }}>
-              <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
+            <View style={{ marginRight: 6 }}>
+              <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
+              <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginTop: 2, overflow: 'hidden', minWidth: 60 }}>
+                <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
+              </View>
             </View>
+            {planetId && (
+              <>
+                <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255, 255, 255, 0.15)', marginHorizontal: 6 }} />
+                <TouchableOpacity onPress={onPressHp} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 2 }}>
+                  <Text style={{ fontSize: 9.5 }}>❤️</Text>
+                  <Text style={{ fontSize: 9.5, color: '#ff5c5c', fontWeight: 'bold' }}>{Math.floor(planetState?.hp || 0)}</Text>
+                </TouchableOpacity>
+                <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255, 255, 255, 0.15)', marginHorizontal: 6 }} />
+                <TouchableOpacity onPress={onPressShield} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 2, opacity: isShieldOnline ? 1 : 0.6 }}>
+                  <Text style={{ fontSize: 9.5 }}>🛡️</Text>
+                  <Text style={{ fontSize: 9.5, color: isShieldOnline ? '#00f0ff' : '#8fa0c4', fontWeight: 'bold' }}>
+                    {isShieldOnline ? Math.floor(planetState?.shield || 0) : 'OFF'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           <View style={styles.tpBadge}>
@@ -350,12 +373,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier New',
   },
   waveBadge: {
-    paddingHorizontal: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 5,
-    backgroundColor: 'rgba(0, 240, 255, 0.1)',
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 240, 255, 0.08)',
     borderWidth: 1,
-    borderColor: '#00f0ff',
+    borderColor: 'rgba(0, 240, 255, 0.35)',
   },
   waveText: {
     color: '#00f0ff',
