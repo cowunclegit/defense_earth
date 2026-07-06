@@ -2814,7 +2814,7 @@ const styles = StyleSheet.create({
     }),
     left: 8,
     right: 8,
-    backgroundColor: 'rgba(5, 8, 20, 0.88)',
+    backgroundColor: 'transparent',
     borderRadius: 8,
     padding: 6,
     zIndex: 99,
