@@ -11,7 +11,10 @@ export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
   const [zoom, setZoom] = React.useState(1.0);
   const [panX, setPanX] = React.useState(0);
   const [panY, setPanY] = React.useState(0);
-  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+  
+  const dragStartRef = React.useRef(null);
+  const initialDistanceRef = React.useRef(null);
+  const initialZoomRef = React.useRef(1.0);
   const containerRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -33,16 +36,78 @@ export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
   }, []);
 
   const onStartShouldSetResponder = () => true;
+  const onMoveShouldSetResponder = () => true;
+
   const onResponderGrant = (evt) => {
-    const locX = evt.nativeEvent.pageX;
-    const locY = evt.nativeEvent.pageY;
-    setDragStart({ x: locX - panX, y: locY - panY });
+    const { touches } = evt.nativeEvent;
+    if (touches && touches.length === 2) {
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      const dx = touch1.pageX - touch2.pageX;
+      const dy = touch1.pageY - touch2.pageY;
+      initialDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+      initialZoomRef.current = zoom;
+      dragStartRef.current = null;
+    } else if (touches && touches.length === 1) {
+      const touch = touches[0];
+      dragStartRef.current = { x: touch.pageX - panX, y: touch.pageY - panY };
+      initialDistanceRef.current = null;
+    } else {
+      const locX = evt.nativeEvent.pageX;
+      const locY = evt.nativeEvent.pageY;
+      dragStartRef.current = { x: locX - panX, y: locY - panY };
+      initialDistanceRef.current = null;
+    }
   };
+
   const onResponderMove = (evt) => {
-    const locX = evt.nativeEvent.pageX;
-    const locY = evt.nativeEvent.pageY;
-    setPanX(locX - dragStart.x);
-    setPanY(locY - dragStart.y);
+    const { touches } = evt.nativeEvent;
+
+    if (touches && touches.length === 2) {
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      const dx = touch1.pageX - touch2.pageX;
+      const dy = touch1.pageY - touch2.pageY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (initialDistanceRef.current === null) {
+        initialDistanceRef.current = distance;
+        initialZoomRef.current = zoom;
+      } else {
+        const scale = distance / initialDistanceRef.current;
+        const targetZoom = initialZoomRef.current * scale;
+        setZoom(Math.max(0.15, Math.min(3.0, targetZoom)));
+      }
+      dragStartRef.current = null;
+    } else if (touches && touches.length === 1) {
+      initialDistanceRef.current = null;
+      const touch = touches[0];
+      const locX = touch.pageX;
+      const locY = touch.pageY;
+
+      if (dragStartRef.current === null) {
+        dragStartRef.current = { x: locX - panX, y: locY - panY };
+      } else {
+        setPanX(locX - dragStartRef.current.x);
+        setPanY(locY - dragStartRef.current.y);
+      }
+    } else {
+      initialDistanceRef.current = null;
+      const locX = evt.nativeEvent.pageX;
+      const locY = evt.nativeEvent.pageY;
+
+      if (dragStartRef.current === null) {
+        dragStartRef.current = { x: locX - panX, y: locY - panY };
+      } else {
+        setPanX(locX - dragStartRef.current.x);
+        setPanY(locY - dragStartRef.current.y);
+      }
+    }
+  };
+
+  const onResponderRelease = () => {
+    initialDistanceRef.current = null;
+    dragStartRef.current = null;
   };
 
   const resetZoomPan = () => {
@@ -61,8 +126,11 @@ export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
           : { width: canvasSize, height: canvasSize }
       ]}
       onStartShouldSetResponder={onStartShouldSetResponder}
+      onMoveShouldSetResponder={onMoveShouldSetResponder}
       onResponderGrant={onResponderGrant}
       onResponderMove={onResponderMove}
+      onResponderRelease={onResponderRelease}
+      onResponderTerminate={onResponderRelease}
     >
       {Platform.OS === 'web' ? (
         <WebCanvas zoom={zoom} panX={panX} panY={panY} />
