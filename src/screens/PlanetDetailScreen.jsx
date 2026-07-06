@@ -589,7 +589,7 @@ function BottomStatusOverlay({ planetId, activeDetail, setActiveDetail }) {
           </View>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </>
   );
 }
 
