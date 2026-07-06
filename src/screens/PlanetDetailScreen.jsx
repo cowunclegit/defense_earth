@@ -2217,7 +2217,7 @@ const styles = StyleSheet.create({
         width: '100%',
       },
       default: {
-        flex: 0.7,
+        flex: 0.5,
         justifyContent: 'center',
         alignItems: 'center',
       }
@@ -2599,7 +2599,7 @@ const styles = StyleSheet.create({
         flex: 1,
       },
       default: {
-        flex: 0.3,
+        flex: 0.5,
       }
     }),
     marginTop: 8,
