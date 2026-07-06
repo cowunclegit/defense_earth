@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     shadowOpacity: 0,
     elevation: 0,
-    paddingTop: 8,
+    paddingTop: Platform.OS === 'ios' ? 48 : 15,
     paddingHorizontal: 15,
     zIndex: 100,
   },

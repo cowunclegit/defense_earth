@@ -2201,7 +2201,7 @@ const styles = StyleSheet.create({
   fixedContentContainer: {
     flex: 1,
     flexDirection: 'column',
-    paddingBottom: 10,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 10,
     overflow: 'hidden',
   },
   battleCanvasContainer: {
@@ -2227,10 +2227,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 185,
+        top: 225,
       },
       default: {
-        top: 155,
+        top: 162,
       }
     }),
     left: 15,
@@ -2750,8 +2750,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(4, 7, 18, 0.9)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
     marginTop: 4,
@@ -2807,10 +2806,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 105,
+        top: 145,
       },
       default: {
-        top: 75,
+        top: 82,
       }
     }),
     left: 8,
@@ -2968,10 +2967,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 185,
+        top: 225,
       },
       default: {
-        top: 155,
+        top: 162,
       }
     }),
     right: 15,
