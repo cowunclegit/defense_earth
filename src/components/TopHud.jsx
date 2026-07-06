@@ -4,7 +4,18 @@ import { useGameStore, isSystemOnline } from '../store/gameStore';
 import { PLANETARY_DATA } from '../constants/planetaryData';
 import { getFactoryIncome } from '../store/gameSpecs';
 
-export default function TopHud({ overlay, planetId, onPressHp, onPressShield }) {
+export default function TopHud({
+  overlay,
+  planetId,
+  onPressHp,
+  onPressShield,
+  onPressEp,
+  onPressTower,
+  onPressTerraform,
+  onPressPop,
+  onPressAuto,
+  onPressFleet
+}) {
   const { width: screenWidth } = useWindowDimensions();
   // 화면 비율 기반 자원칸 너비 (고정 픽셀 대신 화면 크기 비례)
   const colW = {
@@ -31,13 +42,32 @@ export default function TopHud({ overlay, planetId, onPressHp, onPressShield }) 
     timeMachineGauge,
     timeParticles,
     planets,
-    synergies
+    synergies,
+    kineticDefenseTowers,
+    autoTerraform,
+    autoBuildTowers,
+    fleet
   } = useGameStore();
 
   const planetState = planetId ? planets[planetId] : null;
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const isShieldOnline = planetId ? isSystemOnline('shield', null, overloadEnergy, isPowerOffline) : false;
+  const isPowerDischarged = (overloadEnergy || 0) <= 0;
+  const fleetLength = fleet ? fleet.length : 0;
+
+  const [blinkVisible, setBlinkVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!isPowerDischarged) {
+      setBlinkVisible(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      setBlinkVisible((prev) => !prev);
+    }, 400);
+    return () => clearInterval(interval);
+  }, [isPowerDischarged]);
 
   const activeEnemiesCount = enemies ? enemies.length : 0;
   const remainingEnemies = activeEnemiesCount + (enemiesRemainingToSpawn || 0);
@@ -196,27 +226,106 @@ export default function TopHud({ overlay, planetId, onPressHp, onPressShield }) 
         {/* 하단: 게임 컨트롤 및 웨이브 상태 패널 (자원창 하단에 소형 배치) */}
         <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
           <View style={styles.waveBadge}>
-            <View style={{ marginRight: 6 }}>
+            {/* Line 1: Wave Info */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: planetId ? 6 : 0 }}>
               <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
-              <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginTop: 2, overflow: 'hidden', minWidth: 60 }}>
+              <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginLeft: 8, overflow: 'hidden', width: 60 }}>
                 <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
               </View>
             </View>
+
+            {/* Line 2: All Status Chips */}
             {planetId && (
-              <>
-                <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255, 255, 255, 0.15)', marginHorizontal: 6 }} />
-                <TouchableOpacity onPress={onPressHp} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 2 }}>
-                  <Text style={{ fontSize: 9.5 }}>❤️</Text>
-                  <Text style={{ fontSize: 9.5, color: '#ff5c5c', fontWeight: 'bold' }}>{Math.floor(planetState?.hp || 0)}</Text>
+              <View style={styles.statusChipsRow}>
+                {/* ❤️ HP */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#ff5c5c' }]}
+                  onPress={onPressHp}
+                >
+                  <Text style={styles.miniStatusChipIcon}>❤️</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#ff5c5c' }]}>{Math.floor(planetState?.hp || 0)}</Text>
                 </TouchableOpacity>
-                <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255, 255, 255, 0.15)', marginHorizontal: 6 }} />
-                <TouchableOpacity onPress={onPressShield} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 2, opacity: isShieldOnline ? 1 : 0.6 }}>
-                  <Text style={{ fontSize: 9.5 }}>🛡️</Text>
-                  <Text style={{ fontSize: 9.5, color: isShieldOnline ? '#00f0ff' : '#8fa0c4', fontWeight: 'bold' }}>
-                    {isShieldOnline ? Math.floor(planetState?.shield || 0) : 'OFF'}
+
+                {/* 🛡️ Shield */}
+                <TouchableOpacity
+                  style={[
+                    styles.miniStatusChip,
+                    { borderColor: '#00f0ff' },
+                    !isShieldOnline && { borderColor: '#8fa0c4', opacity: 0.6 }
+                  ]}
+                  onPress={onPressShield}
+                >
+                  <Text style={styles.miniStatusChipIcon}>🛡️</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
+                    {!isShieldOnline ? 'OFF' : Math.floor(planetState?.shield || 0)}
                   </Text>
                 </TouchableOpacity>
-              </>
+
+                {/* ⚡ EP */}
+                <TouchableOpacity
+                  style={[
+                    styles.miniStatusChip,
+                    { borderColor: '#ffd700' },
+                    isPowerDischarged && {
+                      borderColor: blinkVisible ? '#ffd700' : '#8fa0c4',
+                      backgroundColor: blinkVisible ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.02)'
+                    }
+                  ]}
+                  onPress={onPressEp}
+                >
+                  <Text style={styles.miniStatusChipIcon}>⚡</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }, isPowerDischarged && { color: blinkVisible ? '#ffd700' : '#8fa0c4' }]}>
+                    {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))}TW`}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* 🛰️ Satellite */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#c296ff' }]}
+                  onPress={onPressTower}
+                >
+                  <Text style={styles.miniStatusChipIcon}>🛰️</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
+                </TouchableOpacity>
+
+                {/* 🌱 Terraform */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
+                  onPress={onPressTerraform}
+                >
+                  <Text style={styles.miniStatusChipIcon}>🌱</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{planetState?.terraformProgress || 0}%</Text>
+                </TouchableOpacity>
+
+                {/* 👥 Population */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#ffd700' }]}
+                  onPress={onPressPop}
+                >
+                  <Text style={styles.miniStatusChipIcon}>👥</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }]}>{Math.floor((planetState?.population || 0) / 1000)}K</Text>
+                </TouchableOpacity>
+
+                {/* ⚙️ Auto settings */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#8fa0c4' }]}
+                  onPress={onPressAuto}
+                >
+                  <Text style={styles.miniStatusChipIcon}>⚙️</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: autoTerraform || autoBuildTowers ? '#00bfa5' : '#8fa0c4' }]}>
+                    {(autoTerraform ? 1 : 0) + (autoBuildTowers ? 1 : 0)}/2
+                  </Text>
+                </TouchableOpacity>
+
+                {/* 🛸 Fleet */}
+                <TouchableOpacity
+                  style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
+                  onPress={onPressFleet}
+                >
+                  <Text style={styles.miniStatusChipIcon}>🛸</Text>
+                  <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{fleetLength}</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -373,14 +482,37 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier New',
   },
   waveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 6,
     backgroundColor: 'rgba(0, 240, 255, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(0, 240, 255, 0.35)',
+  },
+  statusChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3.5,
+    marginTop: 4,
+  },
+  miniStatusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1.5,
+    paddingVertical: 1.5,
+    paddingHorizontal: 3.5,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  miniStatusChipIcon: {
+    fontSize: 7.5,
+  },
+  miniStatusChipVal: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
   },
   waveText: {
     color: '#00f0ff',

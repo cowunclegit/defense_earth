@@ -127,6 +127,12 @@ export default function PlanetDetailScreen({ route, navigation }) {
             planetId={planetId}
             onPressHp={() => setActiveDetail('hp')}
             onPressShield={() => setActiveDetail('shield')}
+            onPressEp={() => setActiveDetail('ep')}
+            onPressTower={() => setActiveDetail('tower')}
+            onPressTerraform={() => setActiveDetail('terraform')}
+            onPressPop={() => setActiveDetail('pop')}
+            onPressAuto={() => setActiveDetail('auto')}
+            onPressFleet={() => setActiveDetail('fleet')}
           />
           
           {/* 오버레이: 좌상단 행성 이름 */}
@@ -408,7 +414,7 @@ function BottomStatusOverlay({ planetId, activeDetail, setActiveDetail }) {
   };
 
   return (
-    <View style={styles.bottomStatusOverlay}>
+    <>
       <View style={styles.hiddenE2ETestWrapper}>
         <Text>지구 HP: {Math.floor(earthHp)} / {earthMaxHp}</Text>
         <Text>에너지 실드: {Math.floor(earthShield)} / {Math.floor(earthMaxShield)}</Text>
@@ -417,68 +423,6 @@ function BottomStatusOverlay({ planetId, activeDetail, setActiveDetail }) {
         {!isPremium && <Text>🔒 PASS 전용</Text>}
       </View>
 
-      <View style={styles.statusChipRow}>
-
-        <TouchableOpacity
-          style={[
-            styles.statusChip,
-            { borderColor: '#ffd700' },
-            activeDetail === 'ep' && styles.statusChipActive,
-            isPowerDischarged && {
-              borderColor: blinkVisible ? '#ffd700' : '#8fa0c4',
-              backgroundColor: blinkVisible ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.02)'
-            }
-          ]}
-          onPress={() => setActiveDetail(activeDetail === 'ep' ? null : 'ep')}
-        >
-          <Text style={styles.statusChipIcon}>⚡</Text>
-          <Text style={[styles.statusChipVal, { color: '#ffd700' }, isPowerDischarged && { color: blinkVisible ? '#ffd700' : '#8fa0c4' }]}>
-            {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))}TW`}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#c296ff' }, activeDetail === 'tower' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'tower' ? null : 'tower')}
-        >
-          <Text style={styles.statusChipIcon}>🛰️</Text>
-          <Text style={[styles.statusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#00ff8a' }, activeDetail === 'terraform' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'terraform' ? null : 'terraform')}
-        >
-          <Text style={styles.statusChipIcon}>🌱</Text>
-          <Text style={[styles.statusChipVal, { color: '#00ff8a' }]}>{planetState.terraformProgress}%</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#ffd700' }, activeDetail === 'pop' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'pop' ? null : 'pop')}
-        >
-          <Text style={styles.statusChipIcon}>👥</Text>
-          <Text style={[styles.statusChipVal, { color: '#ffd700' }]}>{Math.floor(planetState.population / 1000)}K</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#8fa0c4' }, activeDetail === 'auto' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'auto' ? null : 'auto')}
-        >
-          <Text style={styles.statusChipIcon}>⚙️</Text>
-          <Text style={[styles.statusChipVal, { color: autoTerraform || autoBuildTowers ? '#00bfa5' : '#8fa0c4' }]}>
-            {(autoTerraform ? 1 : 0) + (autoBuildTowers ? 1 : 0)}/2
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.statusChip, { borderColor: '#00ff8a' }, activeDetail === 'fleet' && styles.statusChipActive]}
-          onPress={() => setActiveDetail(activeDetail === 'fleet' ? null : 'fleet')}
-        >
-          <Text style={styles.statusChipIcon}>🛸</Text>
-          <Text style={[styles.statusChipVal, { color: '#00ff8a' }]}>{fleetLength}</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Detail Popup Modal */}
       <Modal
