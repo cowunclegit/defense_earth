@@ -185,185 +185,177 @@ export default function TopHud({
           <Text>{Math.floor(nanocores)}</Text>
         </View>
       </View>
-      
-      <View style={styles.hudContentColumn} pointerEvents={overlay ? "box-none" : "auto"}>
-        {/* 상단: 자원 요약 바 */}
-        <View style={styles.leftResourcesColumn} pointerEvents={overlay ? "box-none" : "auto"}>
+
+      <View style={styles.dashboardPanel} pointerEvents={overlay ? "box-none" : "auto"}>
+        {/* Line 1: Resource Summary Row & TP Badge */}
+        <View style={styles.dashboardRow}>
           <TouchableOpacity 
-            style={styles.summaryBarTouch} 
+            style={styles.resourceSummaryTouch} 
             onPress={() => setShowDetails(!showDetails)}
           >
-            <View style={[styles.summaryItemSlot, { width: colW.credit }]}>
-              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">🪙 {Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s)</Text>
-            </View>
-            <View style={[styles.summaryItemSlot, { width: colW.nanocores }]}>
-              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">⚙️ {Math.floor(nanocores)}</Text>
-            </View>
-            <View style={[styles.summaryItemSlot, { width: colW.chronos }]}>
-              <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">⏳ {Math.floor(timeMachineGauge)}%</Text>
-            </View>
-            <Text style={styles.dropdownArrow}>{showDetails ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-
-          {showDetails && (
-            <View style={styles.detailsDropdown} pointerEvents="none">
-              <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: '#00ff8a' }]}>CREDIT</Text>
-                <Text style={[styles.detailValue, { color: '#00ff8a' }]}>{Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s)</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: '#ffd700' }]}>NANOCORE</Text>
-                <Text style={[styles.detailValue, { color: '#ffd700' }]}>{Math.floor(nanocores).toLocaleString()}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: '#bf5cff' }]}>CHRONOS</Text>
-                <Text style={[styles.detailValue, { color: '#bf5cff' }]}>{Math.floor(timeMachineGauge)}%</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* 라인 1: 웨이브 진행도 및 8대 상태 칩 패널 (가로 전체폭) */}
-        <View style={{ alignSelf: 'stretch', marginBottom: 6 }} pointerEvents={overlay ? "box-none" : "auto"}>
-          <View style={styles.waveBadge}>
-            {/* Line 1: Wave Info */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: planetId ? 6 : 0 }}>
-              <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
-              <View style={{ height: 3, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1.5, overflow: 'hidden', flex: 1, marginLeft: 12 }}>
-                <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
-              </View>
-            </View>
-
-            {/* Line 2: All Status Chips */}
-            {planetId && (
-              <View style={styles.statusChipsRow}>
-                {/* ❤️ HP */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#ff5c5c' }]}
-                  onPress={onPressHp}
-                >
-                  <Text style={styles.miniStatusChipIcon}>❤️</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#ff5c5c' }]}>{Math.floor(planetState?.hp || 0)}</Text>
-                </TouchableOpacity>
-
-                {/* 🛡️ Shield */}
-                <TouchableOpacity
-                  style={[
-                    styles.miniStatusChip,
-                    { borderColor: '#00f0ff' },
-                    !isShieldOnline && { borderColor: '#8fa0c4', opacity: 0.6 }
-                  ]}
-                  onPress={onPressShield}
-                >
-                  <Text style={styles.miniStatusChipIcon}>🛡️</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
-                    {!isShieldOnline ? 'OFF' : Math.floor(planetState?.shield || 0)}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* ⚡ EP */}
-                <TouchableOpacity
-                  style={[
-                    styles.miniStatusChip,
-                    { borderColor: '#ffd700' },
-                    isPowerDischarged && {
-                      borderColor: blinkVisible ? '#ffd700' : '#8fa0c4',
-                      backgroundColor: blinkVisible ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.02)'
-                    }
-                  ]}
-                  onPress={onPressEp}
-                >
-                  <Text style={styles.miniStatusChipIcon}>⚡</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }, isPowerDischarged && { color: blinkVisible ? '#ffd700' : '#8fa0c4' }]}>
-                    {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))}TW`}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* 🛰️ Satellite */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#c296ff' }]}
-                  onPress={onPressTower}
-                >
-                  <Text style={styles.miniStatusChipIcon}>🛰️</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
-                </TouchableOpacity>
-
-                {/* 🌱 Terraform */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
-                  onPress={onPressTerraform}
-                >
-                  <Text style={styles.miniStatusChipIcon}>🌱</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{planetState?.terraformProgress || 0}%</Text>
-                </TouchableOpacity>
-
-                {/* 👥 Population */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#ffd700' }]}
-                  onPress={onPressPop}
-                >
-                  <Text style={styles.miniStatusChipIcon}>👥</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }]}>{Math.floor((planetState?.population || 0) / 1000)}K</Text>
-                </TouchableOpacity>
-
-                {/* ⚙️ Auto settings */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#8fa0c4' }]}
-                  onPress={onPressAuto}
-                >
-                  <Text style={styles.miniStatusChipIcon}>⚙️</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: autoTerraform || autoBuildTowers ? '#00bfa5' : '#8fa0c4' }]}>
-                    {(autoTerraform ? 1 : 0) + (autoBuildTowers ? 1 : 0)}/2
-                  </Text>
-                </TouchableOpacity>
-
-                {/* 🛸 Fleet */}
-                <TouchableOpacity
-                  style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
-                  onPress={onPressFleet}
-                >
-                  <Text style={styles.miniStatusChipIcon}>🛸</Text>
-                  <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{fleetLength}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* 라인 2: 게임 속도/일시정지/TP/프리미엄 패스 제어 바 (한 행에 균등 정렬) */}
-        <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
-          <View style={styles.tpBadge}>
-            <Text style={styles.tpText}>🌀 {timeParticles} TP</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.premiumBadge, isPremium ? styles.premiumBadgeActive : styles.premiumBadgeLocked]}
-            onPress={handlePremiumPress}
-          >
-            <Text style={[styles.premiumBadgeText, { color: isPremium ? '#00f0ff' : '#ffd700' }]}>
-              {isPremium ? '★ PREMIUM' : '☆ BUY PASS'}
+            <Text style={styles.summaryIconText} numberOfLines={1} ellipsizeMode="clip">
+              🪙 {Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s) | ⚙️ {Math.floor(nanocores)} | ⏳ {Math.floor(timeMachineGauge)}% {showDetails ? '▲' : '▼'}
             </Text>
           </TouchableOpacity>
+          
+          <View style={styles.dashboardTpBadge}>
+            <Text style={styles.tpText}>🌀 {timeParticles} TP</Text>
+          </View>
+        </View>
 
-          <View style={styles.speedControlStepper}>
-            <TouchableOpacity style={styles.stepperMiniBtn} onPress={decreaseSpeed}>
-              <Text style={styles.stepperMiniBtnText}>◀</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.speedBtnMain} onPress={cycleSpeed}>
-              <Text style={styles.speedText}>{gameSpeed}x Speed</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.stepperMiniBtn} onPress={increaseSpeed}>
-              <Text style={styles.stepperMiniBtnText}>▶</Text>
-            </TouchableOpacity>
+        {/* Dropdown details if clicked */}
+        {showDetails && (
+          <View style={styles.detailsDropdownInline}>
+            <View style={styles.detailItem}>
+              <Text style={[styles.detailLabel, { color: '#00ff8a' }]}>CREDIT</Text>
+              <Text style={[styles.detailValue, { color: '#00ff8a' }]}>{Math.floor(credits).toLocaleString()} (+{creditRate.toFixed(1)}/s)</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={[styles.detailLabel, { color: '#ffd700' }]}>NANOCORE</Text>
+              <Text style={[styles.detailValue, { color: '#ffd700' }]}>{Math.floor(nanocores).toLocaleString()}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={[styles.detailLabel, { color: '#bf5cff' }]}>CHRONOS</Text>
+              <Text style={[styles.detailValue, { color: '#bf5cff' }]}>{Math.floor(timeMachineGauge)}%</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Line 2: Wave Progress & Speed/Pause Controls */}
+        <View style={[styles.dashboardRow, { marginTop: 6 }]}>
+          {/* Wave info */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+            <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
+            <View style={{ height: 3, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1.5, overflow: 'hidden', flex: 1, marginLeft: 8 }}>
+              <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
+            </View>
           </View>
 
-          <TouchableOpacity 
-            style={[styles.pauseBtn, isPaused && styles.pauseBtnActive]} 
-            onPress={togglePause}
-          >
-            <Text style={styles.pauseBtnText}>{isPaused ? '▶ PLAY' : '⏸ PAUSE'}</Text>
-          </TouchableOpacity>
+          {/* Controls */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <TouchableOpacity 
+              style={[styles.premiumBadge, isPremium ? styles.premiumBadgeActive : styles.premiumBadgeLocked]}
+              onPress={handlePremiumPress}
+            >
+              <Text style={[styles.premiumBadgeText, { color: isPremium ? '#00f0ff' : '#ffd700', fontSize: 8 }]}>
+                {isPremium ? 'PREMIUM' : 'BUY PASS'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.speedControlStepper}>
+              <TouchableOpacity style={styles.stepperMiniBtn} onPress={decreaseSpeed}>
+                <Text style={styles.stepperMiniBtnText}>◀</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.speedBtnMain} onPress={cycleSpeed}>
+                <Text style={styles.speedText}>{gameSpeed}x</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stepperMiniBtn} onPress={increaseSpeed}>
+                <Text style={styles.stepperMiniBtnText}>▶</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.pauseBtn, isPaused && styles.pauseBtnActive, { paddingVertical: 3, paddingHorizontal: 6 }]} 
+              onPress={togglePause}
+            >
+              <Text style={[styles.pauseBtnText, { fontSize: 8 }]}>{isPaused ? '▶' : '⏸'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Line 3: All 8 Status Chips */}
+        {planetId && (
+          <View style={[styles.statusChipsRow, { marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: 'rgba(255, 255, 255, 0.08)' }]}>
+            {/* ❤️ HP */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#ff5c5c' }]}
+              onPress={onPressHp}
+            >
+              <Text style={styles.miniStatusChipIcon}>❤️</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#ff5c5c' }]}>{Math.floor(planetState?.hp || 0)}</Text>
+            </TouchableOpacity>
+
+            {/* 🛡️ Shield */}
+            <TouchableOpacity
+              style={[
+                styles.miniStatusChip,
+                { borderColor: '#00f0ff' },
+                !isShieldOnline && { borderColor: '#8fa0c4', opacity: 0.6 }
+              ]}
+              onPress={onPressShield}
+            >
+              <Text style={styles.miniStatusChipIcon}>🛡️</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
+                {!isShieldOnline ? 'OFF' : Math.floor(planetState?.shield || 0)}
+              </Text>
+            </TouchableOpacity>
+
+            {/* ⚡ EP */}
+            <TouchableOpacity
+              style={[
+                styles.miniStatusChip,
+                { borderColor: '#ffd700' },
+                isPowerDischarged && {
+                  borderColor: blinkVisible ? '#ffd700' : '#8fa0c4',
+                  backgroundColor: blinkVisible ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.02)'
+                }
+              ]}
+              onPress={onPressEp}
+            >
+              <Text style={styles.miniStatusChipIcon}>⚡</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }, isPowerDischarged && { color: blinkVisible ? '#ffd700' : '#8fa0c4' }]}>
+                {isPowerDischarged ? '방전됨' : `${Math.max(0, Math.floor(overloadEnergy))}TW`}
+              </Text>
+            </TouchableOpacity>
+
+            {/* 🛰️ Satellite */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#c296ff' }]}
+              onPress={onPressTower}
+            >
+              <Text style={styles.miniStatusChipIcon}>🛰️</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#c296ff' }]}>{kineticDefenseTowers}</Text>
+            </TouchableOpacity>
+
+            {/* 🌱 Terraform */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
+              onPress={onPressTerraform}
+            >
+              <Text style={styles.miniStatusChipIcon}>🌱</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{planetState?.terraformProgress || 0}%</Text>
+            </TouchableOpacity>
+
+            {/* 👥 Population */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#ffd700' }]}
+              onPress={onPressPop}
+            >
+              <Text style={styles.miniStatusChipIcon}>👥</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#ffd700' }]}>{Math.floor((planetState?.population || 0) / 1000)}K</Text>
+            </TouchableOpacity>
+
+            {/* ⚙️ Auto settings */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#8fa0c4' }]}
+              onPress={onPressAuto}
+            >
+              <Text style={styles.miniStatusChipIcon}>⚙️</Text>
+              <Text style={[styles.miniStatusChipVal, { color: autoTerraform || autoBuildTowers ? '#00bfa5' : '#8fa0c4' }]}>
+                {(autoTerraform ? 1 : 0) + (autoBuildTowers ? 1 : 0)}/2
+              </Text>
+            </TouchableOpacity>
+
+            {/* 🛸 Fleet */}
+            <TouchableOpacity
+              style={[styles.miniStatusChip, { borderColor: '#00ff8a' }]}
+              onPress={onPressFleet}
+            >
+              <Text style={styles.miniStatusChipIcon}>🛸</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#00ff8a' }]}>{fleetLength}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -394,6 +386,45 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 48 : 15,
     paddingHorizontal: 15,
     zIndex: 100,
+  },
+  dashboardPanel: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(4, 7, 18, 0.92)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(0, 240, 255, 0.25)',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#00f0ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  dashboardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  resourceSummaryTouch: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 4,
+  },
+  dashboardTpBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(191, 92, 255, 0.15)',
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(191, 92, 255, 0.35)',
+  },
+  detailsDropdownInline: {
+    marginTop: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 4,
+    padding: 4,
+    gap: 4,
   },
   hudContentColumn: {
     flexDirection: 'column',
