@@ -223,13 +223,13 @@ export default function TopHud({
           )}
         </View>
 
-        {/* 하단: 게임 컨트롤 및 웨이브 상태 패널 (자원창 하단에 소형 배치) */}
-        <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
+        {/* 라인 1: 웨이브 진행도 및 8대 상태 칩 패널 (가로 전체폭) */}
+        <View style={{ alignSelf: 'stretch', marginBottom: 6 }} pointerEvents={overlay ? "box-none" : "auto"}>
           <View style={styles.waveBadge}>
             {/* Line 1: Wave Info */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: planetId ? 6 : 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: planetId ? 6 : 0 }}>
               <Text style={styles.waveText}>WAVE {currentWave} ({killedEnemies}/{totalEnemies})</Text>
-              <View style={{ height: 2, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1, marginLeft: 8, overflow: 'hidden', width: 60 }}>
+              <View style={{ height: 3, backgroundColor: 'rgba(0, 240, 255, 0.25)', borderRadius: 1.5, overflow: 'hidden', flex: 1, marginLeft: 12 }}>
                 <View style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#00ff8a' }} />
               </View>
             </View>
@@ -328,7 +328,10 @@ export default function TopHud({
               </View>
             )}
           </View>
+        </View>
 
+        {/* 라인 2: 게임 속도/일시정지/TP/프리미엄 패스 제어 바 (한 행에 균등 정렬) */}
+        <View style={styles.bottomControlRow} pointerEvents={overlay ? "box-none" : "auto"}>
           <View style={styles.tpBadge}>
             <Text style={styles.tpText}>🌀 {timeParticles} TP</Text>
           </View>
@@ -358,7 +361,7 @@ export default function TopHud({
             style={[styles.pauseBtn, isPaused && styles.pauseBtnActive]} 
             onPress={togglePause}
           >
-            <Text style={styles.pauseText}>{isPaused ? 'RESUME' : 'PAUSE'}</Text>
+            <Text style={styles.pauseBtnText}>{isPaused ? '▶ PLAY' : '⏸ PAUSE'}</Text>
           </TouchableOpacity>
         </View>
       </View>

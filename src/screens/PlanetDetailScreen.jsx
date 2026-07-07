@@ -2158,10 +2158,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 225,
+        top: 255,
       },
       default: {
-        top: 162,
+        top: 192,
       }
     }),
     left: 15,
@@ -2737,10 +2737,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 145,
+        top: 175,
       },
       default: {
-        top: 82,
+        top: 112,
       }
     }),
     left: 8,
@@ -2898,10 +2898,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     ...Platform.select({
       ios: {
-        top: 225,
+        top: 255,
       },
       default: {
-        top: 162,
+        top: 192,
       }
     }),
     right: 15,
