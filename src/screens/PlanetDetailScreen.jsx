@@ -2144,11 +2144,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#050814',
     ...Platform.select({
       web: {
-        height: '50%',
+        height: '60%',
         width: '100%',
       },
       default: {
-        flex: 0.5,
+        flex: 0.6,
         justifyContent: 'center',
         alignItems: 'center',
       }
@@ -2530,7 +2530,7 @@ const styles = StyleSheet.create({
         flex: 1,
       },
       default: {
-        flex: 0.5,
+        flex: 0.4,
       }
     }),
     marginTop: 8,
