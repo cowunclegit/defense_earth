@@ -118,10 +118,7 @@ export default function PlanetDetailScreen({ route, navigation }) {
       <View style={styles.fixedContentContainer}>
         {/* 상단: 2D 전투 캔버스 영역 */}
         <View style={styles.battleCanvasContainer}>
-          <GameCanvas
-            purchaseMultiplier={purchaseMultiplier}
-            onToggleMultiplier={() => setPurchaseMultiplier(purchaseMultiplier === 1 ? 5 : 1)}
-          />
+          <GameCanvas />
           <TopHud 
             overlay={true} 
             planetId={planetId}
@@ -198,6 +195,30 @@ export default function PlanetDetailScreen({ route, navigation }) {
 
         {/* 하단: 업그레이드 및 기지 건설 제어 영역 */}
         <View style={styles.controlPanel} pointerEvents="auto">
+          {/* 배수 조절 버튼 (x1 / x5) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 }}>
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: purchaseMultiplier > 1 ? '#ff8a00' : 'rgba(10, 20, 45, 0.8)',
+                borderWidth: 1.5,
+                borderColor: '#ff8a00',
+                borderRadius: 6,
+                paddingVertical: 4,
+                paddingHorizontal: 10,
+                shadowColor: '#ff8a00',
+                shadowOpacity: purchaseMultiplier > 1 ? 0.3 : 0,
+                shadowRadius: 4,
+              }}
+              onPress={() => setPurchaseMultiplier(prev => prev === 1 ? 5 : 1)}
+              accessibilityLabel="purchase-multiplier-toggle"
+            >
+              <Text style={{ color: purchaseMultiplier > 1 ? '#050814' : '#ff8a00', fontSize: 10, fontWeight: 'bold' }}>
+                건설 배수: x{purchaseMultiplier}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
 
           {/* 탭 본문 영역 (60FPS 격리) */}

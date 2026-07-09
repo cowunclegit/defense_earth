@@ -2,9 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Platform, useWindowDimensions } from 'react-native';
 import WebCanvas from './components/WebCanvas';
 import SkiaCanvas from './components/SkiaCanvas';
-import CanvasControls from './components/CanvasControls';
-
-export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
+export default function GameCanvas() {
   const { width: windowWidth } = useWindowDimensions();
   const canvasSize = windowWidth;
 
@@ -137,13 +135,6 @@ export default function GameCanvas({ purchaseMultiplier, onToggleMultiplier }) {
       ) : (
         <SkiaCanvas canvasSize={canvasSize} zoom={zoom} panX={panX} panY={panY} />
       )}
-      <CanvasControls 
-        zoom={zoom} 
-        setZoom={setZoom} 
-        resetZoomPan={resetZoomPan}
-        purchaseMultiplier={purchaseMultiplier}
-        onToggleMultiplier={onToggleMultiplier}
-      />
     </View>
   );
 }
