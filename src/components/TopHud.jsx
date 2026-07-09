@@ -50,6 +50,8 @@ export default function TopHud({
   } = useGameStore();
 
   const planetState = planetId ? planets[planetId] : null;
+  const earthHp = useGameStore(state => state.earthHp);
+  const earthShield = useGameStore(state => state.earthShield);
   const overloadEnergy = useGameStore(state => state.overloadEnergy);
   const isPowerOffline = useGameStore(state => state.isPowerOffline);
   const isShieldOnline = planetId ? isSystemOnline('shield', null, overloadEnergy, isPowerOffline) : false;
@@ -272,7 +274,9 @@ export default function TopHud({
               onPress={onPressHp}
             >
               <Text style={styles.miniStatusChipIcon}>❤️</Text>
-              <Text style={[styles.miniStatusChipVal, { color: '#ff5c5c' }]}>{Math.floor(planetState?.hp || 0)}</Text>
+              <Text style={[styles.miniStatusChipVal, { color: '#ff5c5c' }]}>
+                {planetId === 'earth' ? Math.floor(earthHp || 0) : Math.floor(planetState?.hp || 0)}
+              </Text>
             </TouchableOpacity>
 
             {/* 🛡️ Shield */}
@@ -286,7 +290,7 @@ export default function TopHud({
             >
               <Text style={styles.miniStatusChipIcon}>🛡️</Text>
               <Text style={[styles.miniStatusChipVal, { color: '#00f0ff' }, !isShieldOnline && { color: '#8fa0c4' }]}>
-                {!isShieldOnline ? 'OFF' : Math.floor(planetState?.shield || 0)}
+                {!isShieldOnline ? 'OFF' : (planetId === 'earth' ? Math.floor(earthShield || 0) : Math.floor(planetState?.shield || 0))}
               </Text>
             </TouchableOpacity>
 
