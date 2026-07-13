@@ -1,0 +1,25 @@
+config_version=5
+
+[application]
+
+config/name="Defense Earth"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.2", "Forward Plus")
+
+[autoload]
+
+GameSpecs="*res://scripts/GameSpecs.gd"
+GameState="*res://scripts/GameState.gd"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

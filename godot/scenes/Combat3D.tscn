@@ -1,0 +1,57 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scenes/Combat3D.gd" id="1_script"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_planet"]
+radius = 1.0
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_planet"]
+albedo_color = Color(0.18, 0.42, 0.84, 1.0)
+roughness = 0.6
+rim_enabled = true
+rim = 0.5
+rim_tint = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_shield"]
+radius = 1.25
+height = 2.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shield"]
+transparency = 1
+albedo_color = Color(0.1, 0.6, 1.0, 0.2)
+emission_enabled = true
+emission = Color(0.1, 0.6, 1.0, 1.0)
+emission_energy_multiplier = 0.4
+
+[sub_resource type="Environment" id="Environment_space"]
+background_mode = 1
+background_color = Color(0.03, 0.03, 0.06, 1.0)
+ambient_light_source = 2
+ambient_light_color = Color(0.15, 0.15, 0.2, 1.0)
+
+[node name="Combat3D" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="PlanetMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_planet")
+surface_material_override/0 = SubResource("StandardMaterial3D_planet")
+
+[node name="ShieldMesh" type="MeshInstance3D" parent="PlanetMesh"]
+mesh = SubResource("SphereMesh_shield")
+surface_material_override/0 = SubResource("StandardMaterial3D_shield")
+
+[node name="SatellitePivot" type="Node3D" parent="."]
+
+[node name="CameraPivot" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 0.939692, 0.34202, 0, -0.34202, 0.939692, 0, 1.5, 4.5)
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0.5, 0.612372, -0.612372, 0, 0.707107, 0.707107, 5, 5, 5)
+light_color = Color(0.98, 0.96, 0.9, 1.0)
+light_energy = 1.2
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_space")
