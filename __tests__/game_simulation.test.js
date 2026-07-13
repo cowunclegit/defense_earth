@@ -1,4 +1,21 @@
-import { useGameStore, SHIP_TYPES, SHIP_SPECS } from '../src/store/gameStore';
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store = {};
+  return {
+    default: {
+      setItem: jest.fn(async (key, val) => {
+        store[key] = val;
+      }),
+      getItem: jest.fn(async (key) => {
+        return store[key] || null;
+      }),
+      removeItem: jest.fn(async (key) => {
+        delete store[key];
+      })
+    }
+  };
+});
+
+import { useGameStore, SHIP_TYPES, SHIP_SPECS, calculateSynergies } from '../src/store/gameStore';
 import { PLANETS } from '../src/constants/planetaryData';
 
 describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
@@ -1069,5 +1086,104 @@ describe('Defense Earth: Cosmic Loop Core Simulation Test', () => {
     expect(healedShip.flockOffsetX).toBeDefined();
     expect(healedShip.flockOffsetY).toBeDefined();
     expect(typeof healedShip.orbitRadiusOffset).toBe('number');
+  });
+
+  test('AsyncStorage 연동 세이브/로드 시리얼라이즈 검증', async () => {
+    const store = useGameStore.getState();
+
+    // 임의의 고유 게임 진행 상태 설정
+    useGameStore.setState({
+      credits: 12345,
+      nanocores: 99,
+      timeParticles: 88,
+      currentWave: 7,
+      earthHp: 80,
+      earthShield: 90
+    });
+
+    // 세이브 진행
+    await store.saveGame();
+
+    // 임시로 상태 변경 (초기화 또는 다른 값)
+    useGameStore.setState({
+      credits: 0,
+      nanocores: 0,
+      timeParticles: 0,
+      currentWave: 1,
+      earthHp: 100,
+      earthShield: 100
+    });
+
+    // 세이브 데이터 로드 진행
+    await store.loadGame();
+
+    const loadedState = useGameStore.getState();
+    expect(loadedState.credits).toBe(12345);
+    expect(loadedState.nanocores).toBe(99);
+    expect(loadedState.timeParticles).toBe(88);
+    expect(loadedState.currentWave).toBe(7);
+    expect(loadedState.earthHp).toBe(80);
+    expect(loadedState.earthShield).toBe(90);
+  });
+
+  test('다중 행성(화성, 금성, 목성) 80% 테라포밍 완료 시 시너지 버프 일괄 검증', () => {
+    const store = useGameStore.getState();
+    const planetsCopy = JSON.parse(JSON.stringify(useGameStore.getState().planets));
+
+    // 화성(Mars), 금성(Venus), 목성(Jupiter) 해금 및 테라포밍 80% 달성
+    planetsCopy.mars.unlocked = true;
+    planetsCopy.mars.terraformProgress = 80;
+    planetsCopy.mars.population = 10000;
+
+    planetsCopy.venus.unlocked = true;
+    planetsCopy.venus.terraformProgress = 80;
+    planetsCopy.venus.population = 5000;
+
+    planetsCopy.jupiter.unlocked = true;
+    planetsCopy.jupiter.terraformProgress = 80;
+    planetsCopy.jupiter.population = 20000;
+
+    useGameStore.setState({
+      planets: planetsCopy,
+      synergies: calculateSynergies(planetsCopy, useGameStore.getState().chronosUpgrades)
+    });
+
+    // 틱을 주면 시뮬레이션이 동작함
+    store.tick(0.1);
+
+    const updatedState = useGameStore.getState();
+    // 화성 시너지: 아군 함선 건조 비용 -15% (0.85), 속도 +20% (1.2)
+    expect(updatedState.synergies.shipBuildCostMultiplier).toBe(0.85);
+    expect(updatedState.synergies.shipBuildSpeedMultiplier).toBe(1.2);
+    // 금성 시너지: 발전 인프라 효율 +150% (2.5), 타워 유지비 -20% (0.8)
+    expect(updatedState.synergies.energyProductionMultiplier).toBe(2.5);
+    expect(updatedState.synergies.toggleCounterattackModule ? 0.8 : updatedState.synergies.towerMaintenanceCostMultiplier).toBe(0.8);
+    // 목성 시너지: 감속 범위 +25% (1.25), 감속 효과 +25% (1.25)
+    expect(updatedState.synergies.slowTowerRangeMultiplier).toBe(1.25);
+    expect(updatedState.synergies.slowTowerEffectMultiplier).toBe(1.25);
+  });
+
+  test('특정 웨이브 도달 시 엘리언 보스 스폰 및 스펙 스케일링 검증', () => {
+    const store = useGameStore.getState();
+
+    // 10 웨이브 설정 (10의 배수에서는 보스가 스폰되어야 함)
+    // 보스 웨이브 시 spawnInterval은 baseInterval = 5.0 - 10 * 0.1 = 4.0초임.
+    // enemySpawnTimer를 5.0으로 줘서 한 번에 스폰 조건 충족시킴.
+    useGameStore.setState({
+      currentWave: 10,
+      enemies: [],
+      enemiesRemainingToSpawn: 1, // 보스 1마리 스폰 예정
+      enemySpawnTimer: 5.0
+    });
+
+    // 틱을 주어 보스 스폰 유도
+    store.tick(1.0);
+
+    const state = useGameStore.getState();
+    expect(state.enemies.length).toBe(1);
+    
+    const boss = state.enemies[0];
+    expect(boss.type.toLowerCase()).toContain('boss'); // 보스 타입인지 검증
+    expect(boss.hp).toBeGreaterThan(100); // 보스는 HP가 스케일링되어 매우 큼
   });
 });
