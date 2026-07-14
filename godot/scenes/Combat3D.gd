@@ -94,15 +94,20 @@ func rebuild_orbitals():
 			mesh_instance.mesh = sphere
 			
 			var mat = StandardMaterial3D.new()
-			mat.shading_mode = StandardMaterial3D.SHADING_MODE_UNSHADED
+			mat.albedo_texture = load("res://assets/textures/satellite_diffuse.png")
+			mat.metallic = 0.8
+			mat.roughness = 0.3
+			mat.emission_enabled = true
+			
 			if sat_type == "laser":
-				mat.albedo_color = Color(1.0, 0.2, 0.2) # Red
+				mat.emission = Color(1.0, 0.2, 0.2) # Red
 			elif sat_type == "plasma":
-				mat.albedo_color = Color(1.0, 0.6, 0.0) # Orange
+				mat.emission = Color(1.0, 0.6, 0.0) # Orange
 			elif sat_type == "emp":
-				mat.albedo_color = Color(0.2, 0.8, 1.0) # Light blue
+				mat.emission = Color(0.2, 0.8, 1.0) # Light blue
 			else:
-				mat.albedo_color = Color(0.8, 0.2, 1.0) # Purple
+				mat.emission = Color(0.8, 0.2, 1.0) # Purple
 				
+			mat.emission_energy_multiplier = 1.0
 			mesh_instance.material_override = mat
 			index += 1
