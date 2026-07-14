@@ -5,8 +5,9 @@ func _ready():
 	print("🤖 STARTING GODOT PORT VALIDATION TESTS")
 	print("==================================================")
 	
-	# Pause the automatic engine ticks to keep test ticks 100% deterministic
-	GameState.is_paused = true
+	# Stop the automatic engine process frames, so manual tick calling works deterministically
+	GameState.set_process(false)
+	GameState.is_paused = false
 	
 	run_all_tests()
 	
@@ -33,14 +34,13 @@ func run_all_tests():
 func assert_true(cond: bool, msg: String):
 	if not cond:
 		push_error("❌ Assertion Failed: " + msg)
-		get_tree().quit(1)
-		breakpoint
+		assert(false, msg)
 
 func assert_close(val: float, expected: float, epsilon: float, msg: String):
 	if abs(val - expected) > epsilon:
-		push_error("❌ Assertion Failed: %s. Expected %f, got %f" % [msg, expected, val])
-		get_tree().quit(1)
-		breakpoint
+		var err_msg = "❌ Assertion Failed: %s. Expected %f, got %f" % [msg, expected, val]
+		push_error(err_msg)
+		assert(false, err_msg)
 
 # 1. Economic & Population Growth Math Tests
 func test_population_logistic_growth():
