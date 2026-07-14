@@ -147,7 +147,7 @@ func _process(delta: float):
 	
 	# 2. Power Grid Tick
 	recalculate_energy_limits()
-	var net_power = max_energy - used_energy # For charging rates
+	var net_power = get_production_power() - used_energy # For charging rates
 	if is_power_offline:
 		net_power = get_production_power() - get_offline_consumption()
 		
