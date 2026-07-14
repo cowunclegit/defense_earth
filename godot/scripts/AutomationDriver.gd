@@ -58,6 +58,11 @@ func _execute_command(cmd: Dictionary):
 		else:
 			_write_response({"status": "error", "message": "Target button not found or not a Button: " + target_name})
 			
+	elif action == "get_nodes":
+		var list = []
+		_get_nodes_recursive(main_node, "", list)
+		_write_response({"status": "success", "nodes": list})
+		
 	elif action == "get_state":
 		var state = {
 			"credits": GameState.credits,
@@ -94,6 +99,16 @@ func _find_node_by_name(root: Node, node_name: String) -> Node:
 		if found:
 			return found
 	return null
+
+func _get_nodes_recursive(node: Node, path: String, list: Array):
+	var current_path = path + "/" + node.name if path != "" else node.name
+	list.append({
+		"name": node.name,
+		"path": current_path,
+		"class": node.get_class()
+	})
+	for child in node.get_children():
+		_get_nodes_recursive(child, current_path, list)
 
 func _write_response(data: Dictionary):
 	var file = FileAccess.open(RESPONSE_FILE, FileAccess.WRITE)
