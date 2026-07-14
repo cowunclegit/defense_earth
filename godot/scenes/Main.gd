@@ -1,38 +1,38 @@
 extends Control
 
 # HUD labels & bars
-@onready var credits_label = %CreditsLabel
-@onready var tp_label = %TPLabel
-@onready var nanocores_label = %NanocoresLabel
-@onready var hp_progress = %HPProgress
-@onready var shield_progress = %ShieldProgress
-@onready var power_label = %PowerLabel
+@onready var credits_label = $MainLayout/TopHUD/HUDMargin/HUDContent/ResourcesBar/CreditsLabel
+@onready var tp_label = $MainLayout/TopHUD/HUDMargin/HUDContent/ResourcesBar/TPLabel
+@onready var nanocores_label = $MainLayout/TopHUD/HUDMargin/HUDContent/ResourcesBar/NanocoresLabel
+@onready var hp_progress = $MainLayout/TopHUD/HUDMargin/HUDContent/StatusGrid/HPBar/HPProgress
+@onready var shield_progress = $MainLayout/TopHUD/HUDMargin/HUDContent/StatusGrid/ShieldBar/ShieldProgress
+@onready var power_label = $MainLayout/TopHUD/HUDMargin/HUDContent/StatusGrid/PowerGrid/PowerLabel
 
 # Tab Buttons & Panels
-@onready var buildings_btn = %BuildingsBtn
-@onready var satellites_btn = %SatellitesBtn
-@onready var lab_btn = %LabBtn
+@onready var buildings_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/TabBar/BuildingsBtn
+@onready var satellites_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/TabBar/SatellitesBtn
+@onready var lab_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/TabBar/LabBtn
 
-@onready var buildings_tab = %BuildingsTab
-@onready var satellites_tab = %SatellitesTab
-@onready var lab_tab = %LabTab
+@onready var buildings_tab = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/BuildingsTab
+@onready var satellites_tab = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/SatellitesTab
+@onready var lab_tab = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/LabTab
 
 # Construction buttons
-@onready var power_plant_btn = %PowerPlantBtn
-@onready var factory_btn = %FactoryBtn
-@onready var housing_btn = %HousingBtn
-@onready var bunker_btn = %BunkerBtn
+@onready var power_plant_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/BuildingsTab/PowerPlantBtn
+@onready var factory_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/BuildingsTab/FactoryBtn
+@onready var housing_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/BuildingsTab/HousingBtn
+@onready var bunker_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/BuildingsTab/BunkerBtn
 
 # Satellite buttons
-@onready var buy_laser_btn = %BuyLaserBtn
-@onready var buy_emp_btn = %BuyEmpBtn
-@onready var buy_plasma_btn = %BuyPlasmaBtn
-@onready var buy_cluster_btn = %BuyClusterBtn
+@onready var buy_laser_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/SatellitesTab/BuyLaserBtn
+@onready var buy_emp_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/SatellitesTab/BuyEmpBtn
+@onready var buy_plasma_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/SatellitesTab/BuyPlasmaBtn
+@onready var buy_cluster_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/SatellitesTab/BuyClusterBtn
 
 # Lab buttons
-@onready var credit_gen_upgrade_btn = %CreditGenUpgradeBtn
-@onready var intercept_upgrade_btn = %InterceptUpgradeBtn
-@onready var rebirth_btn = %RebirthBtn
+@onready var credit_gen_upgrade_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/LabTab/CreditGenUpgradeBtn
+@onready var intercept_upgrade_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/LabTab/InterceptUpgradeBtn
+@onready var rebirth_btn = $MainLayout/ControlPanel/PanelMargin/PanelLayout/ContentContainer/TabMargin/LabTab/RebirthBtn
 
 func _ready():
 	# Connect GameState notifications
