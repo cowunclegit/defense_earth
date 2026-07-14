@@ -38,6 +38,11 @@ func _ready():
 	# Connect GameState notifications
 	GameState.connect("state_changed", Callable(self, "_on_state_changed"))
 	
+	# Instantiate automation driver
+	var driver = load("res://scripts/AutomationDriver.gd").new()
+	driver.name = "AutomationDriver"
+	add_child(driver)
+	
 	# Connect Tab Switchers
 	buildings_btn.connect("pressed", Callable(self, "_on_tab_pressed").bind(0))
 	satellites_btn.connect("pressed", Callable(self, "_on_tab_pressed").bind(1))
